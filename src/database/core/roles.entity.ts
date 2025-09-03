@@ -5,13 +5,17 @@ import { BaseEntity } from "./base.entity";
 
 @Entity('roles')
 export class RoleEntity extends BaseEntity{
-    @PrimaryGeneratedColumn()
-    id: number;
     @Column()
-    name: string;
+    nombre: string;
 
     @ManyToMany(() => PermissionEntity, permission => permission.roles)
-    @JoinTable()
+    @JoinTable({
+        name: 'roles_permisos',
+        joinColumn: {
+            name: 'roles_id',
+            referencedColumnName: 'id'
+        },
+    })
     permissions: PermissionEntity[];
 
     @OneToMany(() => UserEntity, user => user.role)

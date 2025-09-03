@@ -86,7 +86,7 @@ export class UsersService extends BaseService<UserEntity> {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    const rol = await this.roleRepository.findOne({ where: { name: rolNombre } });
+    const rol = await this.roleRepository.findOne({ where: { nombre: rolNombre } });
     if (!rol) {
       throw new NotFoundException('Rol no encontrado');
     }
@@ -97,7 +97,7 @@ export class UsersService extends BaseService<UserEntity> {
     user.role = rol;
     await this.repository.save(user);
 
-    return {message: `Rol asignado correctamente a ${user.email}`,userId: user.id,nuevoRol: rol.name,};
+    return {message: `Rol asignado correctamente a ${user.email}`,userId: user.id,nuevoRol: rol.nombre,};
   }
   async cambiarContrasena(userId: number, contrasena: string) {
     const user = await this.repository.findOneBy({ id: userId });

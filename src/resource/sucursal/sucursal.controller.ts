@@ -8,8 +8,6 @@ export class SucursalController extends BaseController<sucursalEntity>{
     constructor(protected readonly SucursalService:SucursalService){
         super(SucursalService);
     }
-    // @Delete(':id')
-    // Poner toda la logica para eliminar una sucursal
 }
 
 

@@ -12,9 +12,9 @@ export class PermisosSeeder {
 
     async run() {
         const permisos = [
-        { name: 'crear_usuario', codigo: 'USR_CREATE' },
-        { name: 'editar_usuario', codigo: 'USR_EDIT' },
-        { name: 'eliminar_usuario', codigo: 'USR_DELETE' },
+        { nombre: 'crear_usuario', codigo: 'USR_CREATE' },
+        { nombre: 'editar_usuario', codigo: 'USR_EDIT' },
+        { nombre: 'eliminar_usuario', codigo: 'USR_DELETE' },
         ];
 
         for (const permiso of permisos) {

@@ -17,13 +17,13 @@ export class UserSeeder {
 
     async run() {
         const usuarios = [
-        { email: 'prueba@prueba.com', password: '123456', roleName: 'admin' },
+        { email: 'ignaciosala2004@gmail.com', password: '12345678', nombre: 'ignacio', apellido:'sala', roleName: 'Superadmin' },
         ];
 
         const totalUsuarios = await this.userRepository.count();
         if (totalUsuarios === 0) {
         for (const usuario of usuarios) {
-            const role = await this.roleRepository.findOne({ where: { name: usuario.roleName } });
+            const role = await this.roleRepository.findOne({ where: { nombre: usuario.roleName } });
             if (!role) {
             console.error(`No se encontró el rol ${usuario.roleName}`);
             continue;
@@ -32,6 +32,8 @@ export class UserSeeder {
             const newUser = new UserEntity();
             newUser.email = usuario.email;
             newUser.password = hashSync(usuario.password, 10);
+            newUser.nombre = usuario.nombre;
+            newUser.apellido = usuario.apellido;
             newUser.role = role;
 
             await this.userRepository.save(newUser);

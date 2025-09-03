@@ -48,6 +48,7 @@ export abstract class BaseService<T extends BaseEntity> {
         if (!entity) {
             throw new Error(`Entity with id ${id} not found`);
         }
+        await this.repository.softDelete(id);
         return {"message": "deleted" };
     }
     async paginate(options: IPaginationOptions): Promise<Pagination<T>> {

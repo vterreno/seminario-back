@@ -3,7 +3,7 @@ import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeor
 import { RoleEntity } from './roles.entity';
 import { BaseEntity } from './base.entity';
 
-@Entity('users')
+@Entity('usuarios')
 export class UserEntity extends BaseEntity implements UserI {
   @PrimaryGeneratedColumn()
   id: number;
@@ -30,6 +30,6 @@ export class UserEntity extends BaseEntity implements UserI {
 
   get permissionCodes(): string[] {
     if (!this.role || !this.role.permissions) return [];
-    return this.role.permissions.map(p => p.name);  // o el nombre del campo que tenga el código de permiso
+    return this.role.permissions.map(p => p.nombre);  // o el nombre del campo que tenga el código de permiso
   }
 }

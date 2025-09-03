@@ -17,11 +17,11 @@ export class RoleSeeder {
         const permisos = await this.permisoRepo.find();
 
         const roles = [
-        { name: 'admin', permissions: permisos },
+        { nombre: 'Superadmin', permissions: permisos },
         ];
 
         for (const roleData of roles) {
-            const exists = await this.roleRepo.findOne({ where: { name: roleData.name } });
+            const exists = await this.roleRepo.findOne({ where: { nombre: roleData.nombre } });
             if (!exists) {
                 const role = this.roleRepo.create(roleData);
                 await this.roleRepo.save(role);

@@ -29,19 +29,19 @@ describe('RolesController', () => {
       const result: RoleEntity[] = [
         {
           id: 1,
-          name: 'Admin',
+          nombre: 'Admin',
           permissions: [],
           users: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
         {
           id: 2,
-          name: 'User',
+          nombre: 'User',
           permissions: [],
           users: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       ];
       jest.spyOn(service, 'find').mockResolvedValue(result);

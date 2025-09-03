@@ -1,5 +1,5 @@
 import { UserI } from '../../resource/users/interface/user.interface';
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
 import { RoleEntity } from './roles.entity';
 import { BaseEntity } from './base.entity';
 
@@ -22,6 +22,7 @@ export class UserEntity extends BaseEntity implements UserI {
   password: string;
   
   @ManyToOne(() => RoleEntity, (role) => role.users)
+  @JoinColumn({ name: 'role_id' })
   role?: RoleEntity;
   permissions: any;
 

@@ -23,7 +23,7 @@ export class UserSeeder {
         const totalUsuarios = await this.userRepository.count();
         if (totalUsuarios === 0) {
         for (const usuario of usuarios) {
-            const role = await this.roleRepository.findOne({ where: { name: usuario.roleName } });
+            const role = await this.roleRepository.findOne({ where: { nombre: usuario.roleName } });
             if (!role) {
             console.error(`No se encontró el rol ${usuario.roleName}`);
             continue;

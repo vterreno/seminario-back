@@ -5,8 +5,6 @@ import { BaseEntity } from "./base.entity";
 
 @Entity('roles')
 export class RoleEntity extends BaseEntity{
-    @PrimaryGeneratedColumn()
-    id: number;
     @Column()
     nombre: string;
 

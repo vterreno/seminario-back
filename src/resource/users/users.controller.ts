@@ -18,8 +18,17 @@ export class UsersController extends BaseController<UserEntity> {
   @UseGuards(AuthGuard)
   @Get('me')
   me(@Req() req: RequestWithUser) {
+    const user = req.user;
     return {
-      email: req.user.email,
+      id: user.id,
+      name: `${user.nombre} ${user.apellido}`,
+      email: user.email,
+      roles: user.role ? [{
+        id: user.role.id,
+        nombre: user.role.nombre,
+        permissions: user.role.permissions || []
+      }] : [],
+      permissions: user.permissionCodes || []
     };
   }
 

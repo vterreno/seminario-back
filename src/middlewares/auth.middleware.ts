@@ -20,10 +20,11 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
       const request: RequestWithUser = context.switchToHttp().getRequest();
-      const token = request.headers.authorization.replace('Bearer ','');
-      if (token == null) {
+      const authHeader = request.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         throw new UnauthorizedException('El token no existe');
       }
+      const token = authHeader.replace('Bearer ','');
       const payload = this.jwtService.getPayload(token);
       const user = await this.usersService.findByEmail(payload.email);
       request.user = user;

@@ -69,4 +69,19 @@ export class UsersController extends BaseController<UserEntity> {
   ) {
     return this.service.cambiarContrasena(userId, contrasena);
   }
+
+  // Endpoint para validar el access token
+  @UseGuards(AuthGuard)
+  @Get('validate-token')
+  validateToken(@Req() req: RequestWithUser) {
+    return {
+      valid: true,
+      user: {
+        email: req.user.email,
+        id: req.user.id,
+      }
+    };
+  }
+
+
 }

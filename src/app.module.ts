@@ -8,6 +8,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { RolesModule } from './resource/roles/roles.module';
 import { PermisosModule } from './resource/permisos/permisos.module';
 import { SeedModule } from './database/seeders/seeder.module';
+import { MailServiceModule } from './resource/mail-service/mail-service.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SeedModule } from './database/seeders/seeder.module';
     RolesModule,
     PermisosModule,
     SeedModule,
+    MailServiceModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard],

@@ -1,5 +1,5 @@
 import { UserI } from '../../resource/users/interface/user.interface';
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn, JoinColumn, IsNull } from 'typeorm';
 import { RoleEntity } from './roles.entity';
 import { BaseEntity } from './base.entity';
 import { empresaEntity } from './empresa.entity';
@@ -24,9 +24,9 @@ export class UserEntity extends BaseEntity implements UserI {;
   role?: RoleEntity;
   permissions: any;
 
-  @ManyToOne(() => empresaEntity, empresa => empresa.usuarios, { nullable: false })
+  @ManyToOne(() => empresaEntity, empresa => empresa.usuarios, { nullable: true })
   @JoinColumn({ name: 'empresa_id' })
-  empresa: empresaEntity;
+  empresa?: empresaEntity;
 
   get permissionCodes(): string[] {
     if (!this.role || !this.role.permissions) return [];

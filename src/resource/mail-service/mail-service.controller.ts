@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { MailServiceService } from './mail-service.service';
 
 @Controller('mail-service')
@@ -11,5 +11,10 @@ export class MailServiceController {
   ) {
     const result = await this.mailServiceService.sendMail(to);
     return { ok: true, result };
+  }
+  @Post('verify')
+  async verifyCode(@Body() body: { email: string; code: string }) {
+    const isValid = await this.mailServiceService.verifyCode(body.email, body.code);
+    return { valid: isValid };
   }
 }

@@ -71,12 +71,12 @@ export class UsersController extends BaseController<UserEntity> {
     return this.service.asignarRol(userId, rol, request.user);
   }
 
-  @Patch(':id/cambiar-contrasena')
+  @Patch('cambiar-contrasena')
   cambiarContrasena(
-    @Param('id') userId: number,
     @Body('contrasena') contrasena: string,
+    @Body('email') email: string,
   ) {
-    return this.service.cambiarContrasena(userId, contrasena);
+    return this.service.cambiarContrasena(contrasena, email);
   }
 
   // Endpoint para validar el access token

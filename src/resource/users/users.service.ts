@@ -56,7 +56,7 @@ export class UsersService extends BaseService<UserEntity> {
     }
     const compareResult = compareSync(body.password, user.password);
     if (!compareResult) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
     return {
       accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
@@ -99,13 +99,18 @@ export class UsersService extends BaseService<UserEntity> {
 
     return {message: `Rol asignado correctamente a ${user.email}`,userId: user.id,nuevoRol: rol.nombre,};
   }
-  async cambiarContrasena(userId: number, contrasena: string) {
-    const user = await this.repository.findOneBy({ id: userId });
+  async cambiarContrasena(contrasenaNueva:string, email:string) {
+    const user = await this.repository.findOneBy({ email: email });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
-    user.password = hashSync(contrasena, 10);
+    user.password = hashSync(contrasenaNueva, 10);
     await this.repository.save(user);
-    return { message: 'Contraseña cambiada correctamente' };
+    return { 
+      accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
+      refreshToken: this.jwtService.generateToken(
+        { email: user.email },
+        'refresh',
+      ) };
   }
 }

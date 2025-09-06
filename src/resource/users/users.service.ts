@@ -113,4 +113,11 @@ export class UsersService extends BaseService<UserEntity> {
         'refresh',
       ) };
   }
+  async findByEmailWithRole(email: string) {
+    return this.repository.findOne({
+      where: { email },
+      relations: ['role', 'role.permissions'],
+    });
+  }
+
 }

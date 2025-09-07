@@ -25,6 +25,11 @@ export class SucursalesController extends BaseController<sucursalEntity>{
         return await this.sucursalesService.find();
     }
 
+    @Get('empresa/:empresaId')
+    async getSucursalesByEmpresa(@Param('empresaId') empresaId: number) {
+        return await this.sucursalesService.findByEmpresa(empresaId);
+    }
+
     @Get(':id')
     async getSucursalById(@Param('id') id: number) {
         return await this.sucursalesService.findOne({ where: { id } });

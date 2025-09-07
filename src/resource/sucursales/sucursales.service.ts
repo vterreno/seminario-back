@@ -19,6 +19,13 @@ export class SucursalesService extends BaseService<sucursalEntity> {
   ) {
     super(sucursalesRepository);
   }
+
+  async findByEmpresa(empresaId: number): Promise<sucursalEntity[]> {
+    return await this.repository.find({
+      where: { empresa: { id: empresaId } },
+      relations: ['empresa']
+    });
+  }
   
   async delete(id: number): Promise<{ message: string }> {
     const entity = await this.repository.findOneBy({id});

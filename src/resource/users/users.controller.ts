@@ -7,6 +7,7 @@ import { AuthGuard } from '../../middlewares/auth.middleware';
 import { RequestWithUser } from 'src/resource/users/interface/request-user';
 import { UserEntity } from 'src/database/core/user.entity';
 import { BaseController } from 'src/base-service/base-controller.controller';
+import { UserI } from './interface/user.interface';
 import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Public } from 'src/middlewares/decorators/public.decorator';
 
@@ -20,17 +21,7 @@ export class UsersController extends BaseController<UserEntity> {
   @Get('me')
   me(@Req() req: RequestWithUser) {
     const user = req.user;
-    return {
-      id: user.id,
-      name: `${user.nombre} ${user.apellido}`,
-      email: user.email,
-      roles: user.role ? [{
-        id: user.role.id,
-        nombre: user.role.nombre,
-        permissions: user.role.permissions || []
-      }] : [],
-      permissions: user.permissionCodes || []
-    };
+    return this.service.me(user as UserI);
   }
   
   @Public()
@@ -51,7 +42,7 @@ export class UsersController extends BaseController<UserEntity> {
     @Req() request: RequestWithUser,
     @Param('permission') permission: string,
   ) {
-    return this.service.canDo(request.user, permission);
+    return this.service.canDo(request.user as UserI, permission);
   }
 
   // Esto es para generar un nuevo access token a partir de un refresh token

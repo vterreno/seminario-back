@@ -14,4 +14,9 @@ export class EmpresaController extends BaseController<empresaEntity>{
     constructor(protected readonly empresaService:EmpresaService){
         super(empresaService);
     }
+
+    @Post('bulk/delete')
+    async deleteEmpresas(@Body() body: { ids: number[] }) {
+        return await this.empresaService.deleteEmpresas(body.ids);
+    }
 }

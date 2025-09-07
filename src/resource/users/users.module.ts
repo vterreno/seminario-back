@@ -5,9 +5,10 @@ import { UserEntity } from "src/database/core/user.entity";
 import { UsersService } from "./users.service";
 import { UsersController } from "./users.controller";
 import { JwtModule } from "src/jwt/jwt.module";
+import { empresaEntity } from "src/database/core/empresa.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity]), 
+    imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity, empresaEntity]), 
     JwtModule
     ],
     providers: [UsersService],

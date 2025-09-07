@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
+import { empresaEntity } from 'src/database/core/empresa.entity';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -20,6 +21,9 @@ export class UsersService extends BaseService<UserEntity> {
 
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
+
+    @InjectRepository(empresaEntity)
+    private readonly empresaRepository: Repository<empresaEntity>,
   ) {
     super(service);
   }
@@ -34,6 +38,29 @@ export class UsersService extends BaseService<UserEntity> {
       throw new UnauthorizedException();
     }
     return true;
+  }
+
+  async me(user: UserI) {
+    const response = {
+      name: `${user.nombre} ${user.apellido}`,
+      email: user.email,
+      empresa: user.empresa ? {
+        id: user.empresa.id,
+        nombre: user.empresa.name
+      } : {
+        id: null,
+        nombre: null
+      },
+      roles: user.role ? [{
+        id: user.role.id,
+        nombre: user.role.nombre,
+        permissions: user.role.permissions || []
+      }] : [],
+      permissions: user.permissionCodes || []
+    };
+
+    console.log(response);
+    return response;
   }
 
   async register(body: RegisterDTO) {
@@ -73,6 +100,7 @@ export class UsersService extends BaseService<UserEntity> {
         role: {
           permissions: true,
         },
+        empresa: true,
       },
     });
   } 

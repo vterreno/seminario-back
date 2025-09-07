@@ -8,6 +8,7 @@ import { RequestWithUser } from 'src/resource/users/interface/request-user';
 import { Permissions } from 'src/middlewares/decorators/permissions.decorator';
 import { UserEntity } from 'src/database/core/user.entity';
 import { BaseController } from 'src/base-service/base-controller.controller';
+import { UserI } from './interface/user.interface';
 
 @Controller('users')
 export class UsersController extends BaseController<UserEntity> {
@@ -19,24 +20,7 @@ export class UsersController extends BaseController<UserEntity> {
   @Get('me')
   me(@Req() req: RequestWithUser) {
     const user = req.user;
-    return {
-      id: user.id,
-      name: `${user.nombre} ${user.apellido}`,
-      email: user.email,
-      empresa: user.empresa ? {
-        id: user.empresa.id,
-        nombre: user.empresa.name
-      } : {
-        id: null,
-        nombre: null
-      },
-      roles: user.role ? [{
-        id: user.role.id,
-        nombre: user.role.nombre,
-        permissions: user.role.permissions || []
-      }] : [],
-      permissions: user.permissionCodes || []
-    };
+    return this.service.me(user as UserI);
   }
 
   @Post('login')
@@ -56,7 +40,7 @@ export class UsersController extends BaseController<UserEntity> {
     @Req() request: RequestWithUser,
     @Param('permission') permission: string,
   ) {
-    return this.service.canDo(request.user, permission);
+    return this.service.canDo(request.user as UserI, permission);
   }
 
   // Esto es para generar un nuevo access token a partir de un refresh token

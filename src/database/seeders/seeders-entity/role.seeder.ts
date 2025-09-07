@@ -21,10 +21,21 @@ export class RoleSeeder {
         ];
 
         for (const roleData of roles) {
-            const exists = await this.roleRepo.findOne({ where: { nombre: roleData.nombre } });
-            if (!exists) {
-                const role = this.roleRepo.create(roleData);
+            let role = await this.roleRepo.findOne({ 
+                where: { nombre: roleData.nombre },
+                relations: ['permissions']
+            });
+            
+            if (!role) {
+                // Create new role if it doesn't exist
+                role = this.roleRepo.create(roleData);
                 await this.roleRepo.save(role);
+                console.log(`Rol '${roleData.nombre}' creado con ${permisos.length} permisos`);
+            } else {
+                // Update existing role with all permissions
+                role.permissions = permisos;
+                await this.roleRepo.save(role);
+                console.log(`Rol '${roleData.nombre}' actualizado con ${permisos.length} permisos`);
             }
         }
 

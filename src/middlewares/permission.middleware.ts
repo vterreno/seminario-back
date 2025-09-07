@@ -3,6 +3,7 @@ import {
     ExecutionContext,
     Injectable,
     ForbiddenException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ACTION_KEY } from '../middlewares/decorators/action.decorator';
@@ -16,18 +17,31 @@ export class PermissionsGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
         const action = this.reflector.get<string>(ACTION_KEY, context.getHandler());
         const entity = this.reflector.get<string>(ENTITY_KEY, context.getClass());
-        if (!action || !entity) return true; // Si no hay metadata, no se requiere permiso
+        
+        // If no metadata, no permission required
+        if (!action || !entity) return true;
         
         const request: RequestWithUser = context.switchToHttp().getRequest();
         const user = request.user;
-        if (!user) throw new ForbiddenException('Usuario no autenticado');
+        
+        if (!user) {
+            throw new UnauthorizedException('Usuario no autenticado');
+        }
 
-        const userPermissions = user.role?.permissions?.map(p => p.codigo.toLowerCase()) || [];
+        // Check if user has a role
+        if (!user.role) {
+            throw new ForbiddenException('Usuario sin rol asignado');
+        }
+
+        // Get user permissions from role
+        const userPermissions = user.role.permissions?.map(p => p.codigo.toLowerCase()) || [];
         const requiredPermission = `${entity}_${action}`.toLowerCase();
         
+        // Check if user has the required permission
         if (!userPermissions.includes(requiredPermission)) {
-            throw new ForbiddenException('No tienes permiso para acceder a este recurso');
+            throw new ForbiddenException(`No tienes permiso para realizar la acción '${action}' en '${entity}'`);
         }
+        
         return true;
     }
 }

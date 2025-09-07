@@ -116,7 +116,7 @@ export class UsersService extends BaseService<UserEntity> {
   async findByEmailWithRole(email: string) {
     return this.repository.findOne({
       where: { email },
-      relations: ['role', 'role.permissions'],
+      relations: ['role', 'role.permissions', 'empresa'],
     });
   }
 

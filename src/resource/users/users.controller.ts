@@ -23,6 +23,13 @@ export class UsersController extends BaseController<UserEntity> {
       id: user.id,
       name: `${user.nombre} ${user.apellido}`,
       email: user.email,
+      empresa: user.empresa ? {
+        id: user.empresa.id,
+        nombre: user.empresa.name
+      } : {
+        id: null,
+        nombre: null
+      },
       roles: user.role ? [{
         id: user.role.id,
         nombre: user.role.nombre,

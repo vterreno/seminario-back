@@ -10,6 +10,7 @@ import { PermisosModule } from './resource/permisos/permisos.module';
 import { SeedModule } from './database/seeders/seeder.module';
 import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
+import { SucursalesModule } from './resource/sucursales/sucursales.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { EmpresaModule } from './resource/empresa/empresa.module';
     SeedModule,
     MailServiceModule,
     EmpresaModule,
+    SucursalesModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard],

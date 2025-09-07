@@ -17,7 +17,7 @@ export class UserSeeder {
 
     async run() {
         const usuarios = [
-        { email: 'admin@mail.com', password: 'admin123', nombre: 'Super', apellido:'Admin', roleName: 'Superadmin' },
+        { email: 'superadmin@mail.com', password: 'admin123', nombre: 'Super', apellido:'Admin', roleName: 'Superadmin' },
         ];
 
         const totalUsuarios = await this.userRepository.count();

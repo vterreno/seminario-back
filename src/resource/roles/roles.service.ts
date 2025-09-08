@@ -21,13 +21,6 @@ export class RolesService extends BaseService<RoleEntity> {
     }
 
     // Get roles filtered by company
-    async getRolesByCompany(empresaId: number): Promise<RoleEntity[]> {
-        return await this.roleService.find({
-            where: { empresa_id: empresaId },
-            relations: ['permissions', 'empresa'],
-        });
-    }
-
     async getRolesByEmpresa(empresaId: number): Promise<RoleEntity[]> {
         return await this.roleService.find({
             where: { empresa_id: empresaId },

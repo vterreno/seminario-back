@@ -26,7 +26,7 @@ export class RolesController extends BaseController<RoleEntity>{
         
         // If user has a company, filter roles by that company
         if (user.empresa?.id) {
-            return await this.roleService.getRolesByCompany(user.empresa.id);
+            return await this.roleService.getRolesByEmpresa(user.empresa.id);
         }
         
         // If no company (superadmin), return all roles
@@ -42,7 +42,7 @@ export class RolesController extends BaseController<RoleEntity>{
     @Get('empresa/:id')
     @Action('ver')
     async getRolesByEmpresa(@Param('id') id: number) {
-        return await this.roleService.getRolesByCompany(id);
+        return await this.roleService.getRolesByEmpresa(id);
     }
 
     @Post()

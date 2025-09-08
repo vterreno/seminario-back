@@ -12,6 +12,9 @@ export class RoleEntity extends BaseEntity{
     @Column({ nullable: true })
     empresa_id: number;
 
+    @Column({ type: 'boolean', nullable: false, default: true })
+    estado: boolean;
+
     @ManyToOne(() => empresaEntity, empresa => empresa.roles, { nullable: true })
     @JoinColumn({ name: 'empresa_id' })
     empresa?: empresaEntity;

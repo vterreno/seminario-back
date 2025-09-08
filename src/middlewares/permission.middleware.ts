@@ -33,6 +33,11 @@ export class PermissionsGuard implements CanActivate {
             throw new ForbiddenException('Usuario sin rol asignado');
         }
 
+        // Check if user role is active
+        if (!user.role.estado) {
+            throw new ForbiddenException('El rol no está activo');
+        }
+
         // Get user permissions from role
         const userPermissions = user.role.permissions?.map(p => p.codigo.toLowerCase()) || [];
         const requiredPermission = `${entity}_${action}`.toLowerCase();

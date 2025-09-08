@@ -59,7 +59,6 @@ export class UsersService extends BaseService<UserEntity> {
       permissions: user.permissionCodes || []
     };
 
-    console.log(response);
     return response;
   }
 

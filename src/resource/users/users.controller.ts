@@ -14,7 +14,6 @@ import { Public } from 'src/middlewares/decorators/public.decorator';
 import { Entity } from 'typeorm';
 
 @Controller('users')
-@Entity('usuario')
 export class UsersController extends BaseController<UserEntity> {
   constructor(protected readonly service:UsersService){
     super(service);

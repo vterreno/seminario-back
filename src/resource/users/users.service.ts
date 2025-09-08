@@ -10,16 +10,7 @@ import { Repository, In } from 'typeorm';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
-
-export interface UpdateUserDTO {
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-  password?: string;
-  role_id?: number;
-  empresa_id?: number;
-  status?: boolean;
-}
+import { CreateUserDTO } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -92,7 +83,7 @@ export class UsersService extends BaseService<UserEntity> {
     }
   }
   
-  async createUser(createUserDTO: any) {
+  async createUser(createUserDTO: CreateUserDTO) {
     try {
       const { role_id, empresa_id, ...userData } = createUserDTO;
       

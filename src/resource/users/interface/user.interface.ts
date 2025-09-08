@@ -13,5 +13,6 @@ export interface UserI {
   role?: RoleEntity;
   nombre: string;
   apellido: string;
+  status: boolean;
   permissionCodes: string[];
 }

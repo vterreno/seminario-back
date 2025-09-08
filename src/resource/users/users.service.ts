@@ -6,10 +6,20 @@ import { UserEntity } from '../../database/core/user.entity';
 import { hashSync, compareSync } from 'bcrypt';
 import { JwtService } from 'src/jwt/jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
+
+export interface UpdateUserDTO {
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  password?: string;
+  role_id?: number;
+  empresa_id?: number;
+  status?: boolean;
+}
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -26,6 +36,13 @@ export class UsersService extends BaseService<UserEntity> {
     private readonly empresaRepository: Repository<empresaEntity>,
   ) {
     super(service);
+    // Set default relations for find operations
+    this.findManyOptions = {
+      relations: ['role', 'empresa']
+    };
+    this.findOneOptions = {
+      relations: ['role', 'empresa']
+    };
   }
   async refreshToken(refreshToken: string) {
     return this.jwtService.refreshToken(refreshToken);
@@ -73,6 +90,106 @@ export class UsersService extends BaseService<UserEntity> {
     } catch (error) {
       throw new HttpException('Error de creación: ' + error.message, 500);
     }
+  }
+  
+  async createUser(createUserDTO: any) {
+    try {
+      const { role_id, empresa_id, ...userData } = createUserDTO;
+      
+      const user = new UserEntity();
+      Object.assign(user, userData);
+      
+      // Hash password
+      if (userData.password) {
+        user.password = hashSync(userData.password, 10);
+      }
+      
+      // Assign role if provided
+      if (role_id) {
+        const role = await this.roleRepository.findOne({ where: { id: role_id } });
+        if (!role) {
+          throw new NotFoundException(`Rol con ID ${role_id} no encontrado`);
+        }
+        user.role = role;
+      }
+      
+      // Assign empresa if provided
+      if (empresa_id) {
+        const empresa = await this.empresaRepository.findOne({ where: { id: empresa_id } });
+        if (!empresa) {
+          throw new NotFoundException(`Empresa con ID ${empresa_id} no encontrada`);
+        }
+        user.empresa = empresa;
+      }
+      
+      // Set default status if not provided
+      if (userData.status === undefined) {
+        user.status = true;
+      }
+      
+      const savedUser = await this.repository.save(user);
+      
+      // Fetch the user with relations to return complete data
+      const userWithRelations = await this.repository.findOne({
+        where: { id: savedUser.id },
+        relations: ['role', 'empresa']
+      });
+      
+      return userWithRelations;
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+      if (error.code === '23505') { // PostgreSQL unique violation error code
+        throw new BadRequestException('El email ya está registrado');
+      }
+      throw new HttpException(`Error al crear usuario: ${error.message}`, 500);
+    }
+  }
+
+  async replace(id: number, entity: any): Promise<UserEntity> {
+    const existingUser = await this.repository.findOne({
+      where: { id },
+      relations: ['role', 'empresa']
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const { role_id, empresa_id, ...userData } = entity;
+
+    // Handle role relation
+    if (role_id !== undefined) {
+      if (role_id) {
+        const role = await this.roleRepository.findOne({ where: { id: role_id } });
+        if (role) {
+          existingUser.role = role;
+        }
+      } else {
+        existingUser.role = undefined;
+      }
+    }
+
+    // Handle empresa relation
+    if (empresa_id !== undefined) {
+      if (empresa_id) {
+        const empresa = await this.empresaRepository.findOne({ where: { id: empresa_id } });
+        if (empresa) {
+          existingUser.empresa = empresa;
+        }
+      } else {
+        existingUser.empresa = undefined;
+      }
+    }
+
+    // Update other fields
+    Object.assign(existingUser, userData);
+
+    // Hash password if provided
+    if (userData.password) {
+      existingUser.password = hashSync(userData.password, 10);
+    }
+
+    return this.repository.save(existingUser);
   }
 
   async login(body: LoginDTO) {
@@ -145,6 +262,74 @@ export class UsersService extends BaseService<UserEntity> {
       where: { email },
       relations: ['role', 'role.permissions', 'empresa'],
     });
+  }
+
+  async updateUsersStatus(userIds: number[], status: boolean, adminUser: UserEntity) {
+    
+    // Verificar que los userIds sea un arreglo válido
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      throw new BadRequestException('Se debe proporcionar al menos un ID de usuario');
+    }
+    
+    // Convertir a números los IDs si son strings
+    const numericUserIds = userIds.map(id => typeof id === 'string' ? parseInt(id) : id);
+    
+    // Buscar los usuarios por ID
+    const users = await this.repository.find({
+      where: { id: In(numericUserIds) }
+    });
+    
+    if (users.length !== numericUserIds.length) {
+      const foundIds = users.map(u => u.id);
+      const missingIds = numericUserIds.filter(id => !foundIds.includes(id));
+      throw new NotFoundException(`Algunos usuarios no fueron encontrados: ${missingIds.join(', ')}`);
+    }
+
+    // Evitamos que un usuario se desactive a sí mismo
+    const adminUserId = adminUser.id;
+    if (!status && numericUserIds.includes(adminUserId)) {
+      throw new BadRequestException('No podés desactivar tu propia cuenta');
+    }
+
+    try {
+      // Actualizar el status de todos los usuarios uno por uno para garantizar que se actualice correctamente
+      for (const user of users) {
+        user.status = status;
+        await this.repository.save(user);
+      }
+      
+      return {
+        message: `${users.length} usuarios ${status ? 'activados' : 'desactivados'} correctamente`,
+        userIds: numericUserIds,
+        status: status
+      };
+    } catch (error) {
+      console.error('Error al actualizar usuarios:', error);
+      throw new HttpException(`Error al actualizar usuarios: ${error.message}`, 500);
+    }
+  }
+
+  async deleteUsers(userIds: number[], adminUser: UserEntity) {
+    const users = await this.repository.find({
+      where: { id: In(userIds) }
+    });
+    if (users.length !== userIds.length) {
+      throw new NotFoundException('Algunos usuarios no fueron encontrados');
+    }
+
+    // Evitamos que un usuario se elimine a sí mismo
+    const adminUserId = adminUser.id;
+    if (userIds.includes(adminUserId)) {
+      throw new BadRequestException('No podés eliminar tu propia cuenta');
+    }
+
+    // Eliminar todos los usuarios
+    await this.repository.delete(userIds);
+
+    return {
+      message: `${users.length} usuarios eliminados correctamente`,
+      userIds: userIds
+    };
   }
 
 }

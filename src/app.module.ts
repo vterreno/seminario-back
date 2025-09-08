@@ -11,6 +11,7 @@ import { SeedModule } from './database/seeders/seeder.module';
 import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
+import { PermissionsGuard } from './middlewares/permission.middleware';
 
 @Module({
   imports: [
@@ -40,6 +41,6 @@ import { SucursalesModule } from './resource/sucursales/sucursales.module';
     SucursalesModule,
     ],
   controllers: [AppController],
-  providers: [AuthGuard],
+  providers: [AuthGuard, PermissionsGuard],
 })
 export class AppModule {}

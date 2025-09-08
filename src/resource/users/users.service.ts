@@ -59,7 +59,6 @@ export class UsersService extends BaseService<UserEntity> {
       permissions: user.permissionCodes || []
     };
 
-    console.log(response);
     return response;
   }
 
@@ -141,4 +140,11 @@ export class UsersService extends BaseService<UserEntity> {
         'refresh',
       ) };
   }
+  async findByEmailWithRole(email: string) {
+    return this.repository.findOne({
+      where: { email },
+      relations: ['role', 'role.permissions', 'empresa'],
+    });
+  }
+
 }

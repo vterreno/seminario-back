@@ -5,10 +5,11 @@ import { RegisterDTO } from './dto/register.dto';
 import { Request } from 'express';
 import { AuthGuard } from '../../middlewares/auth.middleware';
 import { RequestWithUser } from 'src/resource/users/interface/request-user';
-import { Permissions } from 'src/middlewares/decorators/permissions.decorator';
 import { UserEntity } from 'src/database/core/user.entity';
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { UserI } from './interface/user.interface';
+import { Action } from 'src/middlewares/decorators/action.decorator';
+import { Public } from 'src/middlewares/decorators/public.decorator';
 
 @Controller('users')
 export class UsersController extends BaseController<UserEntity> {
@@ -22,7 +23,8 @@ export class UsersController extends BaseController<UserEntity> {
     const user = req.user;
     return this.service.me(user as UserI);
   }
-
+  
+  @Public()
   @Post('login')
   login(@Body() body: LoginDTO) {
     return this.service.login(body);
@@ -53,7 +55,7 @@ export class UsersController extends BaseController<UserEntity> {
 
   @UseGuards(AuthGuard)
   @Patch(':id/asignar-rol')
-  @Permissions(['asignar_rol'])
+  @Action('asignar_rol')
   asignarRol(
     @Param('id') userId: number,
     @Body('rol') rol: string,

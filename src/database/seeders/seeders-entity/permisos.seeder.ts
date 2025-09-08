@@ -12,9 +12,75 @@ export class PermisosSeeder {
 
     async run() {
         const permisos = [
-        { nombre: 'crear_usuario', codigo: 'USR_CREATE' },
-        { nombre: 'editar_usuario', codigo: 'USR_EDIT' },
-        { nombre: 'eliminar_usuario', codigo: 'USR_DELETE' },
+            // Usuario permissions
+            { nombre: 'Ver usuario', codigo: 'usuario_ver' },
+            { nombre: 'Crear usuario', codigo: 'usuario_agregar' },
+            { nombre: 'Modificar usuario', codigo: 'usuario_modificar' },
+            { nombre: 'Eliminar usuario', codigo: 'usuario_borrar' },
+            
+            // Proveedor permissions
+            { nombre: 'Ver proveedor', codigo: 'proveedor_ver' },
+            { nombre: 'Crear proveedor', codigo: 'proveedor_agregar' },
+            { nombre: 'Modificar proveedor', codigo: 'proveedor_modificar' },
+            { nombre: 'Eliminar proveedor', codigo: 'proveedor_eliminar' },
+            
+            // Cliente permissions
+            { nombre: 'Ver cliente', codigo: 'cliente_ver' },
+            { nombre: 'Crear cliente', codigo: 'cliente_agregar' },
+            { nombre: 'Modificar cliente', codigo: 'cliente_modificar' },
+            { nombre: 'Eliminar cliente', codigo: 'cliente_eliminar' },
+            
+            // Producto permissions
+            { nombre: 'Ver producto', codigo: 'producto_ver' },
+            { nombre: 'Crear producto', codigo: 'producto_agregar' },
+            { nombre: 'Modificar producto', codigo: 'producto_modificar' },
+            { nombre: 'Eliminar producto', codigo: 'producto_eliminar' },
+            
+            // Compras permissions
+            { nombre: 'Ver compras', codigo: 'compras_ver' },
+            { nombre: 'Crear compra', codigo: 'compras_agregar' },
+            { nombre: 'Modificar compra', codigo: 'compras_modificar' },
+            { nombre: 'Eliminar compra', codigo: 'compras_eliminar' },
+            
+            // Ventas permissions
+            { nombre: 'Ver ventas', codigo: 'ventas_ver' },
+            { nombre: 'Crear venta', codigo: 'ventas_agregar' },
+            { nombre: 'Modificar venta', codigo: 'ventas_modificar' },
+            { nombre: 'Eliminar venta', codigo: 'ventas_eliminar' },
+            { nombre: 'Acceso a caja', codigo: 'ventas_acceso_caja' },
+            
+            // Marca permissions
+            { nombre: 'Ver marca', codigo: 'marca_ver' },
+            { nombre: 'Crear marca', codigo: 'marca_agregar' },
+            { nombre: 'Modificar marca', codigo: 'marca_modificar' },
+            { nombre: 'Eliminar marca', codigo: 'marca_eliminar' },
+            
+            // Unidad permissions
+            { nombre: 'Ver unidad', codigo: 'unidad_ver' },
+            { nombre: 'Crear unidad', codigo: 'unidad_agregar' },
+            { nombre: 'Modificar unidad', codigo: 'unidad_modificar' },
+            { nombre: 'Eliminar unidad', codigo: 'unidad_eliminar' },
+            
+            // Categoría permissions
+            { nombre: 'Ver categoría', codigo: 'categoria_ver' },
+            { nombre: 'Crear categoría', codigo: 'categoria_agregar' },
+            { nombre: 'Modificar categoría', codigo: 'categoria_modificar' },
+            { nombre: 'Eliminar categoría', codigo: 'categoria_eliminar' },
+            
+            // Configuraciones permissions
+            { nombre: 'Configuración de empresa', codigo: 'configuracion_empresa' },
+            
+            // Sucursales permissions
+            { nombre: 'Acceso a todas las sucursales', codigo: 'sucursal_todas' },
+            
+            // Listas de precios permissions
+            { nombre: 'Lista de precios predeterminada', codigo: 'lista_precios_predeterminada' },
+
+            // Role permissions
+            { nombre: 'Ver roles', codigo: 'roles_ver' },
+            { nombre: 'Crear rol', codigo: 'roles_agregar' },
+            { nombre: 'Modificar rol', codigo: 'roles_modificar' },
+            { nombre: 'Eliminar rol', codigo: 'roles_eliminar' },
         ];
 
         for (const permiso of permisos) {

@@ -18,13 +18,13 @@ export class BaseController<T extends BaseEntity> {  // Definir que T extiende B
     }
 
     @Get('all')
-    @Action('listar_todo')
+    @Action('ver')
     getAll() {
         return this.service.find();
     }
 
     @Get()
-    @Action('listar')
+    @Action('ver')
     async getPaginated(
         @Req() req: Request,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
@@ -40,7 +40,7 @@ export class BaseController<T extends BaseEntity> {  // Definir que T extiende B
     }
 
     @Get(':id')
-    @Action('buscar')
+    @Action('ver')
     findOne(@Param('id') id: number) {
         return this.service.findOne({ where: { id } as FindOptionsWhere<T> });
     }

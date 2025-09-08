@@ -67,11 +67,21 @@ export class PermisosSeeder {
             { nombre: 'Modificar categoría', codigo: 'categoria_modificar' },
             { nombre: 'Eliminar categoría', codigo: 'categoria_eliminar' },
             
+            // Empresa permissions
+            { nombre: 'Ver empresa', codigo: 'empresa_ver' },
+            { nombre: 'Crear empresa', codigo: 'empresa_agregar' },
+            { nombre: 'Modificar empresa', codigo: 'empresa_modificar' },
+            { nombre: 'Eliminar empresa', codigo: 'empresa_eliminar' },
+            
+            // Sucursal permissions
+            { nombre: 'Ver sucursal', codigo: 'sucursal_ver' },
+            { nombre: 'Crear sucursal', codigo: 'sucursal_agregar' },
+            { nombre: 'Modificar sucursal', codigo: 'sucursal_modificar' },
+            { nombre: 'Eliminar sucursal', codigo: 'sucursal_eliminar' },
+            { nombre: 'Acceso a todas las sucursales', codigo: 'sucursal_todas' },
+            
             // Configuraciones permissions
             { nombre: 'Configuración de empresa', codigo: 'configuracion_empresa' },
-            
-            // Sucursales permissions
-            { nombre: 'Acceso a todas las sucursales', codigo: 'sucursal_todas' },
             
             // Listas de precios permissions
             { nombre: 'Lista de precios predeterminada', codigo: 'lista_precios_predeterminada' },

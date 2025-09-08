@@ -5,6 +5,7 @@ import { empresaEntity } from 'src/database/core/empresa.entity';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
 import { PermissionsGuard } from 'src/middlewares/permission.middleware';
 import { Entity } from 'typeorm';
+import { Action } from 'src/middlewares/decorators/action.decorator';
 
 
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -16,6 +17,7 @@ export class EmpresaController extends BaseController<empresaEntity>{
     }
 
     @Post('bulk/delete')
+    @Action('eliminar')
     async deleteEmpresas(@Body() body: { ids: number[] }) {
         return await this.empresaService.deleteEmpresas(body.ids);
     }

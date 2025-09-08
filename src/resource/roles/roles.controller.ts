@@ -42,8 +42,6 @@ export class RolesController extends BaseController<RoleEntity>{
     @Get('empresa/:id')
     @Action('ver')
     async getRolesByEmpresa(@Param('id') id: number) {
-        console.log('id', id);
-        
         return await this.roleService.getRolesByCompany(id);
     }
 

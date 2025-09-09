@@ -69,11 +69,6 @@ export class UsersService extends BaseService<UserEntity> {
           codigo: permission.codigo
         })) : []
       }] : [],
-      permissions: user.role.permissions ? user.role.permissions.map(permission => ({
-        id: permission.id,
-        nombre: permission.nombre,
-        codigo: permission.codigo
-      })) : []
     };
     return response;
   }

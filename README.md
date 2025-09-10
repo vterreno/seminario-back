@@ -77,7 +77,7 @@ npm run start:dev
 ```
 Por defecto, el backend quedará corriendo en:
 ```
-http://localhost:5001
+http://localhost:3001
 ```
 ## 🛠️ Scripts disponibles
   - npm run start:dev → Levanta el servidor en modo desarrollo

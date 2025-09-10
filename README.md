@@ -1,80 +1,77 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# ⚙️ Backend - Proyecto MatePymes
+Este repositorio contiene la parte del backend desarrollada en NestJS.
+## 📋 Requisitos previos
+Antes de comenzar, asegurate de tener instalado en tu máquina:
+  - [Node.js](https://nodejs.org/) (versión recomendada: 18 o superior)
+  - [npm](https://www.npmjs.com/) (se instala junto con Node)
+  - [Docker](https://www.docker.com/) (si vas a usar contenedores para la base de datos)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ npm install
+## 📂 Clonar el repositorio
+```
+git clone https://github.com/vterreno/seminario-back.git
+cd seminario-back
 ```
 
-## Running the app
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+## 📦 Instalar dependencias
 ```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-
-# unit test con archivo especifico 
-$ npm run test -- resource/roles/roles.controller.spec.ts 
-# ruta a modo de ejemplo, pero iria lo que se quiera probar
+npm install
 ```
+## 🛠️ Configurar la base de datos
 
-
-## Para migraciones se ejecuta en este formato 
-```bash
-$ npm run migration:generate (opcional la ruta de destino ./src/database/migrations/CreateUser)
-
-$ npm run migration:run
-# no hace falta especificar la ruta en este caso
-
+Asegurate de configurar tu archivo .env con los datos de conexión a la base de datos:
 ```
-
-## Para realizar poblaciones a las BD, debemos rellenar con datos cada uno de los sedeers (permisos.seeder.ts, role.seeder.ts y users.seeder.ts) y luego ejecutamos
-
-```bash
-$ npm run seed
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=1234
+DB_NAME=mate_pymes
 ```
-Esto directamente ejecuta el archivo seed.ts, el cual se conecta con el seeder.service que tiene los respectivos metodos.
+Si usás Docker, podés levantar un contenedor de postgre:
+```
+docker run --name matepymes-db -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=mate_pymes -p 5432:5432 -d postgres:15
+```
+## 🛠️ Integración con Zoho Mail
+
+El backend del proyecto utiliza **Zoho Mail** como servicio de correo oficial para envíos automáticos de emails, como confirmaciones de reservas, notificaciones de cambios o alertas del sistema.  
+
+Antes de levantar el backend, necesitás configurar tu archivo `.env` con las variables correctas. Algunas, como la conexión a la base de datos y las credenciales de Zoho, deben pedirse a algún miembro del equipo.  
+
+Ejemplo de `.env`:
+
+```env
+# Configuración de la base de datos PostgreSQL
+DATABASE_HOST=localhost          # Host donde corre la base de datos
+DATABASE_PORT=5432               # Puerto de PostgreSQL (5432 por defecto)
+DATABASE_USER=postgres           # Usuario de la base de datos
+DATABASE_PASSWORD=postgres       # Contraseña del usuario
+DATABASE_NAME=mate_pymes         # Nombre de la base de datos
+
+# Configuración del backend
+APP_URL=http://localhost:5001    # URL base del backend
+
+# Integración con Zoho Mail
+ZOHO_USER=matepymes@zohomail.com  # Usuario de Zoho Mail
+ZOHO_PASS=                         # Contraseña de Zoho Mail
+```
+## ▶️ Ejecutar migraciones
+```
+npm run migration:run
+```
+Esto aplicará las migraciones pendientes a tu base de datos.
+
+## ▶️ Levantar el servidor en modo desarrollo
+```
+npm run start:dev
+```
+Por defecto, el backend quedará corriendo en:
+```
+http://localhost:5001
+```
+## 🛠️ Scripts disponibles
+  - npm run start:dev → Levanta el servidor en modo desarrollo
+    
+  - npm run build → Genera la versión compilada del backend
+    
+  - npm run migration:run → Ejecuta las migraciones pendientes
+    
+  - npm run migration:generate <nombre> → Genera una nueva migración

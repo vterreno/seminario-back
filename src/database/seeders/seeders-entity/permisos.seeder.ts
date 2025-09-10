@@ -91,6 +91,9 @@ export class PermisosSeeder {
             { nombre: 'Crear rol', codigo: 'roles_agregar' },
             { nombre: 'Modificar rol', codigo: 'roles_modificar' },
             { nombre: 'Eliminar rol', codigo: 'roles_eliminar' },
+
+            // Role permissions
+            { nombre: 'Ver dashboard', codigo: 'dashboard_ver' },
         ];
 
         for (const permiso of permisos) {

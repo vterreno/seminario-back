@@ -16,7 +16,7 @@ export class PermisosSeeder {
             { nombre: 'Ver usuario', codigo: 'usuario_ver' },
             { nombre: 'Crear usuario', codigo: 'usuario_agregar' },
             { nombre: 'Modificar usuario', codigo: 'usuario_modificar' },
-            { nombre: 'Eliminar usuario', codigo: 'usuario_borrar' },
+            { nombre: 'Eliminar usuario', codigo: 'usuario_eliminar' },
             
             // Proveedor permissions
             { nombre: 'Ver proveedor', codigo: 'proveedor_ver' },

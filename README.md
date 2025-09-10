@@ -26,7 +26,7 @@ DB_USER=root
 DB_PASSWORD=1234
 DB_NAME=mate_pymes
 ```
-Si usás Docker, podés levantar un contenedor de postgre:
+Si usás Docker, podés levantar un contenedor de PostgreSQL:
 ```
 docker run --name matepymes-db -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=mate_pymes -p 5432:5432 -d postgres:15
 ```

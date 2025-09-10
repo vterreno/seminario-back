@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { UserEntity } from 'src/database/core/user.entity';
 import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
+import { UpdateEmpresaDto } from './dto/update-empresa.dto';
+import { UserI } from '../users/interface/user.interface';
 
 
 @Injectable()
@@ -52,6 +54,29 @@ export class EmpresaService extends BaseService<empresaEntity> {
     }
     await this.repository.softDelete(ids);
     return {"message": "Empresas deleted successfully" };
+  }
+
+  async updateMyCompany(updateData: UpdateEmpresaDto, user: UserI): Promise<{ message: string; empresa: empresaEntity }> {
+    // Verificar que el usuario tenga una empresa asignada
+    if (!user.empresa?.id) {
+      throw new ForbiddenException('Usuario no tiene empresa asignada');
+    }
+
+    // Buscar la empresa del usuario
+    const empresa = await this.repository.findOneBy({ id: user.empresa.id });
+    if (!empresa) {
+      throw new NotFoundException('Empresa no encontrada');
+    }
+
+    // Actualizar solo el nombre de la empresa
+    empresa.name = updateData.name;
+    
+    const empresaActualizada = await this.repository.save(empresa);
+    
+    return {
+      message: 'Empresa actualizada correctamente',
+      empresa: empresaActualizada
+    };
   }
 
 }

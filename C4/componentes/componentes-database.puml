@@ -1,0 +1,186 @@
+@startuml Database-Components
+title C4 - Componentes de Base de Datos (MatePymes)
+
+package "Database Layer (PostgreSQL)" {
+  
+  package "Core Database" {
+    database "PostgreSQL Database" as DB #lightblue
+    [Database Connection Pool] as ConnectionPool #lightblue
+    [TypeORM Data Source] as DataSource #lightblue
+  }
+  
+  package "Base Architecture" {
+    [Base Entity] as BaseEntity #lavender {
+      + id: number (PK)
+      + createdAt: Date
+      + updatedAt: Date
+    }
+  }
+  
+  package "User Management Entities" {
+    [User Entity] as UserEntity #orange {
+      + id: number (PK)
+      + email: string (unique)
+      + password: string
+      + name: string
+      + status: boolean
+      + empresaId: number (FK)
+      ---
+      + roles: Role[]
+      + empresa: Empresa
+    }
+    
+    [Role Entity] as RoleEntity #orange {
+      + id: number (PK)
+      + nombre: string
+      + estado: boolean
+      + empresaId: number (FK)
+      ---
+      + permissions: Permission[]
+      + users: User[]
+      + empresa: Empresa
+    }
+    
+    [Permission Entity] as PermissionEntity #orange {
+      + id: number (PK)
+      + nombre: string
+      + codigo: string
+      ---
+      + roles: Role[]
+    }
+  }
+  
+  package "Business Entities" {
+    [Empresa Entity] as EmpresaEntity #yellow {
+      + id: number (PK)
+      + nombre: string
+      + email: string
+      + telefono: string
+      + direccion: string
+      + cuit: string
+      + estado: boolean
+      ---
+      + users: User[]
+      + roles: Role[]
+      + sucursales: Sucursal[]
+    }
+    
+    [Sucursal Entity] as SucursalEntity #yellow {
+      + id: number (PK)
+      + nombre: string
+      + direccion: string
+      + telefono: string
+      + email: string
+      + estado: boolean
+      + empresaId: number (FK)
+      ---
+      + empresa: Empresa
+    }
+  }
+  
+  package "Communication Entities" {
+    [Email Code Entity] as EmailCodeEntity #lightgreen {
+      + id: number (PK)
+      + email: string
+      + code: string
+      + expiresAt: Date
+      + used: boolean
+    }
+  }
+  
+  package "Database Management" {
+    package "Migrations" #lightgray {
+      [Init Migration] as InitMigration
+      [Email Code Migration] as EmailCodeMigration
+      [Rename Sucursal Migration] as RenameMigration
+      [Fix Roles Permisos Migration] as FixRolesMigration
+      [Add Empresa ID Migration] as EmpresaIdMigration
+      [Add Estado Column Migration] as EstadoMigration
+      [Add Status Users Migration] as StatusUsersMigration
+    }
+    
+    package "Seeders" #lightsteelblue {
+      [Main Seeder] as MainSeeder
+      [Seeder Service] as SeederService
+      [Sucursales Seeder] as SucursalesSeeder
+      [Seeder Module] as SeederModule
+    }
+  }
+}
+
+' === Entity Inheritance ===
+BaseEntity --> UserEntity : extends
+BaseEntity --> RoleEntity : extends
+BaseEntity --> PermissionEntity : extends
+BaseEntity --> EmpresaEntity : extends
+BaseEntity --> SucursalEntity : extends
+BaseEntity --> EmailCodeEntity : extends
+
+' === Entity Relationships ===
+UserEntity --> EmpresaEntity : Many-to-One (empresaId)
+UserEntity --> RoleEntity : Many-to-Many (user_roles)
+
+RoleEntity --> PermissionEntity : Many-to-Many (role_permissions)
+RoleEntity --> EmpresaEntity : Many-to-One (empresaId)
+
+SucursalEntity --> EmpresaEntity : Many-to-One (empresaId)
+
+EmpresaEntity --> UserEntity : One-to-Many
+EmpresaEntity --> RoleEntity : One-to-Many
+EmpresaEntity --> SucursalEntity : One-to-Many
+
+' === Database Connection ===
+DataSource --> DB : connects to
+ConnectionPool --> DB : manages connections
+
+UserEntity --> DB : persisted in
+RoleEntity --> DB : persisted in
+PermissionEntity --> DB : persisted in
+EmpresaEntity --> DB : persisted in
+SucursalEntity --> DB : persisted in
+EmailCodeEntity --> DB : persisted in
+
+' === Migration Management ===
+InitMigration --> DB : creates initial schema
+EmailCodeMigration --> DB : adds email_code table
+RenameMigration --> DB : renames sucursal to sucursales
+FixRolesMigration --> DB : fixes roles-permissions relationship
+EmpresaIdMigration --> DB : adds empresaId to roles
+EstadoMigration --> DB : adds estado column to roles
+StatusUsersMigration --> DB : adds status to users
+
+' === Seeder Management ===
+MainSeeder --> SeederService : orchestrates
+SeederService --> DB : populates initial data
+SucursalesSeeder --> DB : seeds sucursales data
+SeederModule --> SeederService : manages
+
+' === TypeORM Integration ===
+DataSource --> UserEntity : manages
+DataSource --> RoleEntity : manages
+DataSource --> PermissionEntity : manages
+DataSource --> EmpresaEntity : manages
+DataSource --> SucursalEntity : manages
+DataSource --> EmailCodeEntity : manages
+
+note right of UserEntity
+  Users belong to an Empresa
+  and can have multiple Roles
+end note
+
+note right of RoleEntity
+  Roles are scoped to an Empresa
+  and have multiple Permissions
+end note
+
+note right of EmpresaEntity
+  Central entity that groups
+  Users, Roles, and Sucursales
+end note
+
+note right of PermissionEntity
+  Global permissions that can be
+  assigned to any Role
+end note
+
+@enduml

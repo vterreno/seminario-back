@@ -1,0 +1,145 @@
+@startuml Frontend-Components
+title C4 - Componentes Frontend (MatePymes)
+
+package "Frontend Application (React + TanStack Router + Shadcn/UI)" {
+  
+  package "Feature Components" {
+    [Dashboard UI] as DashboardUI #lightblue
+    [Auth Features] as AuthUI #lightgreen
+    [Users Management UI] as UsersUI #orange
+    [Roles Management UI] as RolesUI #orange
+    [Empresa Management UI] as EmpresaUI #yellow
+    [Sucursales Management UI] as SucursalesUI #yellow
+    [Settings UI] as SettingsUI #lightgray
+    [Ventas UI] as VentasUI #lightcoral
+    [Compras UI] as ComprasUI #lightcoral
+    [Tasks UI] as TasksUI #lightsteelblue
+    [Contacto UI] as ContactoUI #lightsteelblue
+    [Apps UI] as AppsUI #lightsteelblue
+    [Chats UI] as ChatsUI #lightsteelblue
+  }
+  
+  package "Core Components" {
+    [Layout Components] as LayoutComp #lavender
+    [Header] as HeaderComp #lavender
+    [Sidebar] as SidebarComp #lavender
+    [Main Content] as MainComp #lavender
+    [UI Components (Shadcn)] as UIComp #lavender
+    [Data Tables] as DataTables #lavender
+    [Forms & Dialogs] as Forms #lavender
+    [Navigation] as NavigationComp #lavender
+  }
+  
+  package "Services Layer" {
+    [API Client] as APIClient #lightpink
+    [Auth Service] as AuthService #lightpink
+    [User API Service] as UserAPIService #lightpink
+    [Roles API Service] as RolesAPIService #lightpink
+    [Empresa API Service] as EmpresaAPIService #lightpink
+    [Sucursales API Service] as SucursalesAPIService #lightpink
+    [Permisos API Service] as PermisosAPIService #lightpink
+    [Correo API Service] as CorreoAPIService #lightpink
+  }
+  
+  package "State Management & Hooks" {
+    [Auth Store] as AuthStore #lightyellow
+    [Session Store] as SessionStore #lightyellow
+    [Local Storage Hooks] as LocalStorage #lightyellow
+    [Token Management] as TokenManagement #lightyellow
+    [Permissions Hook] as PermissionsHook #lightyellow
+    [Dialog State Hook] as DialogHook #lightyellow
+  }
+
+  package "Routing & Navigation" {
+    [Route Tree] as RouteTree #lightseagreen
+    [Protected Routes] as ProtectedRoutes #lightseagreen
+    [Auth Routes] as AuthRoutes #lightseagreen
+    [Authenticated Routes] as AuthenticatedRoutes #lightseagreen
+  }
+}
+
+' === Feature to Core Component Relationships ===
+DashboardUI --> LayoutComp
+DashboardUI --> DataTables
+DashboardUI --> UIComp
+
+AuthUI --> Forms
+AuthUI --> UIComp
+AuthUI --> AuthService
+
+UsersUI --> DataTables
+UsersUI --> Forms
+UsersUI --> UserAPIService
+
+RolesUI --> DataTables
+RolesUI --> Forms
+RolesUI --> RolesAPIService
+
+EmpresaUI --> DataTables
+EmpresaUI --> Forms
+EmpresaUI --> EmpresaAPIService
+
+SucursalesUI --> DataTables
+SucursalesUI --> Forms
+SucursalesUI --> SucursalesAPIService
+
+' === Core Component Relationships ===
+LayoutComp --> HeaderComp
+LayoutComp --> SidebarComp
+LayoutComp --> MainComp
+LayoutComp --> NavigationComp
+
+HeaderComp --> UIComp
+SidebarComp --> UIComp
+MainComp --> UIComp
+DataTables --> UIComp
+Forms --> UIComp
+NavigationComp --> UIComp
+
+' === Service Layer Relationships ===
+UserAPIService --> APIClient
+RolesAPIService --> APIClient
+EmpresaAPIService --> APIClient
+SucursalesAPIService --> APIClient
+PermisosAPIService --> APIClient
+CorreoAPIService --> APIClient
+AuthService --> APIClient
+
+APIClient --> AuthStore
+AuthService --> AuthStore
+AuthService --> TokenManagement
+
+' === State Management Relationships ===
+AuthStore --> LocalStorage
+SessionStore --> LocalStorage
+TokenManagement --> LocalStorage
+PermissionsHook --> AuthStore
+DialogHook --> LocalStorage
+
+' === Routing Relationships ===
+RouteTree --> ProtectedRoutes
+RouteTree --> AuthRoutes
+RouteTree --> AuthenticatedRoutes
+
+ProtectedRoutes --> AuthStore
+AuthenticatedRoutes --> AuthStore
+
+UsersUI --> ProtectedRoutes
+RolesUI --> ProtectedRoutes
+EmpresaUI --> ProtectedRoutes
+SucursalesUI --> ProtectedRoutes
+DashboardUI --> AuthenticatedRoutes
+AuthUI --> AuthRoutes
+
+' === Hook Usage ===
+UsersUI --> PermissionsHook
+RolesUI --> PermissionsHook
+EmpresaUI --> PermissionsHook
+SucursalesUI --> PermissionsHook
+
+UsersUI --> DialogHook
+RolesUI --> DialogHook
+EmpresaUI --> DialogHook
+SucursalesUI --> DialogHook
+
+@enduml

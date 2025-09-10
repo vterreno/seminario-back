@@ -1,0 +1,99 @@
+
+@startuml Contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Diagrama de Contexto - MatePymes
+
+' === Actores Principales ===
+Person(admin_sistema, "Administrador del Sistema", "Configura y mantiene el sistema, gestiona empresas y usuarios principales")
+Person(admin_empresa, "Administrador de Empresa", "Gestiona usuarios, roles y configuraciones específicas de su empresa")
+Person(empleado_ventas, "Empleado de Ventas", "Registra ventas, gestiona clientes y procesa transacciones")
+Person(empleado_compras, "Empleado de Compras", "Gestiona proveedores, registra compras y controla inventario")
+Person(gerente, "Gerente/Supervisor", "Supervisa operaciones, consulta reportes y toma decisiones")
+Person(contador, "Contador/Administrativo", "Accede a reportes financieros y datos contables")
+
+' === Sistema Principal ===
+System(matepymes, "MatePymes", "Sistema integral de gestión empresarial SaaS que permite a PyMEs gestionar usuarios, roles, empresas, sucursales, ventas, compras e inventarios de forma multi-tenant")
+
+' === Sistemas Externos ===
+System_Ext(email_service, "Servicio de Email SMTP", "Servidor de correo electrónico para envío de códigos de verificación, notificaciones y recuperación de contraseñas")
+System_Ext(navegador_web, "Navegador Web", "Cualquier navegador moderno (Chrome, Firefox, Safari, Edge) que soporte JavaScript y localStorage")
+System_Ext(base_datos, "Sistema de Base de Datos", "PostgreSQL como sistema de gestión de base de datos relacional")
+
+' === Relaciones de Uso ===
+Rel(admin_sistema, matepymes, "Administra sistema completo", "HTTPS/Web")
+Rel(admin_empresa, matepymes, "Gestiona su empresa", "HTTPS/Web")
+Rel(empleado_ventas, matepymes, "Registra ventas y clientes", "HTTPS/Web")
+Rel(empleado_compras, matepymes, "Gestiona compras e inventario", "HTTPS/Web")
+Rel(gerente, matepymes, "Consulta reportes y supervisa", "HTTPS/Web")
+Rel(contador, matepymes, "Accede a datos financieros", "HTTPS/Web")
+
+' === Relaciones del Sistema ===
+Rel(matepymes, email_service, "Envía notificaciones", "SMTP/Email")
+Rel(matepymes, navegador_web, "Sirve aplicación web", "HTTPS/JSON")
+Rel(matepymes, base_datos, "Almacena y consulta datos", "SQL/TCP")
+
+' === Relaciones de Notificación ===
+Rel_Back(email_service, admin_sistema, "Códigos de verificación", "Email")
+Rel_Back(email_service, admin_empresa, "Notificaciones de empresa", "Email")
+Rel_Back(email_service, empleado_ventas, "Confirmaciones de ventas", "Email")
+Rel_Back(email_service, empleado_compras, "Alertas de inventario", "Email")
+Rel_Back(email_service, gerente, "Reportes periódicos", "Email")
+Rel_Back(email_service, contador, "Resúmenes financieros", "Email")
+
+SHOW_LEGEND()
+
+' === Notas del Contexto ===
+note right of matepymes
+  **Funcionalidades Principales:**
+  • Gestión multi-tenant de empresas
+  • Sistema de usuarios y roles con permisos
+  • Administración de sucursales
+  • Módulo de ventas y facturación
+  • Gestión de compras y proveedores
+  • Control de inventario y stock
+  • Reportes y análisis de datos
+  • Autenticación JWT segura
+  • Interfaz web responsiva
+end note
+
+note left of email_service
+  **Tipos de Notificaciones:**
+  • Códigos de verificación de cuenta
+  • Recuperación de contraseñas
+  • Notificaciones de ventas realizadas
+  • Alertas de stock bajo
+  • Reportes automáticos programados
+  • Confirmaciones de transacciones
+end note
+
+note bottom of navegador_web
+  **Tecnologías Frontend:**
+  • React 19 con hooks modernos
+  • TanStack Router para navegación
+  • Shadcn/UI para componentes
+  • Tailwind CSS para estilos
+  • TypeScript para tipado
+  • Vite como bundler
+end note
+
+note bottom of base_datos
+  **Arquitectura de Datos:**
+  • PostgreSQL como RDBMS principal
+  • TypeORM como ORM
+  • Migraciones versionadas
+  • Seeders para datos iniciales
+  • Arquitectura multi-tenant
+  • Auditoría de cambios
+end note
+
+' === Contexto de Negocio ===
+note top of matepymes
+  **Contexto de Negocio:**
+  MatePymes es una solución SaaS diseñada específicamente 
+  para pequeñas y medianas empresas que necesitan 
+  digitalizar y optimizar sus procesos operativos de 
+  gestión comercial, administrativa y de inventarios.
+end note
+
+@enduml

@@ -1,0 +1,162 @@
+@startuml Communication-Flow
+title C4 - Flujo de Comunicación (MatePymes)
+
+package "Client Browser" {
+  [React App] as ReactApp #lightblue
+  [Local Storage] as LocalStorage #lightblue
+  [Session Storage] as SessionStorage #lightblue
+}
+
+package "Frontend Services" {
+  [API Client (Axios)] as APIClient #lightgreen
+  [Auth Service] as AuthService #lightgreen
+  [Token Management] as TokenMgmt #lightgreen
+  [Service Layer] as ServiceLayer #lightgreen
+}
+
+package "Network Layer" {
+  cloud "HTTP/HTTPS" as HTTP #lightyellow
+  [CORS Headers] as CORS #lightyellow
+  [Request Interceptors] as ReqInterceptors #lightyellow
+  [Response Interceptors] as RespInterceptors #lightyellow
+}
+
+package "Backend API Layer" {
+  [NestJS Application] as NestApp #orange
+  [Global Middleware] as GlobalMiddleware #orange
+  [Auth Middleware] as AuthMiddleware #orange
+  [Permission Middleware] as PermissionMiddleware #orange
+  [Exception Filters] as ExceptionFilters #orange
+}
+
+package "Backend Controllers" {
+  [Users Controller] as UsersCtrl #lightcoral
+  [Roles Controller] as RolesCtrl #lightcoral
+  [Empresa Controller] as EmpresaCtrl #lightcoral
+  [Sucursales Controller] as SucursalesCtrl #lightcoral
+  [Mail Controller] as MailCtrl #lightcoral
+}
+
+package "Backend Services" {
+  [Business Logic] as BusinessLogic #lightpink
+  [JWT Service] as JWTService #lightpink
+  [Database Services] as DBServices #lightpink
+  [Mail Service] as MailService #lightpink
+}
+
+package "Database Layer" {
+  [TypeORM] as TypeORM #lavender
+  database "PostgreSQL" as PostgreSQL #lavender
+}
+
+package "External Services" {
+  cloud "Email Provider" as EmailProvider #lightsteelblue
+  [SMTP Server] as SMTPServer #lightsteelblue
+}
+
+' === Request Flow (Frontend to Backend) ===
+ReactApp --> ServiceLayer : "User Action"
+ServiceLayer --> APIClient : "API Call"
+APIClient --> TokenMgmt : "Get Token"
+TokenMgmt --> LocalStorage : "Retrieve JWT"
+APIClient --> ReqInterceptors : "Add Auth Headers"
+ReqInterceptors --> HTTP : "HTTP Request"
+
+HTTP --> NestApp : "Incoming Request"
+NestApp --> GlobalMiddleware : "Process Request"
+GlobalMiddleware --> AuthMiddleware : "Validate JWT"
+AuthMiddleware --> JWTService : "Verify Token"
+AuthMiddleware --> PermissionMiddleware : "Check Permissions"
+PermissionMiddleware --> UsersCtrl : "Route to Controller"
+
+' === Controller to Service Flow ===
+UsersCtrl --> BusinessLogic : "Business Operation"
+RolesCtrl --> BusinessLogic : "Business Operation"
+EmpresaCtrl --> BusinessLogic : "Business Operation"
+SucursalesCtrl --> BusinessLogic : "Business Operation"
+MailCtrl --> MailService : "Email Operation"
+
+BusinessLogic --> DBServices : "Data Operations"
+DBServices --> TypeORM : "ORM Queries"
+TypeORM --> PostgreSQL : "SQL Queries"
+
+' === Response Flow (Backend to Frontend) ===
+PostgreSQL --> TypeORM : "Query Results"
+TypeORM --> DBServices : "Entity Objects"
+DBServices --> BusinessLogic : "Processed Data"
+BusinessLogic --> UsersCtrl : "Response Data"
+UsersCtrl --> ExceptionFilters : "Handle Errors"
+ExceptionFilters --> HTTP : "HTTP Response"
+
+HTTP --> RespInterceptors : "Process Response"
+RespInterceptors --> APIClient : "Handle Response"
+APIClient --> AuthService : "Update Auth State"
+AuthService --> LocalStorage : "Store Tokens"
+APIClient --> ServiceLayer : "Return Data"
+ServiceLayer --> ReactApp : "Update UI"
+
+' === Authentication Flow ===
+ReactApp --> AuthService : "Login Request"
+AuthService --> APIClient : "POST /users/login"
+APIClient --> HTTP : "Credentials"
+HTTP --> UsersCtrl : "Login Endpoint"
+UsersCtrl --> JWTService : "Generate Tokens"
+JWTService --> UsersCtrl : "Access + Refresh Token"
+UsersCtrl --> HTTP : "Token Response"
+HTTP --> AuthService : "Tokens Received"
+AuthService --> LocalStorage : "Store Tokens"
+AuthService --> ReactApp : "Authentication Success"
+
+' === Permission Validation Flow ===
+ReactApp --> ServiceLayer : "Protected Action"
+ServiceLayer --> APIClient : "Authenticated Request"
+APIClient --> HTTP : "With JWT Header"
+HTTP --> AuthMiddleware : "Validate Token"
+AuthMiddleware --> PermissionMiddleware : "Check Permission"
+PermissionMiddleware --> BusinessLogic : "Permission Query"
+BusinessLogic --> PostgreSQL : "Check User Permissions"
+PostgreSQL --> PermissionMiddleware : "Permission Result"
+PermissionMiddleware --> UsersCtrl : "Allow/Deny"
+
+' === Email Flow ===
+MailCtrl --> MailService : "Send Email"
+MailService --> SMTPServer : "SMTP Request"
+SMTPServer --> EmailProvider : "External Email Service"
+
+' === Error Handling Flow ===
+BusinessLogic --> ExceptionFilters : "Business Exception"
+JWTService --> ExceptionFilters : "JWT Exception"
+DBServices --> ExceptionFilters : "Database Exception"
+ExceptionFilters --> HTTP : "Formatted Error Response"
+HTTP --> RespInterceptors : "Error Response"
+RespInterceptors --> APIClient : "Handle Error"
+APIClient --> ServiceLayer : "Error Callback"
+ServiceLayer --> ReactApp : "Show Error Message"
+
+' === Data Synchronization ===
+ReactApp --> SessionStorage : "UI State"
+LocalStorage --> TokenMgmt : "Token Refresh"
+TokenMgmt --> APIClient : "Refresh Token Request"
+APIClient --> HTTP : "POST /users/refresh-token"
+HTTP --> UsersCtrl : "Refresh Endpoint"
+UsersCtrl --> JWTService : "New Access Token"
+
+note top of HTTP
+  All communication uses REST API
+  with JSON payload format
+  Protected routes require JWT token
+end note
+
+note bottom of PostgreSQL
+  Database handles ACID transactions
+  TypeORM manages entity relationships
+  Migrations ensure schema consistency
+end note
+
+note right of LocalStorage
+  Stores JWT tokens securely
+  Manages user session data
+  Persists UI preferences
+end note
+
+@enduml

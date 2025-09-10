@@ -1,0 +1,315 @@
+@startuml codigo
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama de Código C4 - MatePymes (Arquitectura de Clases)
+
+package "Base Architecture" <<Database>> {
+  abstract class BaseEntity {
+    # id: number
+    # createdAt: Date
+    # updatedAt: Date
+  }
+}
+
+package "Core Entities" <<Database>> {
+  class UserEntity {
+    - nombre: string
+    - apellido: string
+    - email: string
+    - password: string
+    - status: boolean
+    --
+    - role: RoleEntity
+    - empresa: EmpresaEntity
+    - permissions: any
+    --
+    + validatePassword(): boolean
+    + hasPermission(action: string): boolean
+  }
+
+  class EmpresaEntity {
+    - name: string
+    - estado: boolean
+    --
+    - usuarios: UserEntity[]
+    - roles: RoleEntity[]
+    - sucursales: SucursalEntity[]
+    --
+    + addUser(user: UserEntity): void
+    + isActive(): boolean
+  }
+
+  class RoleEntity {
+    - nombre: string
+    - estado: boolean
+    - empresaId: number
+    --
+    - users: UserEntity[]
+    - permissions: PermissionEntity[]
+    - empresa: EmpresaEntity
+    --
+    + hasPermission(code: string): boolean
+    + assignPermission(permission: PermissionEntity): void
+  }
+
+  class PermissionEntity {
+    - nombre: string
+    - codigo: string
+    --
+    - roles: RoleEntity[]
+    --
+    + getCode(): string
+  }
+
+  class SucursalEntity {
+    - nombre: string
+    - direccion: string
+    - telefono: string
+    - email: string
+    - estado: boolean
+    - empresaId: number
+    --
+    - empresa: EmpresaEntity
+    --
+    + isActive(): boolean
+  }
+
+  class EmailCodeEntity {
+    - email: string
+    - code: string
+    - expiresAt: Date
+    - used: boolean
+    --
+    + isValid(): boolean
+    + markAsUsed(): void
+    + isExpired(): boolean
+  }
+}
+
+package "Base Service Architecture" <<Service>> {
+  abstract class BaseService<T> {
+    # repository: Repository<T>
+    --
+    + create(data: T): Promise<T>
+    + find(): Promise<T[]>
+    + findOne(id: number): Promise<T>
+    + update(id: number, data: Partial<T>): Promise<T>
+    + delete(id: number): Promise<void>
+    + paginate(options: IPaginationOptions): Promise<Pagination<T>>
+  }
+
+  abstract class BaseController<T> {
+    # service: BaseService<T>
+    --
+    + create(@Body() data: T): Promise<T>
+    + getAll(): Promise<T[]>
+    + getPaginated(@Query() options): Promise<Pagination<T>>
+    + findOne(@Param('id') id: number): Promise<T>
+    + update(@Param('id') id: number, @Body() data: Partial<T>): Promise<T>
+    + delete(@Param('id') id: number): Promise<void>
+  }
+}
+
+package "Business Services" <<Service>> {
+  class UsersService {
+    - usersRepository: Repository<UserEntity>
+    - jwtService: JwtService
+    --
+    + login(loginDto: LoginDTO): Promise<AuthResponse>
+    + register(registerDto: RegisterDTO): Promise<UserEntity>
+    + me(user: UserI): Promise<UserEntity>
+    + createUser(createUserDto: CreateUserDTO): Promise<UserEntity>
+    + asignarRol(userId: number, rol: string, user: UserI): Promise<UserEntity>
+    + cambiarContrasena(contrasena: string, email: string): Promise<void>
+    + refreshToken(refreshToken: string): Promise<AuthResponse>
+    + canDo(user: UserI, permission: string): Promise<boolean>
+  }
+
+  class RolesService {
+    - rolesRepository: Repository<RoleEntity>
+    - permissionsRepository: Repository<PermissionEntity>
+    --
+    + createRole(createRoleDto: CreateRoleDTO): Promise<RoleEntity>
+    + assignPermissions(roleId: number, permissionIds: number[]): Promise<RoleEntity>
+    + getRolesByEmpresa(empresaId: number): Promise<RoleEntity[]>
+    + updateRoleStatus(roleId: number, estado: boolean): Promise<RoleEntity>
+  }
+
+  class EmpresaService {
+    - empresaRepository: Repository<EmpresaEntity>
+    - usersService: UsersService
+    --
+    + createEmpresa(createEmpresaDto: CreateEmpresaDTO): Promise<EmpresaEntity>
+    + updateEmpresa(id: number, updateData: UpdateEmpresaDTO): Promise<EmpresaEntity>
+    + getEmpresaWithUsers(id: number): Promise<EmpresaEntity>
+    + activateEmpresa(id: number): Promise<EmpresaEntity>
+  }
+
+  class SucursalesService {
+    - sucursalesRepository: Repository<SucursalEntity>
+    - empresaService: EmpresaService
+    --
+    + createSucursal(createSucursalDto: CreateSucursalDTO): Promise<SucursalEntity>
+    + getSucursalesByEmpresa(empresaId: number): Promise<SucursalEntity[]>
+    + updateSucursalStatus(id: number, estado: boolean): Promise<SucursalEntity>
+  }
+
+  class MailService {
+    - emailCodeRepository: Repository<EmailCodeEntity>
+    - transporter: nodemailer.Transporter
+    --
+    + sendVerificationCode(email: string): Promise<void>
+    + verifyCode(email: string, code: string): Promise<boolean>
+    + sendPasswordRecovery(email: string): Promise<void>
+    + generateCode(): string
+  }
+
+  class JwtService {
+    - configService: ConfigService
+    --
+    + sign(payload: JwtPayload): string
+    + verify(token: string): JwtPayload
+    + generateTokens(user: UserEntity): AuthTokens
+    + validateToken(token: string): boolean
+  }
+}
+
+package "Controllers" <<Controller>> {
+  class UsersController {
+    - usersService: UsersService
+    --
+    + login(@Body() loginDto: LoginDTO): Promise<AuthResponse>
+    + register(@Body() registerDto: RegisterDTO): Promise<UserEntity>
+    + me(@Req() req: RequestWithUser): Promise<UserEntity>
+    + createUser(@Body() createUserDto: CreateUserDTO): Promise<UserEntity>
+    + asignarRol(@Param('id') userId: number, @Body('rol') rol: string): Promise<UserEntity>
+    + cambiarContrasena(@Body() changePasswordDto): Promise<void>
+    + refreshToken(@Req() req: Request): Promise<AuthResponse>
+    + canDo(@Param('permission') permission: string, @Req() req): Promise<boolean>
+  }
+
+  class RolesController {
+    - rolesService: RolesService
+    --
+    + createRole(@Body() createRoleDto: CreateRoleDTO): Promise<RoleEntity>
+    + assignPermissions(@Param('id') roleId: number, @Body() permissionIds: number[]): Promise<RoleEntity>
+    + getRolesByEmpresa(@Query('empresaId') empresaId: number): Promise<RoleEntity[]>
+  }
+
+  class EmpresaController {
+    - empresaService: EmpresaService
+    --
+    + createEmpresa(@Body() createEmpresaDto: CreateEmpresaDTO): Promise<EmpresaEntity>
+    + getEmpresaWithUsers(@Param('id') id: number): Promise<EmpresaEntity>
+  }
+}
+
+package "DTOs & Interfaces" <<DTO>> {
+  class LoginDTO {
+    + email: string
+    + password: string
+  }
+
+  class RegisterDTO {
+    + nombre: string
+    + apellido: string
+    + email: string
+    + password: string
+  }
+
+  class CreateUserDTO {
+    + nombre: string
+    + apellido: string
+    + email: string
+    + password: string
+    + roleId: number
+    + empresaId: number
+  }
+
+  interface AuthResponse {
+    + user: UserEntity
+    + accessToken: string
+    + refreshToken: string
+  }
+
+  interface RequestWithUser {
+    + user: UserI
+  }
+}
+
+package "Middleware & Security" <<Middleware>> {
+  class AuthMiddleware {
+    - jwtService: JwtService
+    --
+    + use(req: Request, res: Response, next: NextFunction): void
+    + validateToken(token: string): Promise<UserEntity>
+  }
+
+  class PermissionMiddleware {
+    - usersService: UsersService
+    --
+    + canActivate(context: ExecutionContext): Promise<boolean>
+    + validatePermission(user: UserEntity, action: string, entity: string): Promise<boolean>
+  }
+
+  class ActionDecorator {
+    + Action(action: string): MethodDecorator
+  }
+
+  class PublicDecorator {
+    + Public(): MethodDecorator
+  }
+}
+
+' === Entity Relationships ===
+BaseEntity <|-- UserEntity
+BaseEntity <|-- EmpresaEntity  
+BaseEntity <|-- RoleEntity
+BaseEntity <|-- PermissionEntity
+BaseEntity <|-- SucursalEntity
+BaseEntity <|-- EmailCodeEntity
+
+UserEntity }o-- RoleEntity : role
+UserEntity }o-- EmpresaEntity : empresa
+EmpresaEntity ||--o{ UserEntity : usuarios
+EmpresaEntity ||--o{ RoleEntity : roles
+EmpresaEntity ||--o{ SucursalEntity : sucursales
+RoleEntity }o--o{ PermissionEntity : permissions
+RoleEntity }o-- EmpresaEntity : empresa
+SucursalEntity }o-- EmpresaEntity : empresa
+
+' === Service Architecture ===
+BaseService <|-- UsersService
+BaseService <|-- RolesService
+BaseService <|-- EmpresaService
+BaseService <|-- SucursalesService
+
+BaseController <|-- UsersController
+BaseController <|-- RolesController
+BaseController <|-- EmpresaController
+
+' === Controller-Service Relationships ===
+UsersController --> UsersService : uses
+RolesController --> RolesService : uses
+EmpresaController --> EmpresaService : uses
+UsersService --> UserEntity : manages
+RolesService --> RoleEntity : manages
+EmpresaService --> EmpresaEntity : manages
+SucursalesService --> SucursalEntity : manages
+MailService --> EmailCodeEntity : manages
+
+' === Security Integration ===
+UsersController --> AuthMiddleware : protected by
+RolesController --> AuthMiddleware : protected by
+EmpresaController --> AuthMiddleware : protected by
+AuthMiddleware --> JwtService : validates with
+PermissionMiddleware --> UsersService : checks permissions
+
+' === DTO Usage ===
+UsersController --> LoginDTO : uses
+UsersController --> RegisterDTO : uses
+UsersController --> CreateUserDTO : uses
+UsersController --> AuthResponse : returns
+UsersController --> RequestWithUser : receives
+
+@enduml

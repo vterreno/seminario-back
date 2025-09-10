@@ -1,0 +1,167 @@
+@startuml Backend-Components
+title C4 - Componentes Backend (MatePymes)
+
+package "Backend Application (NestJS + TypeORM)" {
+  
+  package "Core Application" {
+    [App Module] as AppModule #lightblue
+    [Main Bootstrap] as MainBootstrap #lightblue
+    [Configuration] as ConfigModule #lightblue
+  }
+  
+  package "Authentication & Security" {
+    [JWT Module] as JWTModule #lightcoral
+    [JWT Service] as JWTService #lightcoral
+    [Auth Middleware] as AuthMiddleware #lightcoral
+    [Permission Middleware] as PermissionMiddleware #lightcoral
+    [JWT Exception Filter] as JWTExceptionFilter #lightcoral
+    [Auth Guard] as AuthGuard #lightcoral
+    [Permissions Guard] as PermissionsGuard #lightcoral
+  }
+  
+  package "Base Architecture" {
+    [Base Controller] as BaseController #lavender
+    [Base Service] as BaseService #lavender
+    [Base Entity] as BaseEntity #lavender
+  }
+  
+  package "Decorators & Utilities" {
+    [Action Decorator] as ActionDecorator #lightsteelblue
+    [Entity Decorator] as EntityDecorator #lightsteelblue
+    [Public Decorator] as PublicDecorator #lightsteelblue
+  }
+  
+  package "Business Modules" {
+    [Users Module] as UsersModule #orange
+    [Roles Module] as RolesModule #orange
+    [Permisos Module] as PermisosModule #orange
+    [Empresa Module] as EmpresaModule #yellow
+    [Sucursales Module] as SucursalesModule #yellow
+    [Mail Service Module] as MailModule #lightgreen
+    [Seeder Module] as SeederModule #lightgray
+  }
+  
+  package "Controllers Layer" {
+    [Users Controller] as UsersController #orange
+    [Roles Controller] as RolesController #orange
+    [Permisos Controller] as PermisosController #orange
+    [Empresa Controller] as EmpresaController #yellow
+    [Sucursales Controller] as SucursalesController #yellow
+    [Mail Controller] as MailController #lightgreen
+  }
+  
+  package "Services Layer" {
+    [Users Service] as UsersService #orange
+    [Roles Service] as RolesService #orange
+    [Permisos Service] as PermisosService #orange
+    [Empresa Service] as EmpresaService #yellow
+    [Sucursales Service] as SucursalesService #yellow
+    [Mail Service] as MailService #lightgreen
+    [Seeder Service] as SeederService #lightgray
+  }
+  
+  package "DTOs & Interfaces" {
+    [Login DTO] as LoginDTO #lightpink
+    [Register DTO] as RegisterDTO #lightpink
+    [Create User DTO] as CreateUserDTO #lightpink
+    [User Interface] as UserInterface #lightpink
+    [Request With User] as RequestWithUser #lightpink
+  }
+}
+
+' === Core Application Relationships ===
+AppModule --> ConfigModule
+AppModule --> JWTModule
+AppModule --> UsersModule
+AppModule --> RolesModule
+AppModule --> PermisosModule
+AppModule --> EmpresaModule
+AppModule --> SucursalesModule
+AppModule --> MailModule
+AppModule --> SeederModule
+
+MainBootstrap --> AppModule
+
+' === Authentication & Security Relationships ===
+JWTModule --> JWTService
+AuthMiddleware --> JWTService
+PermissionMiddleware --> JWTService
+JWTExceptionFilter --> JWTService
+
+AuthGuard --> AuthMiddleware
+PermissionsGuard --> PermissionMiddleware
+
+' === Module to Controller Relationships ===
+UsersModule --> UsersController
+RolesModule --> RolesController
+PermisosModule --> PermisosController
+EmpresaModule --> EmpresaController
+SucursalesModule --> SucursalesController
+MailModule --> MailController
+
+' === Module to Service Relationships ===
+UsersModule --> UsersService
+RolesModule --> RolesService
+PermisosModule --> PermisosService
+EmpresaModule --> EmpresaService
+SucursalesModule --> SucursalesService
+MailModule --> MailService
+SeederModule --> SeederService
+
+' === Controller to Service Relationships ===
+UsersController --> UsersService
+RolesController --> RolesService
+PermisosController --> PermisosService
+EmpresaController --> EmpresaService
+SucursalesController --> SucursalesService
+MailController --> MailService
+
+' === Base Architecture Inheritance ===
+BaseController --> UsersController : extends
+BaseController --> RolesController : extends
+BaseController --> PermisosController : extends
+BaseController --> EmpresaController : extends
+BaseController --> SucursalesController : extends
+
+BaseService --> UsersService : extends
+BaseService --> RolesService : extends
+BaseService --> PermisosService : extends
+BaseService --> EmpresaService : extends
+BaseService --> SucursalesService : extends
+
+' === Security Integration ===
+UsersController --> AuthMiddleware : uses
+RolesController --> AuthMiddleware : uses
+PermisosController --> AuthMiddleware : uses
+EmpresaController --> AuthMiddleware : uses
+SucursalesController --> AuthMiddleware : uses
+
+UsersController --> PermissionMiddleware : uses
+RolesController --> PermissionMiddleware : uses
+PermisosController --> PermissionMiddleware : uses
+EmpresaController --> PermissionMiddleware : uses
+SucursalesController --> PermissionMiddleware : uses
+
+' === Decorator Usage ===
+UsersController --> ActionDecorator : uses
+RolesController --> ActionDecorator : uses
+PermisosController --> ActionDecorator : uses
+EmpresaController --> ActionDecorator : uses
+SucursalesController --> ActionDecorator : uses
+
+UsersController --> PublicDecorator : uses
+MailController --> PublicDecorator : uses
+
+' === DTO Usage ===
+UsersController --> LoginDTO : uses
+UsersController --> RegisterDTO : uses
+UsersController --> CreateUserDTO : uses
+UsersController --> UserInterface : uses
+UsersController --> RequestWithUser : uses
+
+' === Cross-module Dependencies ===
+EmpresaModule --> UsersModule : depends on
+SucursalesModule --> EmpresaModule : depends on
+SucursalesModule --> UsersModule : depends on
+
+@enduml

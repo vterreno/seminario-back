@@ -1,0 +1,101 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Diagrama de Contenedores - MatePymes
+
+Person(admin, "Administrador", "Administra empresas, usuarios y roles del sistema")
+Person(empleado, "Empleado", "Usuario final que gestiona ventas, compras y datos")
+Person(cliente, "Cliente", "Cliente externo que recibe notificaciones por email")
+
+System_Boundary(matepymes, "MatePymes - Sistema de Gestión Empresarial") {
+  
+  Container_Boundary(frontend, "Aplicación Frontend") {
+    Container(spa, "Single Page Application", "React 19 + TanStack Router + Shadcn/UI", "Interfaz de usuario responsiva con gestión de estado y routing avanzado")
+  }
+  
+  Container_Boundary(backend, "Aplicación Backend") {
+    Container(api, "API REST", "NestJS + TypeScript", "Expone endpoints REST para gestión de usuarios, roles, empresas y sucursales")
+    Container(auth, "Servicio de Autenticación", "JWT + Middlewares", "Maneja autenticación y autorización basada en roles y permisos")
+    Container(mail, "Servicio de Email", "NodeMailer + SMTP", "Envía códigos de verificación y notificaciones por email")
+  }
+  
+  Container_Boundary(data, "Capa de Datos") {
+    ContainerDb(db, "Base de Datos Principal", "PostgreSQL + TypeORM", "Almacena usuarios, roles, permisos, empresas, sucursales en arquitectura multi-tenant")
+    Container(migrations, "Sistema de Migraciones", "TypeORM Migrations", "Gestiona evolución del esquema de base de datos")
+    Container(seeders, "Sistema de Seeders", "TypeORM Seeders", "Inicializa datos base del sistema")
+  }
+  
+  Container_Boundary(storage, "Almacenamiento") {
+    Container(session, "Almacenamiento de Sesión", "Browser LocalStorage", "Almacena tokens JWT y estado de usuario en el cliente")
+  }
+}
+
+System_Ext(smtp, "Servidor SMTP", "Servidor de correo externo para envío de emails")
+
+' === Relaciones Principales ===
+Rel(admin, spa, "Administra sistema", "HTTPS/Browser")
+Rel(empleado, spa, "Gestiona datos empresariales", "HTTPS/Browser")
+
+Rel(spa, api, "Consume API", "HTTPS/REST/JSON")
+Rel(spa, session, "Almacena estado", "Browser API")
+
+' === Backend Internal Relations ===
+Rel(api, auth, "Valida tokens", "Internal calls")
+Rel(api, mail, "Envía notificaciones", "Internal calls")
+Rel(auth, db, "Verifica credenciales", "SQL/TypeORM")
+Rel(api, db, "CRUD operations", "SQL/TypeORM")
+Rel(mail, db, "Gestiona códigos email", "SQL/TypeORM")
+
+' === Database Relations ===
+Rel(migrations, db, "Actualiza esquema", "SQL DDL")
+Rel(seeders, db, "Inicializa datos", "SQL DML")
+
+' === External Relations ===
+Rel(mail, smtp, "Envía emails", "SMTP")
+Rel(smtp, cliente, "Recibe notificaciones", "Email")
+
+' === Authentication Flow ===
+Rel_Back(auth, spa, "Retorna JWT", "JSON")
+Rel(session, auth, "Persiste tokens", "Browser Storage")
+
+SHOW_LEGEND()
+
+' === Notas explicativas ===
+note right of spa
+  **Tecnologías Frontend:**
+  • React 19 con hooks modernos
+  • TanStack Router para routing
+  • Shadcn/UI para componentes
+  • Tailwind CSS para estilos
+  • Axios para comunicación HTTP
+  • Zustand para gestión de estado
+end note
+
+note right of api
+  **Arquitectura Backend:**
+  • NestJS con módulos por dominio
+  • Base Controller/Service pattern
+  • Guards para autenticación/autorización
+  • DTOs para validación de datos
+  • Interceptors para logging/errores
+end note
+
+note right of db
+  **Modelo de Datos:**
+  • Multi-tenant por empresa
+  • Usuarios con roles y permisos
+  • Estructura jerárquica de empresas/sucursales
+  • Auditoría con BaseEntity
+  • Migraciones versionadas
+end note
+
+note right of auth
+  **Seguridad:**
+  • JWT con access/refresh tokens
+  • Middleware de autenticación
+  • Middleware de permisos
+  • Decoradores para rutas públicas
+  • Filtros de excepciones JWT
+end note
+
+@enduml

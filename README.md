@@ -59,6 +59,18 @@ npm run migration:run
 ```
 Esto aplicará las migraciones pendientes a tu base de datos.
 
+##  🌱 Ejecutar seeders
+
+Los seeders permiten cargar datos iniciales en la base de datos (roles, usuarios de prueba, configuraciones básicas, etc.).
+
+Para ejecutar los seeders:
+```
+npm run seed:run
+```
+Si querés generar un nuevo seeder:
+```
+npm run seed:generate <nombre>
+```
 ## ▶️ Levantar el servidor en modo desarrollo
 ```
 npm run start:dev

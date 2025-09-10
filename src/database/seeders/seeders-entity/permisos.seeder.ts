@@ -16,7 +16,7 @@ export class PermisosSeeder {
             { nombre: 'Ver usuario', codigo: 'usuario_ver' },
             { nombre: 'Crear usuario', codigo: 'usuario_agregar' },
             { nombre: 'Modificar usuario', codigo: 'usuario_modificar' },
-            { nombre: 'Eliminar usuario', codigo: 'usuario_borrar' },
+            { nombre: 'Eliminar usuario', codigo: 'usuario_eliminar' },
             
             // Proveedor permissions
             { nombre: 'Ver proveedor', codigo: 'proveedor_ver' },
@@ -91,6 +91,9 @@ export class PermisosSeeder {
             { nombre: 'Crear rol', codigo: 'roles_agregar' },
             { nombre: 'Modificar rol', codigo: 'roles_modificar' },
             { nombre: 'Eliminar rol', codigo: 'roles_eliminar' },
+
+            // Role permissions
+            { nombre: 'Ver dashboard', codigo: 'dashboard_ver' },
         ];
 
         for (const permiso of permisos) {

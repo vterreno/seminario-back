@@ -34,7 +34,7 @@ docker run --name matepymes-db -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=mate_pym
 
 El backend del proyecto utiliza **Zoho Mail** como servicio de correo oficial para envíos automáticos de emails, como confirmaciones de reservas, notificaciones de cambios o alertas del sistema.  
 
-Antes de levantar el backend, necesitás configurar tu archivo `.env` con las variables correctas. Algunas, como la conexión a la base de datos y las credenciales de Zoho, deben pedirse a algún miembro del equipo.  
+Antes de levantar el backend, necesitas configurar tu archivo `.env` con las variables correctas. Algunas, como la conexión a la base de datos y las credenciales de Zoho, deben pedirse a algún miembro del equipo.  
 
 Ejemplo de `.env`:
 

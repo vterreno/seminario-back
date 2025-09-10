@@ -2,7 +2,6 @@ import { Controller, UseGuards, Get, Post, Put, Delete, Param, Body, Req } from 
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { RolesService } from './roles.service';
-import { Entity } from 'typeorm';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
 import { PermissionsGuard } from 'src/middlewares/permission.middleware';
 import { RequestWithUser } from 'src/resource/users/interface/request-user';
@@ -10,7 +9,6 @@ import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Entity as EntityDecorator } from 'src/middlewares/decorators/entity.decorator';
 
 @UseGuards(AuthGuard, PermissionsGuard)
-@Entity('roles')
 @EntityDecorator('roles')
 @Controller('roles')
 export class RolesController extends BaseController<RoleEntity>{

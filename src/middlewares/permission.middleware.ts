@@ -17,7 +17,6 @@ export class PermissionsGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
         const action = this.reflector.get<string>(ACTION_KEY, context.getHandler());
         const entity = this.reflector.get<string>(ENTITY_KEY, context.getClass());
-        
         // If no metadata, no permission required
         if (!action || !entity) return true;
         

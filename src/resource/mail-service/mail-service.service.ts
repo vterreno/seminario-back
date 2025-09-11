@@ -29,6 +29,12 @@ export class MailServiceService {
     }
 
 async sendMail(to: string) {
+    // Verificar si es el superadmin
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@mail.com';
+    if (to === superAdminEmail) {
+      throw new Error('No se permite el cambio de contraseña del superadministrador por motivos de seguridad');
+    }
+
     const codigo = this.generateCode();
     const codeHash = hashSync(codigo, 10);
 

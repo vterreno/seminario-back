@@ -11,7 +11,6 @@ import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { find } from 'rxjs/internal/operators/find';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -238,18 +237,30 @@ export class UsersService extends BaseService<UserEntity> {
     return {message: `Rol asignado correctamente a ${user.email}`,userId: user.id,nuevoRol: rol.nombre,};
   }
   async cambiarContrasena(contrasenaNueva:string, email:string) {
-    const user = await this.repository.findOneBy({ email: email });
-    if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+    try {
+          const user = await this.findByEmail(email);
+          if (!user) {
+              throw new NotFoundException('Usuario no encontrado');
+          }
+          user.password = hashSync(contrasenaNueva, 10);
+          await this.repository.save(user);
+          
+          const permissions = this.getUserPermissions(user.id);
+          return { 
+            accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
+            refreshToken: this.jwtService.generateToken(
+              { email: user.email },
+              'refresh',
+            ),
+            permissions: await permissions
+          };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error in cambiarContrasena:', error);
+      throw new HttpException('Error al cambiar la contraseña', 500);
     }
-    user.password = hashSync(contrasenaNueva, 10);
-    await this.repository.save(user);
-    return { 
-      accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
-      refreshToken: this.jwtService.generateToken(
-        { email: user.email },
-        'refresh',
-      ) };
   }
   async findByEmailWithRole(email: string) {
     return this.repository.findOne({

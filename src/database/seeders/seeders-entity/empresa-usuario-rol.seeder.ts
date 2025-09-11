@@ -141,7 +141,8 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'producto_modificar' },
                     { codigo: 'producto_eliminar' },
                     { codigo: 'ventas_ver' },
-                    { codigo: 'compras_ver' }
+                    { codigo: 'compras_ver' },
+                    { codigo: 'configuracion_empresa'},
                 ]
             });
             
@@ -196,6 +197,7 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'ventas_ver' },
                     { codigo: 'compras_ver' },
                     { codigo: 'dashboard_ver' },
+                    { codigo: 'configuracion_empresa'},
                     // Permisos de AGREGAR/CREAR
                     { codigo: 'usuario_agregar'},
                     { codigo: 'roles_agregar' },

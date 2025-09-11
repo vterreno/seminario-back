@@ -87,8 +87,7 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'sucursales_ver' },
                     { codigo: 'producto_ver' },
                     { codigo: 'ventas_ver' },
-                    { codigo: 'compras_ver' },
-                    
+                    { codigo: 'compras_ver' }
                 ]
             });
             

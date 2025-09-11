@@ -255,7 +255,11 @@ export class UsersService extends BaseService<UserEntity> {
             permissions: await permissions
           };
     } catch (error) {
-      throw new NotFoundException('Usuario no encontrado');
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error in cambiarContrasena:', error);
+      throw new HttpException('Error al cambiar la contraseña', 500);
     }
   }
   async findByEmailWithRole(email: string) {

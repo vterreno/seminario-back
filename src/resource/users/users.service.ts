@@ -195,11 +195,9 @@ export class UsersService extends BaseService<UserEntity> {
     if (!compareResult) {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
-    const permissions = this.getUserPermissions(user.id);
     return {
       accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
       refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
-      permissions: await permissions
     };
   }
   async findByEmail(email: string): Promise<UserEntity> {

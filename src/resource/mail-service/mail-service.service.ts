@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { emailCodeEntity } from 'src/database/core/email-code.entity';
 import { Repository } from 'typeorm';
 import { compareSync, hashSync } from 'bcrypt';
+import { UserEntity } from 'src/database/core/user.entity';
 
 @Injectable()
 export class MailServiceService {
@@ -16,6 +17,8 @@ export class MailServiceService {
   constructor(
       @InjectRepository(emailCodeEntity)
       private readonly emailCodeRepository: Repository<emailCodeEntity>,
+      @InjectRepository(UserEntity)
+      private readonly userRepository: Repository<UserEntity>,
     ) {
       this.transporter = nodemailer.createTransport({
         host: 'smtp.zoho.com',
@@ -32,7 +35,13 @@ async sendMail(to: string) {
     // Verificar si es el superadmin
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@mail.com';
     if (to === superAdminEmail) {
-      throw new Error('No se permite el cambio de contraseña del superadministrador por motivos de seguridad');
+      throw new Error('No se permite el cambio de contraseña por motivos de seguridad');
+    }
+
+    // Verificar si el correo existe en la base de datos y pertenece a un usuario
+    const userExists = await this.userRepository.findOne({ where: { email: to } });
+    if (!userExists) {
+      throw new Error('No se permite el cambio de contraseña');
     }
 
     const codigo = this.generateCode();

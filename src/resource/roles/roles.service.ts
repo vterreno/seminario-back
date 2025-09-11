@@ -96,13 +96,52 @@ export class RolesService extends BaseService<RoleEntity> {
     }
 
     // Bulk delete roles
-    async bulkDeleteRoles(ids: number[]): Promise<void> {
+    async bulkDeleteRoles(ids: number[], empresaId?: number, currentUserRoleId?: number): Promise<void> {
+        // If empresa validation is needed, check roles belong to the company
+        if (empresaId) {
+            const roles = await this.roleService.find({
+                where: { id: In(ids), empresa_id: empresaId }
+            });
+            
+            if (roles.length !== ids.length) {
+                throw new Error('Algunos roles no pertenecen a tu empresa o no existen');
+            }
+        }
+
+        // Verificar que el usuario no esté intentando eliminar su propio rol
+        if (currentUserRoleId && ids.includes(currentUserRoleId)) {
+            throw new Error('No puedes eliminar tu propio rol');
+        }
+
         await this.roleService.delete(ids);
     }
 
     // Bulk update role status (activate/deactivate)
-    async bulkUpdateRoleStatus(ids: number[], estado: boolean): Promise<void> {
+    async bulkUpdateRoleStatus(ids: number[], estado: boolean, empresaId?: number, currentUserRoleId?: number): Promise<RoleEntity[]> {
+        // If empresa validation is needed, check roles belong to the company
+        if (empresaId) {
+            const roles = await this.roleService.find({
+                where: { id: In(ids), empresa_id: empresaId }
+            });
+            
+            if (roles.length !== ids.length) {
+                throw new Error('Algunos roles no pertenecen a tu empresa o no existen');
+            }
+        }
+
+        // Verificar que el usuario no esté intentando cambiar el estado de su propio rol
+        if (currentUserRoleId && ids.includes(currentUserRoleId)) {
+            throw new Error('No puedes cambiar el estado de tu propio rol');
+        }
+
+        // Update the roles
         await this.roleService.update(ids, { estado });
+        
+        // Return updated roles with relations
+        return await this.roleService.find({
+            where: { id: In(ids) },
+            relations: ['permissions', 'empresa']
+        });
     }
 
     // Soft delete (set estado to false instead of hard delete)

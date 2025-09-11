@@ -54,6 +54,14 @@ export class EmpresaUsuarioRolSeeder {
             });
             rol = await this.roleRepo.save(rol);
             console.log('Rol de prueba creado con todos los permisos');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rol.estado) {
+                rol.estado = true;
+                await this.roleRepo.save(rol);
+                console.log('Rol AdminPrueba reactivado');
+            }
+            console.log('Rol AdminPrueba ya existe y está activo');
         }
         // 4. Asociar el rol al usuario
         usuario.role = rol;
@@ -100,6 +108,14 @@ export class EmpresaUsuarioRolSeeder {
             });
             rolOperador = await this.roleRepo.save(rolOperador);
             console.log('Rol OperadorPrueba creado con permisos de solo lectura');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rolOperador.estado) {
+                rolOperador.estado = true;
+                await this.roleRepo.save(rolOperador);
+                console.log('Rol OperadorPrueba reactivado');
+            }
+            console.log('Rol OperadorPrueba ya existe y está activo');
         }
 
         // 7. USUARIO GESTOR DE PRODUCTOS - Ver + gestionar productos, ver ventas y compras
@@ -155,6 +171,14 @@ export class EmpresaUsuarioRolSeeder {
             });
             rolGestor = await this.roleRepo.save(rolGestor);
             console.log('Rol GestorPrueba creado con gestión completa de productos + lectura ventas/compras');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rolGestor.estado) {
+                rolGestor.estado = true;
+                await this.roleRepo.save(rolGestor);
+                console.log('Rol GestorPrueba reactivado');
+            }
+            console.log('Rol GestorPrueba ya existe y está activo');
         }
 
         // 9. Asociar roles a los nuevos usuarios
@@ -218,6 +242,14 @@ export class EmpresaUsuarioRolSeeder {
             });
             rolGestor1 = await this.roleRepo.save(rolGestor1);
             console.log('Rol Gestor1Prueba creado con permisos de ver + crear');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rolGestor1.estado) {
+                rolGestor1.estado = true;
+                await this.roleRepo.save(rolGestor1);
+                console.log('Rol Gestor1Prueba reactivado');
+            }
+            console.log('Rol Gestor1Prueba ya existe y está activo');
         }
 
         // 12. Asociar rol al usuario gestor1

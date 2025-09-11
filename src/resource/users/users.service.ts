@@ -241,7 +241,6 @@ export class UsersService extends BaseService<UserEntity> {
           const user = await this.findByEmail(email);
           if (!user) {
               throw new NotFoundException('Usuario no encontrado');
-              
           }
           user.password = hashSync(contrasenaNueva, 10);
           await this.repository.save(user);

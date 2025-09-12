@@ -256,5 +256,120 @@ export class EmpresaUsuarioRolSeeder {
         usuarioGestor1.role = rolGestor1;
         await this.userRepo.save(usuarioGestor1);
         console.log('Rol Gestor1Prueba vinculado al usuario gestor1@test.com');
+
+        // 13. CREAR SEGUNDA EMPRESA DE PRUEBA
+        let empresa2 = await this.empresaRepo.findOne({ where: { name: 'Empresa Comercial S.A.' } });
+        if (!empresa2) {
+            empresa2 = this.empresaRepo.create({ 
+                name: 'Empresa Comercial S.A.', 
+                estado: true 
+            });
+            empresa2 = await this.empresaRepo.save(empresa2);
+            console.log('Segunda empresa de prueba "Empresa Comercial S.A." creada');
+        }
+
+        // 14. CREAR USUARIO ADMINISTRADOR PARA LA SEGUNDA EMPRESA
+        let adminEmpresa2 = await this.userRepo.findOne({ where: { email: 'admin@comercial.com' } });
+        if (!adminEmpresa2) {
+            adminEmpresa2 = this.userRepo.create({
+                nombre: 'Carlos',
+                apellido: 'Administrador',
+                email: 'admin@comercial.com',
+                password: hashSync('admin123', 10),
+                empresa: empresa2
+            });
+            adminEmpresa2 = await this.userRepo.save(adminEmpresa2);
+            console.log('Usuario administrador para Empresa Comercial S.A. creado');
+        }
+
+        // 15. CREAR ROL ADMINISTRADOR COMPLETO PARA LA SEGUNDA EMPRESA
+        let rolAdminEmpresa2 = await this.roleRepo.findOne({ 
+            where: { nombre: 'AdminComercial', empresa_id: empresa2.id }, 
+            relations: ['permissions'] 
+        });
+        if (!rolAdminEmpresa2) {
+            const todosLosPermisos = await this.permisoRepo.find();
+            
+            rolAdminEmpresa2 = this.roleRepo.create({
+                nombre: 'AdminComercial',
+                empresa_id: empresa2.id,
+                estado: true,
+                permissions: todosLosPermisos,
+                empresa: empresa2
+            });
+            rolAdminEmpresa2 = await this.roleRepo.save(rolAdminEmpresa2);
+            console.log('Rol AdminComercial creado con todos los permisos para la segunda empresa');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rolAdminEmpresa2.estado) {
+                rolAdminEmpresa2.estado = true;
+                await this.roleRepo.save(rolAdminEmpresa2);
+                console.log('Rol AdminComercial reactivado');
+            }
+            console.log('Rol AdminComercial ya existe y está activo');
+        }
+
+        // 16. ASOCIAR EL ROL AL USUARIO ADMINISTRADOR DE LA SEGUNDA EMPRESA
+        adminEmpresa2.role = rolAdminEmpresa2;
+        await this.userRepo.save(adminEmpresa2);
+        console.log('Rol AdminComercial vinculado al usuario admin@comercial.com');
+
+        // 17. CREAR USUARIO VENDEDOR PARA LA SEGUNDA EMPRESA
+        let vendedorEmpresa2 = await this.userRepo.findOne({ where: { email: 'vendedor@comercial.com' } });
+        if (!vendedorEmpresa2) {
+            vendedorEmpresa2 = this.userRepo.create({
+                nombre: 'María',
+                apellido: 'Vendedora',
+                email: 'vendedor@comercial.com',
+                password: hashSync('vendedor123', 10),
+                empresa: empresa2
+            });
+            vendedorEmpresa2 = await this.userRepo.save(vendedorEmpresa2);
+            console.log('Usuario vendedor para Empresa Comercial S.A. creado');
+        }
+
+        // 18. CREAR ROL VENDEDOR PARA LA SEGUNDA EMPRESA
+        let rolVendedorEmpresa2 = await this.roleRepo.findOne({ 
+            where: { nombre: 'VendedorComercial', empresa_id: empresa2.id }, 
+            relations: ['permissions'] 
+        });
+        if (!rolVendedorEmpresa2) {
+            const permisosVendedor = await this.permisoRepo.find({
+                where: [
+                    // Permisos relacionados con ventas y productos
+                    { codigo: 'producto_ver' },
+                    { codigo: 'ventas_ver' },
+                    { codigo: 'ventas_agregar' },
+                    { codigo: 'ventas_modificar' },
+                    { codigo: 'dashboard_ver' },
+                    { codigo: 'sucursal_ver' },
+                    // Puede ver usuarios pero no modificarlos
+                    { codigo: 'usuario_ver'}
+                ]
+            });
+            
+            rolVendedorEmpresa2 = this.roleRepo.create({
+                nombre: 'VendedorComercial',
+                empresa_id: empresa2.id,
+                estado: true,
+                permissions: permisosVendedor,
+                empresa: empresa2
+            });
+            rolVendedorEmpresa2 = await this.roleRepo.save(rolVendedorEmpresa2);
+            console.log('Rol VendedorComercial creado con permisos de ventas y productos');
+        } else {
+            // Si el rol ya existe, asegurar que esté activo
+            if (!rolVendedorEmpresa2.estado) {
+                rolVendedorEmpresa2.estado = true;
+                await this.roleRepo.save(rolVendedorEmpresa2);
+                console.log('Rol VendedorComercial reactivado');
+            }
+            console.log('Rol VendedorComercial ya existe y está activo');
+        }
+
+        // 19. ASOCIAR EL ROL AL USUARIO VENDEDOR DE LA SEGUNDA EMPRESA
+        vendedorEmpresa2.role = rolVendedorEmpresa2;
+        await this.userRepo.save(vendedorEmpresa2);
+        console.log('Rol VendedorComercial vinculado al usuario vendedor@comercial.com');
     }
 }

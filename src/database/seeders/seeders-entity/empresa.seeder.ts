@@ -13,7 +13,8 @@ export class EmpresaSeeder {
 
     async run() {
         const empresas = [
-            { name: 'Empresa Principal', estado: true },
+            { name: 'TechCorp S.A.', estado: true },
+            { name: 'FoodMarket Ltda.', estado: true },
         ];
 
         const totalEmpresas = await this.empresaRepository.count();

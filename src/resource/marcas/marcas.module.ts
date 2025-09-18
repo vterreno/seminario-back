@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from 'src/jwt/jwt.module';
+import { MarcaValidationPipe } from './pipes/marca-validation.pipe';
 
 @Module({
   imports: [
@@ -13,7 +14,10 @@ import { JwtModule } from 'src/jwt/jwt.module';
     UsersModule,
   ],
   controllers: [MarcasController],
-  providers: [MarcasService],
+  providers: [
+    MarcasService,
+    MarcaValidationPipe
+  ],
   exports: [MarcasService]
 })
 export class MarcasModule {}

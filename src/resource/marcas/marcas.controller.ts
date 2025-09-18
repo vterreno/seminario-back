@@ -9,6 +9,7 @@ import { RequestWithUser } from '../users/interface/request-user';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
 import { PermissionsGuard } from 'src/middlewares/permission.middleware';
 import { Entity as EntityDecorator } from 'src/middlewares/decorators/entity.decorator';
+import { MarcaValidationPipe } from './pipes/marca-validation.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @EntityDecorator('marca')
@@ -46,7 +47,7 @@ export class MarcasController extends BaseController<MarcaEntity>{
 
     @Post()
     @Action('agregar')
-    async createMarca(@Body() marcaData: CreateMarcaDto, @Req() req: RequestWithUser) {
+    async createMarca(@Body(MarcaValidationPipe) marcaData: CreateMarcaDto, @Req() req: RequestWithUser) {
         const user = req.user;
         // If user has a company and empresa_id is not provided, assign that company to the marca
         if (user.empresa?.id && !marcaData.empresa_id) {
@@ -58,7 +59,7 @@ export class MarcasController extends BaseController<MarcaEntity>{
 
     @Put(':id')
     @Action('modificar')
-    async updateMarca(@Param('id') id: number, @Body() marcaData: UpdateMarcaDto, @Req() req: RequestWithUser) {
+    async updateMarca(@Param('id') id: number, @Body(MarcaValidationPipe) marcaData: UpdateMarcaDto, @Req() req: RequestWithUser) {
         const user = req.user;
 
         // Verify the marca belongs to the user's company (if user has a company)

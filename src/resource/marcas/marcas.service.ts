@@ -31,23 +31,23 @@ export class MarcasService extends BaseService<MarcaEntity>{
         });
     }
 
-    // Check if marca name exists
+    // Check if marca name exists (case insensitive)
     async findByNombre(nombre: string, empresaId?: number): Promise<MarcaEntity | null> {
-        const whereCondition: any = { nombre }; 
+        const query = this.marcasRepository.createQueryBuilder('marca')
+            .where('LOWER(marca.nombre) = LOWER(:nombre)', { nombre });
+        
         // If empresa is provided, check uniqueness within that empresa
         if (empresaId) {
-            whereCondition.empresa_id = empresaId;
-        }        
-        const result = await this.marcasRepository.findOne({
-            where: whereCondition,
-        });
-        return result;
+            query.andWhere('marca.empresa_id = :empresaId', { empresaId });
+        }
+        
+        return await query.getOne();
     }
 
-    // Check if marca name exists for update (exclude current marca)
+    // Check if marca name exists for update (exclude current marca, case insensitive)
     async findByNombreForUpdate(nombre: string, currentId: number, empresaId?: number): Promise<MarcaEntity | null> {
         const query = this.marcasRepository.createQueryBuilder('marca')
-            .where('marca.nombre = :nombre', { nombre })
+            .where('LOWER(marca.nombre) = LOWER(:nombre)', { nombre })
             .andWhere('marca.id != :currentId', { currentId });
         
         // If empresa is provided, check uniqueness within that empresa
@@ -60,15 +60,6 @@ export class MarcasService extends BaseService<MarcaEntity>{
 
     // Create marca
     async createMarca(marcaData: CreateMarcaDto): Promise<MarcaEntity> {
-        // Check if marca name already exists
-        const existingMarca = await this.findByNombre(marcaData.nombre, marcaData.empresa_id);            
-        if (existingMarca) {
-            const errorMessage = marcaData.empresa_id 
-                ? `Ya existe una marca llamada "${marcaData.nombre}" en tu empresa. Por favor, elige un nombre diferente.`
-                : `Ya existe una marca llamada "${marcaData.nombre}". Por favor, elige un nombre diferente.`;
-            throw new BadRequestException(errorMessage);
-        }
-        
         try {
             const marca = this.marcasRepository.create({
                 ...marcaData,
@@ -90,23 +81,6 @@ export class MarcasService extends BaseService<MarcaEntity>{
         
         if (!marca) {
             throw new BadRequestException(`❌ No se encontró la marca que intentas actualizar. Verifica que el ID sea correcto.`);
-        }
-
-        // If name is being updated, check for uniqueness
-        if (marcaData.nombre && marcaData.nombre !== marca.nombre) {
-            const existingMarca = await this.findByNombreForUpdate(
-                marcaData.nombre, 
-                id, 
-                marcaData.empresa_id || marca.empresa_id
-            );
-            
-            if (existingMarca) {
-                if (marca.empresa_id) {
-                    throw new BadRequestException(`⚠️ Ya existe otra marca llamada "${marcaData.nombre}" en tu empresa. Por favor, elige un nombre diferente.`);
-                } else {
-                    throw new BadRequestException(`⚠️ Ya existe otra marca llamada "${marcaData.nombre}". Por favor, elige un nombre diferente.`);
-                }
-            }
         }
 
         await this.marcasRepository.update(id, marcaData);

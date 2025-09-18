@@ -15,8 +15,6 @@ export class RolesController extends BaseController<RoleEntity>{
     constructor(protected readonly roleService:RolesService){
         super(roleService);
     }
-
-
     @Get()
     @Action('ver')
     async getAllRoles(@Req() req: RequestWithUser) {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { MarcasService } from './marcas.service';
@@ -66,14 +66,14 @@ export class MarcasController extends BaseController<MarcaEntity>{
         if (user.empresa?.id) {
             const existingMarca = await this.marcasService.findById(id);
             if (!existingMarca) {
-                throw new Error('Marca no encontrada');
+                throw new BadRequestException('Marca no encontrada');
             }
             if (existingMarca.empresa_id !== user.empresa.id) {
-                throw new Error('No tienes permisos para modificar esta marca');
+                throw new BadRequestException('No tienes permisos para modificar esta marca');
             }
             // Ensure company_id doesn't change for regular users
             if (marcaData.empresa_id && marcaData.empresa_id !== user.empresa.id) {
-                throw new Error('No puedes cambiar la empresa de la marca');
+                throw new BadRequestException('No puedes cambiar la empresa de la marca');
             }
         }
 
@@ -92,7 +92,7 @@ export class MarcasController extends BaseController<MarcaEntity>{
         if (user.empresa?.id) {
             const existingMarca = await this.marcasService.findById(id);
             if (existingMarca.empresa_id !== user.empresa.id) {
-                throw new Error('No tienes permisos para eliminar esta marca');
+                throw new BadRequestException('No tienes permisos para eliminar esta marca');
             }
         }
 
@@ -116,7 +116,7 @@ export class MarcasController extends BaseController<MarcaEntity>{
             return { message: `${ids.length} marcas eliminadas exitosamente` };
         } catch (error) {
             console.error('Error en bulk delete de marcas:', error);
-            throw new Error(`Error al eliminar marcas: ${error.message}`);
+            throw new BadRequestException(`Error al eliminar marcas: ${error.message}`);
         }
     }
 
@@ -140,7 +140,7 @@ export class MarcasController extends BaseController<MarcaEntity>{
             };
         } catch (error) {
             console.error('Error en bulk update de marcas:', error);
-            throw new Error(`Error al actualizar marcas: ${error.message}`);
+            throw new BadRequestException(`Error al actualizar marcas: ${error.message}`);
         }
     }
 

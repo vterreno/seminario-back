@@ -5,6 +5,7 @@ import { UserSeeder } from './seeders-entity/users.seeder';
 import { EmpresaSeeder } from './seeders-entity/empresa.seeder';
 import { VincularSuperadminPermisosSeeder } from './seeders-entity/vincular-superadmin-permisos.seeder';
 import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
+import { UnidadesMedidaSeeder } from './unidades-medida.seeder';
 
 @Injectable()
 export class SeederService {
@@ -15,6 +16,7 @@ export class SeederService {
         private readonly empresaSeeder: EmpresaSeeder,
         private readonly vincularSuperadminPermisosSeeder: VincularSuperadminPermisosSeeder,
         private readonly empresaUsuarioRolSeeder: EmpresaUsuarioRolSeeder,
+        private readonly unidadesMedidaSeeder: UnidadesMedidaSeeder,
     ) {}
 
     async seedAll() {
@@ -25,6 +27,7 @@ export class SeederService {
         await this.userSeeder.run();
         await this.vincularSuperadminPermisosSeeder.run();
         await this.empresaUsuarioRolSeeder.run();
+        await this.unidadesMedidaSeeder.seed();
         console.log('Seeding completo');
     }
 }

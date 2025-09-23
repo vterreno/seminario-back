@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, Length } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, Length, IsArray, IsNumber, ArrayMinSize } from 'class-validator';
 
 export class CreateUnidadMedidaDto {
   @IsString()
@@ -28,4 +28,11 @@ export class UpdateUnidadMedidaDto {
   @IsOptional()
   @IsBoolean()
   aceptaDecimales?: boolean;
+}
+
+export class BulkDeleteUnidadMedidaDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Debe seleccionar al menos una unidad de medida para eliminar' })
+  @IsNumber({}, { each: true, message: 'Todos los IDs deben ser números válidos' })
+  ids: number[];
 }

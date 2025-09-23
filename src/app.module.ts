@@ -14,6 +14,7 @@ import { SucursalesModule } from './resource/sucursales/sucursales.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
 import { MarcasModule } from './resource/marcas/marcas.module';
 import { MovimientosStockModule } from './resource/movimientos-stock/movimientos-stock.module';
+import { ProductosModule } from './resource/productos/productos.module';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { MovimientosStockModule } from './resource/movimientos-stock/movimientos
     EmpresaModule,
     SucursalesModule,
     MarcasModule,
-
+    ProductosModule,
     MovimientosStockModule,
     ],
   controllers: [AppController],

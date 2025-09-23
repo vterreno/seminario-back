@@ -1,7 +1,8 @@
 
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
+import { ProductoEntity } from "./producto.entity";
 @Entity('marcas')
 export class MarcaEntity extends BaseEntity{
     @Column()
@@ -16,4 +17,7 @@ export class MarcaEntity extends BaseEntity{
     empresa?: empresaEntity;
     @Column({ type: 'boolean', nullable: false, default: true })
     estado: boolean; 
+
+    @OneToMany(() => ProductoEntity, producto => producto.marca)
+    productos: ProductoEntity[];
 }

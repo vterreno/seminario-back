@@ -5,10 +5,9 @@ import { ExceptionFilter, Catch, ArgumentsHost, UnauthorizedException } from '@n
 import { Response } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 
-//El decorador @Catch() sin argumentos indica que este filtro capturará todas 
-// las excepciones que no hayan sido manejadas antes (puedes pasar tipos de error 
-// específicos dentro de @Catch para limitar).
-@Catch()
+// Solo captura errores JWT específicos y UnauthorizedException
+// Deja que NestJS maneje otras excepciones como BadRequestException
+@Catch(TokenExpiredError, JsonWebTokenError, UnauthorizedException)
 export class JwtExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -26,6 +25,7 @@ export class JwtExceptionFilter implements ExceptionFilter {
       return response.status(401).json({ message: exception.message || 'Unauthorized' });
     }
 
+    // Este caso no debería ocurrir ya que solo capturamos tipos específicos
     return response.status(500).json({ message: 'Internal server error' });
   }
 }

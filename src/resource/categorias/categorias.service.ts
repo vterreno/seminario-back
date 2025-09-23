@@ -222,6 +222,7 @@ export class CategoriasService extends BaseService<categoriasEntity> {
 
   // Check if categoria name exists (case insensitive)
   async findByNombre(nombre: string, empresaId?: number): Promise<categoriasEntity | null> {
+  
     const query = this.categoriasRepository.createQueryBuilder('categoria')
       .where('LOWER(categoria.nombre) = LOWER(:nombre)', { nombre });
 

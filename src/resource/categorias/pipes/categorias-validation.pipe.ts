@@ -42,6 +42,7 @@ export class CategoriaValidationPipe implements PipeTransform {
                 value.nombre, // El servicio ya compara en minúsculas
                 value.empresa_id
             );
+    
         }
 
         // Si existe, lanzar error

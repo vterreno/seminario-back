@@ -6,6 +6,7 @@ import { UserSeeder } from './users.seeder';
 import { EmpresaUsuarioRolSimpleSeeder } from './empresa-usuario-rol-simple.seeder';
 import { MarcaSimpleSeeder } from './marca-simple.seeder';
 import { ProductoSimpleSeeder } from './producto-simple.seeder';
+import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -17,6 +18,7 @@ export class MasterSeeder {
         private readonly empresaUsuarioRolSimpleSeeder: EmpresaUsuarioRolSimpleSeeder,
         private readonly marcaSimpleSeeder: MarcaSimpleSeeder,
         private readonly productoSimpleSeeder: ProductoSimpleSeeder,
+        private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
     ) {}
 
     async run() {
@@ -55,9 +57,14 @@ export class MasterSeeder {
             console.log('✅ Marcas completadas\n');
 
             // 7. Productos por empresa y marca
-            console.log('📦 7/7 - Creando productos por empresa y marca...');
+            console.log('📦 7/8 - Creando productos por empresa y marca...');
             await this.productoSimpleSeeder.run();
             console.log('✅ Productos completados\n');
+
+            // 8. Movimientos de stock iniciales
+            console.log('📊 8/8 - Creando movimientos de stock iniciales...');
+            await this.movimientosStockInicialSeeder.run();
+            console.log('✅ Movimientos de stock completados\n');
 
             console.log('🎉 SEED COMPLETO FINALIZADO EXITOSAMENTE');
             console.log('=========================================');

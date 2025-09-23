@@ -7,6 +7,8 @@ import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { In } from 'typeorm/find-options/operator/In';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
+import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 
 @Injectable()
 export class ProductosService extends BaseService<ProductoEntity>{
@@ -15,7 +17,9 @@ export class ProductosService extends BaseService<ProductoEntity>{
     
     constructor(
         @InjectRepository(ProductoEntity) 
-        protected productosRepository: Repository<ProductoEntity>
+        protected productosRepository: Repository<ProductoEntity>,
+        @InjectRepository(MovimientoStockEntity)
+        protected movimientoStockRepository: Repository<MovimientoStockEntity>
     ){
         super(productosRepository);
     }
@@ -56,8 +60,18 @@ export class ProductosService extends BaseService<ProductoEntity>{
                 stock: productoData.stock_apertura ?? 0, // Convertir stock_apertura en stock actual
                 stock_apertura: productoData.stock_apertura ?? 0 // Mantener el valor original de stock_apertura
             });
-
             const savedProducto = await this.productosRepository.save(producto);
+
+            const movimiento = this.movimientoStockRepository.create({
+                fecha: new Date(),
+                tipo_movimiento: TipoMovimientoStock.STOCK_APERTURA,
+                descripcion: 'Stock de apertura al crear producto',
+                cantidad: productoData.stock_apertura ?? 0,
+                stock_resultante: productoData.stock_apertura ?? 0,
+                producto_id: producto.id, // Temporal, se actualizará después de crear el producto
+                empresa_id: productoData.empresa_id
+            });
+            await this.movimientoStockRepository.save(movimiento);
             return await this.findById(savedProducto.id);
         } catch (error) {
             // Log internal error but don't expose it to client
@@ -159,6 +173,19 @@ export class ProductosService extends BaseService<ProductoEntity>{
     // Bulk soft delete
     async bulkSoftDeleteProductos(ids: number[]): Promise<void> {
         await this.productosRepository.update(ids, { estado: false });
+    }
+
+    async getStockProducto(id: number, empresaId?: number): Promise<number> {
+        const productos = await this.productosRepository.findOne({
+            where: { id: id, empresa_id: empresaId }
+        });
+        if (!productos) {
+            throw new BadRequestException(`No se encontró el producto. Verifica que el ID sea correcto.`);
+        }
+        if (productos.empresa_id !== empresaId) {
+            throw new BadRequestException(`El producto no pertenece a la empresa especificada.`);
+        }
+        return productos.stock;
     }
 
 }

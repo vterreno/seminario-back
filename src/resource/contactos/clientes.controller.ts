@@ -22,8 +22,18 @@ export class ClientesController extends BaseController<contactoEntity> {
 
   @Get('all')
   @Action('ver')
-  async getAllClientes() {
-    return await this.contactosService.find({ where: [{ rol: 'cliente' }, { rol: 'ambos' }] as any });
+  async getAllClientes(@Req() req: RequestWithUser) {
+    try {
+      const user = req.user;
+      const isSuperAdmin = user?.role?.nombre === 'super_admin';
+      const empresaId = user?.empresa?.id;
+      
+      const result = await this.contactosService.findByRoles(['cliente', 'ambos'], empresaId, isSuperAdmin);
+      return result;
+    } catch (error) {
+      console.error('Error al obtener clientes:', error);
+      throw error;
+    }
   }
 
   @Post()
@@ -37,13 +47,15 @@ export class ClientesController extends BaseController<contactoEntity> {
   @Put(':id')
   @Action('modificar')
   async updateCliente(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
-    return await this.contactosService.updateContacto(id, dto);
+    const { provincia, ciudad, ...rest } = dto as any;
+    return await this.contactosService.updateContacto(id, rest as Partial<contactoEntity>);
   }
 
   @Patch(':id')
   @Action('modificar')
   async updateClientePartial(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
-    return await this.contactosService.updateContacto(id, dto);
+    const { provincia, ciudad, ...rest } = dto as any;
+    return await this.contactosService.updateContacto(id, rest as Partial<contactoEntity>);
   }
 
   @Post('bulk/status')

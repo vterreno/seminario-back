@@ -13,6 +13,22 @@ export class ContactosService extends BaseService<contactoEntity> {
     super(contactosRepository);
   }
 
+  async findByRoles(roles: string[], empresaId?: number, isSuperAdmin?: boolean): Promise<contactoEntity[]> {
+    const query = this.contactosRepository
+      .createQueryBuilder('contacto')
+      .leftJoinAndSelect('contacto.empresa', 'empresa')
+      .where('contacto.rol IN (:...roles)', { roles })
+      .andWhere('contacto.deleted_at IS NULL')
+      .orderBy('contacto.id', 'DESC');
+
+    // Si no es superadmin, filtrar por empresa del usuario
+    if (!isSuperAdmin && empresaId) {
+      query.andWhere('contacto.empresa_id = :empresaId', { empresaId });
+    }
+
+    return query.getMany();
+  }
+
   async createContacto(data: Partial<contactoEntity>): Promise<contactoEntity> {
     // Validaciones: si hay tipo_identificacion, numero_identificacion es obligatorio y único por empresa
     if (data.tipo_identificacion && !data.numero_identificacion) {
@@ -36,7 +52,10 @@ export class ContactosService extends BaseService<contactoEntity> {
   }
 
   async updateContacto(id: number, data: Partial<contactoEntity>): Promise<contactoEntity> {
-    const existing = await this.contactosRepository.findOne({ where: { id } });
+    const existing = await this.contactosRepository.findOne({ 
+      where: { id },
+      relations: ['empresa'] 
+    });
     if (!existing) throw new NotFoundException('Contacto no encontrado');
 
     // No permitir modificar tipo y número de identificación
@@ -64,7 +83,13 @@ export class ContactosService extends BaseService<contactoEntity> {
     }
 
     const updated = { ...existing, ...data };
-    return this.contactosRepository.save(updated);
+    const result = await this.contactosRepository.save(updated);
+    
+    // Devolver el contacto actualizado con la relación empresa cargada
+    return await this.contactosRepository.findOne({
+      where: { id: result.id },
+      relations: ['empresa']
+    });
   }
 
   async updateContactosStatus(ids: number[], estado: boolean) {

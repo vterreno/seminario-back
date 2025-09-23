@@ -58,6 +58,9 @@ export class CreateContactoDto {
   @IsOptional()
   @IsIn(['cliente', 'proveedor', 'ambos'])
   rol?: ContactoRol;
+
+  @IsOptional()
+  empresa_id?: number;
 }
 
 

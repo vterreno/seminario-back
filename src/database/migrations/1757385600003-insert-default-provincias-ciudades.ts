@@ -7,7 +7,7 @@ export class InsertDefaultProvinciasCiudades1757385600003 implements MigrationIn
         // Insert default provincias
        await queryRunner.query(
         `INSERT INTO "provincias"("id", "nombre") VALUES
-                (1,'Ciudad Autónoma de Buenos Aires (CABA)'),
+                (1,'CABA'),
                 (2,'Buenos Aires'),
                 (3,'Catamarca'),
                 (4,'Córdoba'),

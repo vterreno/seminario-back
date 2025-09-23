@@ -2,13 +2,16 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { contactoEntity } from 'src/database/core/contacto.entity';
-import { Repository } from 'typeorm';
+import { empresaEntity } from 'src/database/core/empresa.entity';
+import { Repository, In } from 'typeorm';
 
 @Injectable()
 export class ContactosService extends BaseService<contactoEntity> {
   constructor(
     @InjectRepository(contactoEntity)
     protected contactosRepository: Repository<contactoEntity>,
+    @InjectRepository(empresaEntity)
+    protected empresaRepository: Repository<empresaEntity>
   ) {
     super(contactosRepository);
   }
@@ -30,81 +33,130 @@ export class ContactosService extends BaseService<contactoEntity> {
   }
 
   async createContacto(data: Partial<contactoEntity>): Promise<contactoEntity> {
-    // Validaciones: si hay tipo_identificacion, numero_identificacion es obligatorio y único por empresa
-    if (data.tipo_identificacion && !data.numero_identificacion) {
-      throw new BadRequestException('El número de identificación es obligatorio');
-    }
-
-    if (data.tipo_identificacion && data.numero_identificacion && data.empresa_id) {
-      const exists = await this.contactosRepository.findOne({
-        where: {
-          empresa_id: data.empresa_id,
-          tipo_identificacion: data.tipo_identificacion,
-          numero_identificacion: data.numero_identificacion,
-        },
-      });
-      if (exists) {
-        throw new BadRequestException('Ya existe un contacto con ese Tipo y Número de Identificación');
+    try {
+      // Validaciones: si hay tipo_identificacion, numero_identificacion es obligatorio y único por empresa
+      if (data.tipo_identificacion && !data.numero_identificacion) {
+        throw new BadRequestException('El número de identificación es obligatorio cuando se selecciona un tipo');
       }
-    }
 
-    return this.contactosRepository.save(data as contactoEntity);
+      if (data.tipo_identificacion && data.numero_identificacion && data.empresa_id) {
+        const exists = await this.contactosRepository.findOne({
+          where: {
+            empresa_id: data.empresa_id,
+            tipo_identificacion: data.tipo_identificacion,
+            numero_identificacion: data.numero_identificacion,
+          },
+        });
+        if (exists) {
+          throw new BadRequestException('Ya existe un contacto con ese Tipo y Número de Identificación en esta empresa');
+        }
+      }
+
+      return await this.contactosRepository.save(data as contactoEntity);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error creating contacto:', error);
+      throw new BadRequestException('Error al crear el contacto');
+    }
   }
 
   async updateContacto(id: number, data: Partial<contactoEntity>): Promise<contactoEntity> {
-    const existing = await this.contactosRepository.findOne({ 
-      where: { id },
-      relations: ['empresa'] 
-    });
-    if (!existing) throw new NotFoundException('Contacto no encontrado');
+    try {
+      const existing = await this.contactosRepository.findOne({ 
+        where: { id },
+        relations: ['empresa'] 
+      });
+      if (!existing) throw new NotFoundException('Contacto no encontrado');
 
-    // No permitir modificar tipo y número de identificación
-    if (
-      (data.tipo_identificacion && data.tipo_identificacion !== existing.tipo_identificacion) ||
-      (data.numero_identificacion && data.numero_identificacion !== existing.numero_identificacion)
-    ) {
-      throw new BadRequestException('No se puede modificar el Tipo o Número de Identificación');
-    }
-
-    // Consumidor Final: no permitir cambiar datos fiscales ni inactivarlo
-    if (existing.es_consumidor_final) {
-      if (
-        typeof data.estado === 'boolean' && data.estado === false
-      ) {
-        throw new BadRequestException('No se puede inactivar el contacto Consumidor Final');
+      // Validar unicidad si se está cambiando tipo o número de identificación
+      if (data.tipo_identificacion || data.numero_identificacion) {
+        const newTipo = data.tipo_identificacion || existing.tipo_identificacion;
+        const newNumero = data.numero_identificacion || existing.numero_identificacion;
+        
+        // Si hay tipo, el número es obligatorio
+        if (newTipo && !newNumero) {
+          throw new BadRequestException('El número de identificación es obligatorio cuando se selecciona un tipo');
+        }
+        
+        // Verificar unicidad solo si cambió alguno de los campos
+        if (newTipo && newNumero && existing.empresa_id && 
+            (newTipo !== existing.tipo_identificacion || newNumero !== existing.numero_identificacion)) {
+          const exists = await this.contactosRepository.findOne({
+            where: {
+              empresa_id: existing.empresa_id,
+              tipo_identificacion: newTipo,
+              numero_identificacion: newNumero,
+            },
+          });
+          if (exists && exists.id !== id) {
+            throw new BadRequestException('Ya existe un contacto con ese Tipo y Número de Identificación en esta empresa');
+          }
+        }
       }
-      if (
-        typeof data.condicion_iva !== 'undefined' ||
-        typeof data.tipo_identificacion !== 'undefined' ||
-        typeof data.numero_identificacion !== 'undefined'
-      ) {
-        throw new BadRequestException('No se pueden modificar los datos fiscales del Consumidor Final');
-      }
-    }
 
-    const updated = { ...existing, ...data };
-    const result = await this.contactosRepository.save(updated);
-    
-    // Devolver el contacto actualizado con la relación empresa cargada
-    return await this.contactosRepository.findOne({
-      where: { id: result.id },
-      relations: ['empresa']
-    });
+      // Consumidor Final: no permitir cambiar condición IVA ni inactivarlo
+      if (existing.es_consumidor_final) {
+        if (
+          typeof data.estado === 'boolean' && data.estado === false
+        ) {
+          throw new BadRequestException('No se puede inactivar el contacto Consumidor Final');
+        }
+        if (
+          typeof data.condicion_iva !== 'undefined'
+        ) {
+          throw new BadRequestException('No se puede modificar la condición IVA del Consumidor Final');
+        }
+      }
+
+      const newEmpresa = await this.empresaRepository.find({where: { id: data.empresa_id }})
+      data.empresa = newEmpresa[0] || existing.empresa
+      const updated = { ...existing, ...data };
+      const result = await this.contactosRepository.save(updated);
+      
+      // Devolver el contacto actualizado con la relación empresa cargada
+      return await this.contactosRepository.findOne({
+        where: { id: result.id },
+        relations: ['empresa']
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error updating contacto:', error);
+      throw new BadRequestException('Error al actualizar el contacto');
+    }
   }
 
   async updateContactosStatus(ids: number[], estado: boolean) {
     // Evitar inactivar consumidores finales
     if (estado === false) {
-      const consumidores = await this.contactosRepository.findBy({ id: (ids as any) });
+      const consumidores = await this.contactosRepository.findBy({ id: In(ids) });
       const bloqueados = consumidores.filter(c => c.es_consumidor_final).map(c => c.id);
       const permitidos = ids.filter(id => !bloqueados.includes(id));
-      if (permitidos.length) {
+      
+      if (permitidos.length > 0) {
         await this.contactosRepository.update(permitidos, { estado });
       }
-      return { message: bloqueados.length ? `Algunos contactos no se pudieron inactivar (Consumidor Final): ${bloqueados.join(',')}` : 'Estados actualizados' };
+      
+      if (bloqueados.length > 0) {
+        if (permitidos.length === 0) {
+          return { 
+            message: `No se pudo desactivar ningún contacto. ${bloqueados.length} consumidor${bloqueados.length !== 1 ? 'es' : ''} final${bloqueados.length !== 1 ? 'es' : ''} no se puede${bloqueados.length !== 1 ? 'n' : ''} desactivar.` 
+          };
+        } else {
+          return { 
+            message: `${permitidos.length} contacto${permitidos.length !== 1 ? 's' : ''} desactivado${permitidos.length !== 1 ? 's' : ''}. ${bloqueados.length} consumidor${bloqueados.length !== 1 ? 'es' : ''} final${bloqueados.length !== 1 ? 'es' : ''} no se pudo${bloqueados.length !== 1 ? 'ieron' : ''} desactivar.` 
+          };
+        }
+      } else {
+        return { message: 'Estados actualizados correctamente' };
+      }
     }
+    
     await this.contactosRepository.update(ids, { estado });
-    return { message: 'Estados actualizados' };
+    return { message: 'Estados actualizados correctamente' };
   }
 
   async delete(id: number | string): Promise<{ message: string }> {

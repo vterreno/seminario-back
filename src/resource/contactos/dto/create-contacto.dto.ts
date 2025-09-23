@@ -7,12 +7,12 @@ export class CreateContactoDto {
   nombre_razon_social: string;
 
   @IsOptional()
-  @IsIn(['CUIT', 'DNI', 'LE', 'LC', 'PASAPORTE', 'OTRO'])
+  @IsIn(['CUIT', 'DNI', 'CUIL', 'PASAPORTE', 'OTRO'])
   tipo_identificacion?: TipoIdentificacion;
 
   @ValidateIf(o => !!o.tipo_identificacion)
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'El número de identificación es obligatorio cuando se selecciona un tipo' })
   numero_identificacion?: string;
 
   @IsOptional()

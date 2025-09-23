@@ -6,10 +6,11 @@ import { ClientesController } from './clientes.controller';
 import { ProveedoresController } from './proveedores.controller';
 import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
+import { empresaEntity } from 'src/database/core/empresa.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([contactoEntity]),
+    TypeOrmModule.forFeature([contactoEntity, empresaEntity]),
     JwtModule,
     UsersModule,
   ],

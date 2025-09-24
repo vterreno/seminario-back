@@ -23,6 +23,7 @@ export class EmpresaUsuarioRolSeeder {
     async run() {
         // 1. Crear empresa de prueba
         let empresa = await this.empresaRepo.findOne({ where: { name: 'Empresa Prueba' } });
+        
         if (!empresa) {
             empresa = this.empresaRepo.create({ name: 'Empresa Prueba', estado: true });
             empresa = await this.empresaRepo.save(empresa);
@@ -92,8 +93,10 @@ export class EmpresaUsuarioRolSeeder {
                 where: [
                     { codigo: 'usuario_ver'},
                     { codigo: 'roles_ver' },
-                    { codigo: 'sucursales_ver' },
+                    { codigo: 'sucursal_ver' },
                     { codigo: 'producto_ver' },
+                    { codigo: 'marca_ver' },
+                    { codigo: 'categoria_ver' },
                     { codigo: 'ventas_ver' },
                     { codigo: 'compras_ver' }
                 ]
@@ -145,17 +148,25 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'usuario_modificar'},
                     { codigo: 'usuario_eliminar'},
                     { codigo: 'producto_ver' },
+                    { codigo: 'producto_agregar' },
+                    { codigo: 'producto_modificar' },
+                    { codigo: 'producto_eliminar' },
+                    { codigo: 'marca_ver' },
+                    { codigo: 'marca_agregar' },
+                    { codigo: 'marca_modificar' },
+                    { codigo: 'marca_eliminar' },
+                    { codigo: 'categoria_ver' },
+                    { codigo: 'categoria_agregar' },
+                    { codigo: 'categoria_modificar' },
+                    { codigo: 'categoria_eliminar' },
                     { codigo: 'roles_ver' },
                     { codigo: 'roles_agregar' },
                     { codigo: 'roles_modificar' },
                     { codigo: 'roles_eliminar' },
-                    { codigo: 'sucursales_ver' },
-                    { codigo: 'sucursales_agregar' },
-                    { codigo: 'sucursales_modificar' },
-                    { codigo: 'sucursales_eliminar' },
-                    { codigo: 'producto_agregar' },
-                    { codigo: 'producto_modificar' },
-                    { codigo: 'producto_eliminar' },
+                    { codigo: 'sucursal_ver' },
+                    { codigo: 'sucursal_agregar' },
+                    { codigo: 'sucursal_modificar' },
+                    { codigo: 'sucursal_eliminar' },
                     { codigo: 'ventas_ver' },
                     { codigo: 'compras_ver' },
                     { codigo: 'configuracion_empresa'},

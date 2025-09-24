@@ -3,6 +3,7 @@ import { BaseEntity } from "./base.entity";
 import { sucursalEntity } from "./sucursal.entity";
 import { UserEntity } from "./user.entity";
 import { RoleEntity } from "./roles.entity";
+import { MarcaEntity } from "./marcas.entity";
 
 @Entity("empresa")
 export class empresaEntity extends BaseEntity{
@@ -16,4 +17,7 @@ export class empresaEntity extends BaseEntity{
     usuarios: UserEntity[]
     @OneToMany(() => RoleEntity, role => role.empresa)
     roles: RoleEntity[]
+
+    @OneToMany(() => MarcaEntity, marca => marca.empresa)
+    marcas: MarcaEntity[];
 }

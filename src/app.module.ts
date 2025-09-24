@@ -13,6 +13,7 @@ import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
 import { UnidadesMedidaModule } from './resource/unidades-medida/unidades-medida.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
+import { MarcasModule } from './resource/marcas/marcas.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { PermissionsGuard } from './middlewares/permission.middleware';
     EmpresaModule,
     SucursalesModule,
     UnidadesMedidaModule,
+    MarcasModule
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

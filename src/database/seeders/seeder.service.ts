@@ -12,6 +12,7 @@ export class SeederService {
     async seedAll() {
         console.log('🚀 Iniciando seeding completo con datos simplificados...');
         await this.masterSeeder.run();
+        await this.unidadesMedidaSeeder.run();
         console.log('✅ Seeding completo finalizado');
     }
 }

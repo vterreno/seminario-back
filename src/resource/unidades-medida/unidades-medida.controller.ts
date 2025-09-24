@@ -7,32 +7,28 @@ import {
   Param,
   Delete,
   ParseIntPipe,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UnidadesMedidaService } from './unidades-medida.service';
 import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto, BulkDeleteUnidadMedidaDto } from './dto/unidad-medida.dto';
-import { Request } from 'express';
+import { EmpresaId } from '../../common/decorators/empresa-id.decorator';
 
 @Controller('unidades-medida')
 export class UnidadesMedidaController {
   constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
 
   @Get()
-  findAll(@Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  findAll(@EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.findAll(empresaId);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  findOne(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.findOne(id, empresaId);
   }
 
   @Post()
-  create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.create(createUnidadMedidaDto, empresaId);
   }
 
@@ -40,27 +36,23 @@ export class UnidadesMedidaController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUnidadMedidaDto: UpdateUnidadMedidaDto,
-    @Req() request: Request,
+    @EmpresaId() empresaId: number,
   ) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
     return this.unidadesMedidaService.update(id, updateUnidadMedidaDto, empresaId);
   }
 
   @Delete('bulk-delete')
-  bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.bulkDelete(bulkDeleteDto.ids, empresaId);
   }
 
   @Get(':id/can-delete')
-  canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  canDelete(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.canDelete(id, empresaId);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const empresaId = request['user']?.empresaId || 1; // TODO: Obtener de JWT
+  remove(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
     return this.unidadesMedidaService.remove(id, empresaId);
   }
 }

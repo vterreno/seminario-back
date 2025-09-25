@@ -12,6 +12,7 @@ import { UserI } from './interface/user.interface';
 import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Public } from 'src/middlewares/decorators/public.decorator';
 import { Entity } from 'typeorm';
+import { UsersValidationPipe } from './pipes/users-validation.pipe';
 
 @Controller('users')
 export class UsersController extends BaseController<UserEntity> {
@@ -32,9 +33,11 @@ export class UsersController extends BaseController<UserEntity> {
     return this.service.login(body);
   }
 
+  @Public()
   @Post('register')
-  register(@Body() body: RegisterDTO) {
+  register(@Body(UsersValidationPipe) body: RegisterDTO) {
     return this.service.register(body);
+    
   }
   
   @UseGuards(AuthGuard)

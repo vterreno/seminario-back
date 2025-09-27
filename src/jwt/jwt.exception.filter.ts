@@ -1,7 +1,7 @@
 // Filtro que captura errores JWT y devuelve respuestas HTTP claras para token expirado, 
 // inválido o sin autorización.
 
-import { ExceptionFilter, Catch, ArgumentsHost, UnauthorizedException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, UnauthorizedException, HttpException } from '@nestjs/common';
 import { Response } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 
@@ -24,6 +24,15 @@ export class JwtExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof UnauthorizedException) {
       return response.status(401).json({ message: exception.message || 'Unauthorized' });
+    }
+
+    // Si es una HttpException (que incluye BadRequestException), preservar su status y mensaje
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const message = exception.getResponse();
+      return response.status(status).json(
+        typeof message === 'string' ? { message } : message
+      );
     }
 
     return response.status(500).json({ message: 'Internal server error' });

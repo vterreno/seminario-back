@@ -27,29 +27,19 @@ export class UsersValidationPipe implements PipeTransform {
         const isUpdate = this.request.method === 'PUT';
         
         let existingUser;
-
         if (isUpdate) {
             // Para actualización: excluir el usuario actual
-            const currentId = parseInt(this.request.params?.id as string);
-
             existingUser = await this.usersService.findByEmail(value.email);
-
-            if (existingUser && existingUser.id !== currentId) {
-                throw new BadRequestException(
-                    `El email "${value.email}" ya está en uso por otro usuario.`
-                );
-            }
         } else {
             // Para creación: buscar cualquier usuario con ese email
             existingUser = await this.usersService.findByEmail(value.email);
-
-            if (existingUser) {
-                throw new BadRequestException(
-                    `El email "${value.email}" ya está en uso.`
-                );
-            }
         }
-
+        // Si existe, lanzar error
+        if (existingUser) {
+            throw new BadRequestException(
+                `Ya existe un usuario con el email "${existingUser.email}". Por favor, elige un email diferente.`
+            );
+        }
         // Retornar el valor original
         return value;
     }

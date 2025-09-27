@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDTO } from 'src/resource/users/dto/login.dto';
 import { RegisterDTO } from 'src/resource/users/dto/register.dto';
 import { UserI } from 'src/resource/users/interface/user.interface';
@@ -6,12 +6,13 @@ import { UserEntity } from '../../database/core/user.entity';
 import { hashSync, compareSync } from 'bcrypt';
 import { JwtService } from 'src/jwt/jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { find } from 'rxjs/internal/operators/find';
+import { PermissionEntity } from 'src/database/core/permission.entity';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -26,6 +27,9 @@ export class UsersService extends BaseService<UserEntity> {
 
     @InjectRepository(empresaEntity)
     private readonly empresaRepository: Repository<empresaEntity>,
+
+    @InjectRepository(PermissionEntity)
+    private readonly permissionRepository: Repository<PermissionEntity>,
   ) {
     super(service);
     // Set default relations for find operations
@@ -75,13 +79,51 @@ export class UsersService extends BaseService<UserEntity> {
 
   async register(body: RegisterDTO) {
     try {
+      // Verificar si el usuario ya existe
+      const existingUser = await this.findByEmail(body.email);
+      if (existingUser) {
+        throw new BadRequestException('El usuario ya está registrado con este email');
+      }
+
+      const rol= new RoleEntity();
+      rol.nombre = "Administrador"
+      
+      // Primero buscar todos los permisos para debug
+      const todosLosPermisos = await this.permissionRepository.find();
+      // Filtrar permisos excluyendo los de empresa
+      const permisosExcluidos = [
+        'empresa_ver',
+        'empresa_agregar',
+        'empresa_modificar',
+        'empresa_eliminar',
+      ];
+      
+      const permisos = todosLosPermisos.filter(permiso => 
+        !permisosExcluidos.includes(permiso.codigo)
+      );
+      rol.permissions = permisos;
+      const empresa = new empresaEntity();
+      empresa.name = body.empresa;
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
+      user.empresa = empresa;
+      user.role = rol;
+      user.status = true;
+      await this.roleRepository.save(rol);
+      await this.empresaRepository.save(empresa);
+      await this.service.save(user);
 
-      await this.repository.save(user);
-      return { status: 'created' };
+      return { 
+        accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
+        refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
+      };
     } catch (error) {
+      // Si es una BadRequestException, la relanzamos tal como está
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Para cualquier otro error, lanzar HttpException con status 500
       throw new HttpException('Error de creación: ' + error.message, 500);
     }
   }
@@ -196,15 +238,13 @@ export class UsersService extends BaseService<UserEntity> {
     if (!compareResult) {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
-    const permissions = this.getUserPermissions(user.id);
     return {
       accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
       refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
-      permissions: await permissions
     };
   }
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.repository.findOne({
+    return await this.service.findOne({
       where: { email },
       relations: {
         role: {

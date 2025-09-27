@@ -35,9 +35,8 @@ export class UsersController extends BaseController<UserEntity> {
 
   @Public()
   @Post('register')
-  register(@Body(UsersValidationPipe) body: RegisterDTO) {
-    return this.service.register(body);
-    
+  async register(@Body() body: RegisterDTO) {
+    return await this.service.register(body);
   }
   
   @UseGuards(AuthGuard)

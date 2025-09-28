@@ -182,9 +182,6 @@ export class ProductosService extends BaseService<ProductoEntity>{
         if (!productos) {
             throw new BadRequestException(`No se encontró el producto. Verifica que el ID sea correcto.`);
         }
-        if (productos.empresa_id !== empresaId) {
-            throw new BadRequestException(`El producto no pertenece a la empresa especificada.`);
-        }
         return productos.stock;
     }
 

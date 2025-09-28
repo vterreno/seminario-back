@@ -2,7 +2,6 @@ import { Controller, UseGuards, Get, Post, Put, Delete, Param, Body, Req } from 
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { RolesService } from './roles.service';
-import { Entity } from 'typeorm';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
 import { PermissionsGuard } from 'src/middlewares/permission.middleware';
 import { RequestWithUser } from 'src/resource/users/interface/request-user';
@@ -10,20 +9,16 @@ import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Entity as EntityDecorator } from 'src/middlewares/decorators/entity.decorator';
 
 @UseGuards(AuthGuard, PermissionsGuard)
-@Entity('roles')
 @EntityDecorator('roles')
 @Controller('roles')
 export class RolesController extends BaseController<RoleEntity>{
     constructor(protected readonly roleService:RolesService){
         super(roleService);
     }
-
-
     @Get()
     @Action('ver')
     async getAllRoles(@Req() req: RequestWithUser) {
         const user = req.user;
-        
         // If user has a company, filter roles by that company
         if (user.empresa?.id) {
             return await this.roleService.getRolesByEmpresa(user.empresa.id);
@@ -81,6 +76,11 @@ export class RolesController extends BaseController<RoleEntity>{
     async deleteRole(@Param('id') id: number, @Req() req: RequestWithUser) {
         const user = req.user;
         
+        // Verificar que el usuario no esté intentando eliminar su propio rol
+        if (user.role?.id === id) {
+            throw new Error('No puedes eliminar tu propio rol');
+        }
+        
         // Verify the role belongs to the user's company (if user has a company)
         if (user.empresa?.id) {
             const existingRole = await this.roleService.findById(id);
@@ -99,18 +99,17 @@ export class RolesController extends BaseController<RoleEntity>{
         const user = req.user;
         const { ids } = body;
 
-        // Verify all roles belong to the user's company (if user has a company)
-        if (user.empresa?.id) {
-            for (const id of ids) {
-                const existingRole = await this.roleService.findById(id);
-                if (existingRole.empresa_id !== user.empresa.id) {
-                    throw new Error(`No tienes permisos para eliminar el rol con ID ${id}`);
-                }
-            }
+        try {
+            await this.roleService.bulkDeleteRoles(
+                ids, 
+                user.empresa?.id,
+                user.role?.id // Pass current user's role ID to prevent self-deletion
+            );
+            return { message: `${ids.length} roles eliminados exitosamente` };
+        } catch (error) {
+            console.error('Error en bulk delete de roles:', error);
+            throw new Error(`Error al eliminar roles: ${error.message}`);
         }
-
-        await this.roleService.bulkDeleteRoles(ids);
-        return { message: `${ids.length} roles eliminados exitosamente` };
     }
 
     @Put('bulk/status')
@@ -119,18 +118,22 @@ export class RolesController extends BaseController<RoleEntity>{
         const user = req.user;
         const { ids, estado } = body;
 
-        // Verify all roles belong to the user's company (if user has a company)
-        if (user.empresa?.id) {
-            for (const id of ids) {
-                const existingRole = await this.roleService.findById(id);
-                if (existingRole.empresa_id !== user.empresa.id) {
-                    throw new Error(`No tienes permisos para modificar el rol con ID ${id}`);
-                }
-            }
+        try {
+            const updatedRoles = await this.roleService.bulkUpdateRoleStatus(
+                ids, 
+                estado, 
+                user.empresa?.id, // Pass company ID for validation
+                user.role?.id // Pass current user's role ID to prevent self-modification
+            );
+            
+            const action = estado ? 'activados' : 'desactivados';
+            return { 
+                message: `${ids.length} roles ${action} exitosamente`,
+                updatedRoles: updatedRoles
+            };
+        } catch (error) {
+            console.error('Error en bulk update de roles:', error);
+            throw new Error(`Error al actualizar roles: ${error.message}`);
         }
-
-        await this.roleService.bulkUpdateRoleStatus(ids, estado);
-        const action = estado ? 'activados' : 'desactivados';
-        return { message: `${ids.length} roles ${action} exitosamente` };
     }
 }

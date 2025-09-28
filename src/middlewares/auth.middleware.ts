@@ -37,6 +37,14 @@ export class AuthGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
+    // Verificar si el usuario está activo
+    if (!user.status) {
+      throw new UnauthorizedException('Usuario inactivo');
+    }
+    // Verificar si el rol existe y está activo
+    if (user.role && !user.role.estado) {
+      throw new UnauthorizedException('El rol del usuario está inactivo');
+    }
     request.user = user;
     return true;
   }

@@ -10,20 +10,26 @@ import { PermisosSeeder } from './seeders-entity/permisos.seeder';
 import { UserSeeder } from './seeders-entity/users.seeder';
 import { EmpresaSeeder } from './seeders-entity/empresa.seeder';
 import { empresaEntity } from '../core/empresa.entity';
-import { VincularSuperadminPermisosSeeder } from './seeders-entity/vincular-superadmin-permisos.seeder';
-import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
+import { MarcaEntity } from '../core/marcas.entity';
+import { MasterSeeder } from './seeders-entity/master.seeder';
+import { EmpresaUsuarioRolSimpleSeeder } from './seeders-entity/empresa-usuario-rol-simple.seeder';
+import { MarcaSimpleSeeder } from './seeders-entity/marca-simple.seeder';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity]),
+        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity]),
     ],
     providers: [
-        RoleSeeder,
+        // Seeders principales
         PermisosSeeder,
-        UserSeeder,
         EmpresaSeeder,
-        VincularSuperadminPermisosSeeder,
-        EmpresaUsuarioRolSeeder,
+        RoleSeeder,
+        UserSeeder,
+        // Seeders simplificados
+        EmpresaUsuarioRolSimpleSeeder,
+        MarcaSimpleSeeder,
+        // Seeder maestro
+        MasterSeeder,
         SeederService,
     ],
     exports: [SeederService],

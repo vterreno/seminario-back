@@ -14,6 +14,7 @@ import { SucursalesModule } from './resource/sucursales/sucursales.module';
 import { ContactosModule } from './resource/contactos/contactos.module';
 import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
+import { MarcasModule } from './resource/marcas/marcas.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PermissionsGuard } from './middlewares/permission.middleware';
     SucursalesModule,
     ContactosModule,
     UbicacionesModule,
+    MarcasModule
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

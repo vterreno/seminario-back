@@ -35,8 +35,6 @@ export class UsersValidationPipe implements PipeTransform {
             // Intentar obtener el id del usuario actual desde el request
             if (this.request.params && this.request.params.id) {
                 currentUserId = parseInt(this.request.params.id, 10);
-            } else if (this.request.params && this.request.params.id) {
-                currentUserId = this.request.params.id;
             }
 
             if (!isUpdate || (existingUser.id != currentUserId)) {

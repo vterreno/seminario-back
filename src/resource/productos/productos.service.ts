@@ -68,7 +68,7 @@ export class ProductosService extends BaseService<ProductoEntity>{
                 descripcion: 'Stock de apertura al crear producto',
                 cantidad: productoData.stock_apertura ?? 0,
                 stock_resultante: productoData.stock_apertura ?? 0,
-                producto_id: producto.id, // Temporal, se actualizará después de crear el producto
+                producto_id: producto.id,
                 empresa_id: productoData.empresa_id
             });
             await this.movimientoStockRepository.save(movimiento);

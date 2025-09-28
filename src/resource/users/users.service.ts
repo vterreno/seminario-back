@@ -12,11 +12,14 @@ import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { PermissionEntity } from 'src/database/core/permission.entity';
+import { MailServiceService } from '../mail-service/mail-service.service';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
     constructor(
     private jwtService: JwtService,
+    private mailService: MailServiceService,
+
 
     @InjectRepository(UserEntity)
     protected readonly userRepository: Repository<UserEntity>,
@@ -103,10 +106,17 @@ export class UsersService extends BaseService<UserEntity> {
       await this.roleRepository.save(rol);
       await this.empresaRepository.save(empresa);
       await this.userRepository.save(user);
+      const userName = `${user.nombre} ${user.apellido}`;
 
+      try {
+        this.mailService.sendWelcomeMail(user.email, userName)
+          .catch(err => console.error('Error enviando correo de bienvenida:', err));
+      } catch (err) {
+        console.error('Error inesperado al lanzar el envío de correo:', err);
+      }
       return { 
         accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
-        refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
+        refreshToken: this.jwtService.generateToken({ email: user.email }, 'refresh'),
       };
     } catch (error) {
       // Si es una BadRequestException, la relanzamos tal como está

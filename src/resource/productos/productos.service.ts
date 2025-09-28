@@ -68,7 +68,7 @@ export class ProductosService extends BaseService<ProductoEntity>{
                 descripcion: 'Stock de apertura al crear producto',
                 cantidad: productoData.stock_apertura ?? 0,
                 stock_resultante: productoData.stock_apertura ?? 0,
-                producto_id: producto.id, // Temporal, se actualizará después de crear el producto
+                producto_id: producto.id,
                 empresa_id: productoData.empresa_id
             });
             await this.movimientoStockRepository.save(movimiento);
@@ -181,9 +181,6 @@ export class ProductosService extends BaseService<ProductoEntity>{
         });
         if (!productos) {
             throw new BadRequestException(`No se encontró el producto. Verifica que el ID sea correcto.`);
-        }
-        if (productos.empresa_id !== empresaId) {
-            throw new BadRequestException(`El producto no pertenece a la empresa especificada.`);
         }
         return productos.stock;
     }

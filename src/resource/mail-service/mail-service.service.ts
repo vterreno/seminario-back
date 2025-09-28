@@ -97,7 +97,7 @@ async sendMail(to: string) {
   }
 
   async sendWelcomeMail(to: string, userName: string) {
-    const templatePath = path.join(__dirname, 'welcome-template.html');
+    const templatePath = path.join(process.cwd(), 'src', 'resource', 'mail-service', 'welcome-template.html');
 
     try {
       let htmlContent = fs.readFileSync(templatePath, 'utf8');

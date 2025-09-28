@@ -88,19 +88,16 @@ export class UsersService extends BaseService<UserEntity> {
       const rol= new RoleEntity();
       rol.nombre = "Administrador";
       
-      // Primero buscar todos los permisos para debug
-      const todosLosPermisos = await this.permissionRepository.find();
-      // Filtrar permisos excluyendo los de empresa
+      // Filtrar permisos excluyendo los de empresa directamente en la consulta
       const permisosExcluidos = [
         'empresa_ver',
         'empresa_agregar',
         'empresa_modificar',
         'empresa_eliminar',
       ];
-      
-      const permisos = todosLosPermisos.filter(permiso => 
-        !permisosExcluidos.includes(permiso.codigo)
-      );
+      const permisos = await this.permissionRepository.find({
+        where: { codigo: Not(In(permisosExcluidos)) }
+      });
       rol.permissions = permisos;
       const empresa = new empresaEntity();
       empresa.name = body.empresa;

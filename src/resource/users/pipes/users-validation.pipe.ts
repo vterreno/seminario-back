@@ -26,19 +26,24 @@ export class UsersValidationPipe implements PipeTransform {
         // Verificar si es actualización (PUT) o creación (POST)
         const isUpdate = this.request.method === 'PUT';
         
-        let existingUser;
-        if (isUpdate) {
-            // Para actualización: excluir el usuario actual
-            existingUser = await this.usersService.findByEmail(value.email);
-        } else {
-            // Para creación: buscar cualquier usuario con ese email
-            existingUser = await this.usersService.findByEmail(value.email);
-        }
-        // Si existe, lanzar error
+        // Buscar usuario existente con el mismo email
+        const existingUser = await this.usersService.findByEmail(value.email);
+
+        // Si es actualización, excluir el usuario actual del chequeo
         if (existingUser) {
-            throw new BadRequestException(
-                `Ya existe un usuario con el email "${existingUser.email}". Por favor, elige un email diferente.`
-            );
+            let currentUserId: string | number | undefined;
+            // Intentar obtener el id del usuario actual desde el request
+            if (this.request.user && this.request.user.id) {
+                currentUserId = this.request.user.id;
+            } else if (this.request.params && this.request.params.id) {
+                currentUserId = this.request.params.id;
+            }
+
+            if (!isUpdate || (existingUser.id != currentUserId)) {
+                throw new BadRequestException(
+                    `Ya existe un usuario con el email "${existingUser.email}". Por favor, elige un email diferente.`
+                );
+            }
         }
         // Retornar el valor original
         return value;

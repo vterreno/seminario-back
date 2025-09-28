@@ -86,7 +86,7 @@ export class UsersService extends BaseService<UserEntity> {
       }
 
       const rol= new RoleEntity();
-      rol.nombre = "Administrador"
+      rol.nombre = "Administrador";
       
       // Primero buscar todos los permisos para debug
       const todosLosPermisos = await this.permissionRepository.find();

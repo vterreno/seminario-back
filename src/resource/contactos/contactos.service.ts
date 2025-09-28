@@ -116,8 +116,14 @@ export class ContactosService extends BaseService<contactoEntity> {
         }
       }
 
-      const newEmpresa = await this.empresaRepository.find({where: { id: data.empresa_id }})
-      data.empresa = newEmpresa[0] || existing.empresa
+      let newEmpresaEntity = existing.empresa;
+      if (data.empresa_id) {
+        newEmpresaEntity = await this.empresaRepository.findOne({ where: { id: data.empresa_id } });
+        if (!newEmpresaEntity) {
+          throw new NotFoundException('Empresa no encontrada');
+        }
+      }
+      data.empresa = newEmpresaEntity;
       const updated = { ...existing, ...data };
       const result = await this.contactosRepository.save(updated);
       

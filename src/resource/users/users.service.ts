@@ -6,11 +6,12 @@ import { UserEntity } from '../../database/core/user.entity';
 import { hashSync, compareSync } from 'bcrypt';
 import { JwtService } from 'src/jwt/jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
+import { PermissionEntity } from 'src/database/core/permission.entity';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
@@ -18,15 +19,18 @@ export class UsersService extends BaseService<UserEntity> {
     private jwtService: JwtService,
 
     @InjectRepository(UserEntity)
-    protected readonly service: Repository<UserEntity>,
+    protected readonly userRepository: Repository<UserEntity>,
 
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
 
     @InjectRepository(empresaEntity)
     private readonly empresaRepository: Repository<empresaEntity>,
+
+    @InjectRepository(PermissionEntity)
+    private readonly permissionRepository: Repository<PermissionEntity>,
   ) {
-    super(service);
+    super(userRepository);
     // Set default relations for find operations
     this.findManyOptions = {
       relations: ['role', 'empresa']
@@ -74,13 +78,42 @@ export class UsersService extends BaseService<UserEntity> {
 
   async register(body: RegisterDTO) {
     try {
+      const rol= new RoleEntity();
+      rol.nombre = "Administrador";
+      
+      // Filtrar permisos excluyendo los de empresa directamente en la consulta
+      const permisosExcluidos = [
+        'empresa_ver',
+        'empresa_agregar',
+        'empresa_modificar',
+        'empresa_eliminar',
+      ];
+      const permisos = await this.permissionRepository.find({
+        where: { codigo: Not(In(permisosExcluidos)) }
+      });
+      rol.permissions = permisos;
+      const empresa = new empresaEntity();
+      empresa.name = body.empresa;
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
+      user.empresa = empresa;
+      user.role = rol;
+      user.status = true;
+      await this.roleRepository.save(rol);
+      await this.empresaRepository.save(empresa);
+      await this.userRepository.save(user);
 
-      await this.repository.save(user);
-      return { status: 'created' };
+      return { 
+        accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
+        refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
+      };
     } catch (error) {
+      // Si es una BadRequestException, la relanzamos tal como está
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Para cualquier otro error, lanzar HttpException con status 500
       throw new HttpException('Error de creación: ' + error.message, 500);
     }
   }
@@ -201,7 +234,7 @@ export class UsersService extends BaseService<UserEntity> {
     };
   }
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.repository.findOne({
+    return await this.userRepository.findOne({
       where: { email },
       relations: {
         role: {

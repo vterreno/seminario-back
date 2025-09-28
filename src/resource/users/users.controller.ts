@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards, UsePipes} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { LoginDTO } from './dto/login.dto';
 import { RegisterDTO } from './dto/register.dto';
@@ -11,7 +11,7 @@ import { BaseController } from 'src/base-service/base-controller.controller';
 import { UserI } from './interface/user.interface';
 import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Public } from 'src/middlewares/decorators/public.decorator';
-import { Entity } from 'typeorm';
+import { UsersValidationPipe } from './pipes/users-validation.pipe';
 
 @Controller('users')
 export class UsersController extends BaseController<UserEntity> {
@@ -32,9 +32,11 @@ export class UsersController extends BaseController<UserEntity> {
     return this.service.login(body);
   }
 
+  @Public()
   @Post('register')
-  register(@Body() body: RegisterDTO) {
-    return this.service.register(body);
+  @UsePipes(UsersValidationPipe)
+  async register(@Body() body: RegisterDTO ) {
+    return await this.service.register(body);
   }
   
   @UseGuards(AuthGuard)

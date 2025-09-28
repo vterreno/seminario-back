@@ -13,6 +13,7 @@ import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
 import { MarcasModule } from './resource/marcas/marcas.module';
+import { ProductosModule } from './resource/productos/productos.module';
 
 @Module({
   imports: [
@@ -40,7 +41,8 @@ import { MarcasModule } from './resource/marcas/marcas.module';
     MailServiceModule,
     EmpresaModule,
     SucursalesModule,
-    MarcasModule
+    MarcasModule,
+    ProductosModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

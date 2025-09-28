@@ -5,6 +5,7 @@ import { RoleSeeder } from './role.seeder';
 import { UserSeeder } from './users.seeder';
 import { EmpresaUsuarioRolSimpleSeeder } from './empresa-usuario-rol-simple.seeder';
 import { MarcaSimpleSeeder } from './marca-simple.seeder';
+import { ProductoSimpleSeeder } from './producto-simple.seeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -15,6 +16,7 @@ export class MasterSeeder {
         private readonly userSeeder: UserSeeder,
         private readonly empresaUsuarioRolSimpleSeeder: EmpresaUsuarioRolSimpleSeeder,
         private readonly marcaSimpleSeeder: MarcaSimpleSeeder,
+        private readonly productoSimpleSeeder: ProductoSimpleSeeder,
     ) {}
 
     async run() {
@@ -48,9 +50,14 @@ export class MasterSeeder {
             console.log('✅ Usuarios y roles por empresa completados\n');
 
             // 6. Marcas por empresa
-            console.log('🏷️ 6/6 - Creando marcas por empresa...');
+            console.log('🏷️ 6/7 - Creando marcas por empresa...');
             await this.marcaSimpleSeeder.run();
             console.log('✅ Marcas completadas\n');
+
+            // 7. Productos por empresa y marca
+            console.log('📦 7/7 - Creando productos por empresa y marca...');
+            await this.productoSimpleSeeder.run();
+            console.log('✅ Productos completados\n');
 
             console.log('🎉 SEED COMPLETO FINALIZADO EXITOSAMENTE');
             console.log('=========================================');
@@ -64,9 +71,11 @@ export class MasterSeeder {
             console.log('│ admin@foodmarket.com                │ food123     │ Admin FoodMarket    │');
             console.log('└─────────────────────────────────────┴─────────────┴─────────────────────┘');
             
-            console.log('\n🏢 EMPRESAS Y SUS MARCAS:');
+            console.log('\n🏢 EMPRESAS, MARCAS Y PRODUCTOS:');
             console.log('• TechCorp S.A.: Apple, Samsung, Sony, LG, HP');
+            console.log('  - Productos: iPhone 15 Pro, MacBook Air M2, Galaxy S24, PlayStation 5, etc.');
             console.log('• FoodMarket Ltda.: Coca Cola, Nestlé, Unilever, Danone, Kelloggs');
+            console.log('  - Productos: Coca Cola 2.5L, Nestlé Nescafé, Dove Jabón, Yogurt Natural, etc.');
             
         } catch (error) {
             console.error('❌ Error durante el seed:', error);

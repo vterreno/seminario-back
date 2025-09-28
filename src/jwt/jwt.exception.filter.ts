@@ -5,10 +5,8 @@ import { ExceptionFilter, Catch, ArgumentsHost, UnauthorizedException } from '@n
 import { Response } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 
-//El decorador @Catch() sin argumentos indica que este filtro capturará todas 
-// las excepciones que no hayan sido manejadas antes (puedes pasar tipos de error 
-// específicos dentro de @Catch para limitar).
-@Catch()
+//El decorador @Catch() con tipos específicos limita qué excepciones maneja este filtro
+@Catch(TokenExpiredError, JsonWebTokenError, UnauthorizedException)
 export class JwtExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -26,6 +24,7 @@ export class JwtExceptionFilter implements ExceptionFilter {
       return response.status(401).json({ message: exception.message || 'Unauthorized' });
     }
 
+    // This shouldn't happen since we're only catching specific types
     return response.status(500).json({ message: 'Internal server error' });
   }
 }

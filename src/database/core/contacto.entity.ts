@@ -5,7 +5,7 @@ import { provinciaEntity } from "./provincia.entity";
 import { ciudadEntity } from "./ciudad.entity";
 
 export type ContactoRol = 'cliente' | 'proveedor' | 'ambos';
-export type TipoIdentificacion = 'CUIT' | 'DNI' | 'PASAPORTE' | 'OTRO';
+export type TipoIdentificacion = 'CUIT' | 'DNI' | 'CUIL' | 'PASAPORTE' | 'OTRO';
 export type CondicionIVA = 'Responsable Inscripto' | 'Monotributista' | 'Exento' | 'Consumidor Final';
 
 @Entity('contactos')

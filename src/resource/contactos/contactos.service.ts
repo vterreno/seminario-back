@@ -48,7 +48,7 @@ export class ContactosService extends BaseService<contactoEntity> {
           },
         });
         if (exists) {
-          throw new BadRequestException('Ya existe un contacto con ese Tipo y Número de Identificación en esta empresa');
+          throw new BadRequestException(`Ya existe el contacto "${exists.nombre_razon_social}" con ${data.tipo_identificacion} ${data.numero_identificacion} en esta empresa`);
         }
       }
 
@@ -57,6 +57,12 @@ export class ContactosService extends BaseService<contactoEntity> {
       if (error instanceof BadRequestException) {
         throw error;
       }
+      
+      // Handle database constraint violation
+      if (error.code === '23505' && error.constraint === 'UQ_contactos_identificacion') {
+        throw new BadRequestException(`Ya existe un contacto con ${data.tipo_identificacion} ${data.numero_identificacion} en esta empresa`);
+      }
+      
       console.error('Error creating contacto:', error);
       throw new BadRequestException('Error al crear el contacto');
     }
@@ -91,7 +97,7 @@ export class ContactosService extends BaseService<contactoEntity> {
             },
           });
           if (exists && exists.id !== id) {
-            throw new BadRequestException('Ya existe un contacto con ese Tipo y Número de Identificación en esta empresa');
+            throw new BadRequestException(`Ya existe el contacto "${exists.nombre_razon_social}" con ${newTipo} ${newNumero} en esta empresa`);
           }
         }
       }
@@ -124,6 +130,12 @@ export class ContactosService extends BaseService<contactoEntity> {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
+      
+      // Handle database constraint violation
+      if (error.code === '23505' && error.constraint === 'UQ_contactos_identificacion') {
+        throw new BadRequestException(`Ya existe un contacto con esa identificación en esta empresa`);
+      }
+      
       console.error('Error updating contacto:', error);
       throw new BadRequestException('Error al actualizar el contacto');
     }

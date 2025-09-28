@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDTO } from 'src/resource/users/dto/login.dto';
 import { RegisterDTO } from 'src/resource/users/dto/register.dto';
 import { UserI } from 'src/resource/users/interface/user.interface';
@@ -11,7 +11,6 @@ import { RoleEntity } from 'src/database/core/roles.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { find } from 'rxjs/internal/operators/find';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 
 @Injectable()
@@ -20,7 +19,7 @@ export class UsersService extends BaseService<UserEntity> {
     private jwtService: JwtService,
 
     @InjectRepository(UserEntity)
-    protected readonly service: Repository<UserEntity>,
+    protected readonly userRepository: Repository<UserEntity>,
 
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
@@ -31,7 +30,7 @@ export class UsersService extends BaseService<UserEntity> {
     @InjectRepository(PermissionEntity)
     private readonly permissionRepository: Repository<PermissionEntity>,
   ) {
-    super(service);
+    super(userRepository);
     // Set default relations for find operations
     this.findManyOptions = {
       relations: ['role', 'empresa']
@@ -79,12 +78,6 @@ export class UsersService extends BaseService<UserEntity> {
 
   async register(body: RegisterDTO) {
     try {
-      // Verificar si el usuario ya existe
-      const existingUser = await this.findByEmail(body.email);
-      if (existingUser) {
-        throw new BadRequestException('El usuario ya está registrado con este email');
-      }
-
       const rol= new RoleEntity();
       rol.nombre = "Administrador";
       
@@ -109,7 +102,7 @@ export class UsersService extends BaseService<UserEntity> {
       user.status = true;
       await this.roleRepository.save(rol);
       await this.empresaRepository.save(empresa);
-      await this.service.save(user);
+      await this.userRepository.save(user);
 
       return { 
         accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
@@ -241,7 +234,7 @@ export class UsersService extends BaseService<UserEntity> {
     };
   }
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.service.findOne({
+    return await this.userRepository.findOne({
       where: { email },
       relations: {
         role: {

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MovimientosStockService } from './movimientos-stock.service';
 import { MovimientosStockController } from './movimientos-stock.controller';
-import { Type } from 'class-transformer';
 import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 import { JwtModule } from 'src/jwt/jwt.module';

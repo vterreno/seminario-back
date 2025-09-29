@@ -14,20 +14,26 @@ import {
 import { UnidadesMedidaService } from './unidades-medida.service';
 import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto, BulkDeleteUnidadMedidaDto } from './dto/unidad-medida.dto';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
+import { PermissionsGuard } from 'src/middlewares/permission.middleware';
+import { Entity } from 'src/middlewares/decorators/entity.decorator';
+import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Request } from 'express';
 
 @Controller('unidades-medida')
-@UseGuards(AuthGuard)
+@Entity('unidad_medida')
+@UseGuards(AuthGuard, PermissionsGuard)
 export class UnidadesMedidaController {
   constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
 
   @Get()
+  @Action('ver')
   findAll(@Req() request: Request) {
     const empresaId = request['user']?.empresa?.id; // Para superadmin puede ser undefined
     return this.unidadesMedidaService.findAll(empresaId);
   }
 
   @Get(':id')
+  @Action('ver')
   findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -37,6 +43,7 @@ export class UnidadesMedidaController {
   }
 
   @Post()
+  @Action('agregar')
   create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -46,6 +53,7 @@ export class UnidadesMedidaController {
   }
 
   @Patch(':id')
+  @Action('modificar')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUnidadMedidaDto: UpdateUnidadMedidaDto,
@@ -59,6 +67,7 @@ export class UnidadesMedidaController {
   }
 
   @Delete('bulk-delete')
+  @Action('eliminar')
   bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -68,6 +77,7 @@ export class UnidadesMedidaController {
   }
 
   @Get(':id/can-delete')
+  @Action('eliminar')
   canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -77,6 +87,7 @@ export class UnidadesMedidaController {
   }
 
   @Delete(':id')
+  @Action('eliminar')
   remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {

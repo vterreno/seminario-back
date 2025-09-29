@@ -79,4 +79,35 @@ export class EmpresaService extends BaseService<empresaEntity> {
     };
   }
 
+  // Hook utilitario para crear por defecto un Consumidor Final cuando se cree una empresa
+  async create(entity: Partial<empresaEntity>): Promise<empresaEntity> {
+    const empresa = await this.repository.save(entity);
+    // Crear contacto por defecto "Consumidor Final" para esta empresa
+    const queryRunner = this.repository.manager.connection.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.query(
+        `INSERT INTO contactos (nombre_razon_social, condicion_iva, rol, es_consumidor_final, estado, empresa_id, tipo_identificacion, numero_identificacion)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT DO NOTHING`,
+        [
+          'Consumidor Final',
+          'Consumidor Final',
+          'cliente',
+          true,
+          true,
+          empresa.id,
+          'DNI',
+          '00-00000000-0',
+        ],
+      );
+    } catch (e) {
+      // No romper creación de empresa si falla el seed del contacto
+      // Se puede loggear si hay un logger centralizado
+    } finally {
+      await queryRunner.release();
+    }
+    return empresa;
+  }
+
 }

@@ -18,10 +18,14 @@ import { MarcaSimpleSeeder } from './seeders-entity/marca-simple.seeder';
 import { ProductoSimpleSeeder } from './seeders-entity/producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './seeders-entity/movimientos-stock-inicial.seeder';
 import { MovimientoStockEntity } from '../core/movimientos-stock.entity';
+import { ConsumidorFinalSeeder } from './seeders-entity/consumidor-final.seeder';
+import SucursalesSeeder from './seeders-entity/sucursales.seeder';
+import { contactoEntity } from '../core/contacto.entity';
+import { sucursalEntity } from '../core/sucursal.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity]),
+        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity]),
     ],
     providers: [
         // Seeders principales
@@ -29,6 +33,8 @@ import { MovimientoStockEntity } from '../core/movimientos-stock.entity';
         EmpresaSeeder,
         RoleSeeder,
         UserSeeder,
+        SucursalesSeeder,
+        ConsumidorFinalSeeder,
         // Seeders simplificados
         EmpresaUsuarioRolSimpleSeeder,
         MarcaSimpleSeeder,

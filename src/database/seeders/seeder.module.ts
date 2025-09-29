@@ -11,6 +11,7 @@ import { UserSeeder } from './seeders-entity/users.seeder';
 import { EmpresaSeeder } from './seeders-entity/empresa.seeder';
 import { empresaEntity } from '../core/empresa.entity';
 import { MarcaEntity } from '../core/marcas.entity';
+import { ProductoEntity } from '../core/producto.entity';
 import { MasterSeeder } from './seeders-entity/master.seeder';
 import { EmpresaUsuarioRolSimpleSeeder } from './seeders-entity/empresa-usuario-rol-simple.seeder';
 import { MarcaSimpleSeeder } from './seeders-entity/marca-simple.seeder';
@@ -34,6 +35,7 @@ import { sucursalEntity } from '../core/sucursal.entity';
         // Seeders simplificados
         EmpresaUsuarioRolSimpleSeeder,
         MarcaSimpleSeeder,
+        ProductoSimpleSeeder,
         // Seeder maestro
         MasterSeeder,
         SeederService,

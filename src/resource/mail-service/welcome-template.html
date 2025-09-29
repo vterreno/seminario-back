@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bienvenida MatePymes</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6; /* gris claro */
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+    }
+    table {border-spacing: 0; width: 100%;}
+    td {padding: 0;}
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      border: 1px solid #e5e7eb;
+    }
+    .header {
+      background-color: #4a7a34; /* verde logo */
+      color: #ffffff;
+      text-align: center;
+      padding: 24px;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .logo {
+      text-align: center;
+      padding: 30px 0 10px;
+    }
+    .logo img {
+      width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    .content {
+      padding: 30px 40px;
+      text-align: center;
+    }
+    .content h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #4a7a34; /* verde */
+    }
+    .content p {
+      font-size: 16px;
+      margin: 0 0 24px;
+      color: #374151; /* gris oscuro */
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #4a7a34;
+      margin: 20px 0 30px;
+    }
+    .features {width: 100%; text-align: center;}
+    .feature {width: 50%; padding: 16px 0;}
+    .feature img {
+      width: 48px;
+      height: auto;
+      margin-bottom: 8px;
+    }
+    .feature-title {
+      font-size: 14px;
+      color: #111827;
+    }
+    .footer {
+      background-color: #f9fafb;
+      text-align: center;
+      padding: 18px;
+      font-size: 12px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+    }
+    a {color: #4a7a34; text-decoration: none;}
+  </style>
+</head>
+<body>
+
+<!-- Preheader oculto -->
+<span style="display:none;color:transparent;font-size:0;line-height:0;max-height:0;opacity:0;overflow:hidden;">
+  Bienvenido a MatePymes, organiza tu empresa de manera ágil y confiable.
+</span>
+
+<table role="presentation" width="100%">
+<tr>
+<td align="center">
+  <table class="container">
+    <tr>
+      <td class="logo">
+        <img src="https://imgur.com/hwoIOR5.png" alt="Logo MatePymes" />
+      </td>
+    </tr>
+    <tr>
+      <td class="header">
+        ¡Bienvenido!
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <h1>¡Hola {{userName}}, te damos la bienvenida a MatePymes!</h1>
+        <p>Organiza tu empresa de manera ágil, sencilla y confiable.</p>
+
+        <div class="section-title">Mira todo lo que te ofrecemos:</div>
+
+        <table class="features" role="presentation">
+          <tr>
+            <td class="feature">
+              <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" alt="Facturación">
+              <div class="feature-title">Facturación electrónica</div>
+            </td>
+            <td class="feature">
+              <img src="https://cdn-icons-png.flaticon.com/512/891/891399.png" alt="Stock">
+              <div class="feature-title">Control de stock eficiente</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="feature">
+              <img src="https://cdn-icons-png.flaticon.com/512/3135/3135706.png" alt="Ingresos y egresos">
+              <div class="feature-title">Administración precisa de ingresos y egresos</div>
+            </td>
+            <td class="feature">
+              <img src="https://cdn-icons-png.flaticon.com/512/159/159748.png" alt="Reportes">
+              <div class="feature-title">Generación de reportes adaptados a tu negocio</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="feature" colspan="2">
+              <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Clientes">
+              <div class="feature-title">Gestión ágil de la información de clientes</div>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin-top:30px;font-size:14px;text-align:left;">
+          MatePymes es una solución completa y simple para todas tus necesidades. 
+          Te invitamos a conocer todo lo que tenemos para ofrecerte con nuestra 
+          <a href="https://www.ejemplo.com/guia" target="_blank">guía de primer inicio</a> y los 
+          <a href="https://www.ejemplo.com/tutoriales" target="_blank">video tutoriales</a>.
+        </p>
+
+        <p style="font-size:14px;text-align:left;">
+          Estamos a disposición para cualquier consulta que pueda surgir, a través de nuestros medios de contacto:
+        </p>
+        <p style="font-size:14px;">
+          <a href="mailto:info@matepymes.com.ar">info@matepymes.com.ar</a><br>
+          (+54) 0353 156578161
+        </p>
+
+        <p style="font-weight:bold;color:#4a7a34;margin-top:20px;">Tu gestión, más fácil que nunca.</p>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        © 2025 MatePymes. Todos los derechos reservados.
+      </td>
+    </tr>
+  </table>
+</td>
+</tr>
+</table>
+</body>
+</html>

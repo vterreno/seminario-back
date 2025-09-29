@@ -7,28 +7,41 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Req,
   UseGuards,
+  ConflictException,
 } from '@nestjs/common';
 import { UnidadesMedidaService } from './unidades-medida.service';
 import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto, BulkDeleteUnidadMedidaDto } from './dto/unidad-medida.dto';
-import { EmpresaId } from '../../common/decorators/empresa-id.decorator';
+import { AuthGuard } from 'src/middlewares/auth.middleware';
+import { Request } from 'express';
 
 @Controller('unidades-medida')
+@UseGuards(AuthGuard)
 export class UnidadesMedidaController {
   constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
 
   @Get()
-  findAll(@EmpresaId() empresaId: number) {
+  findAll(@Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id; // Para superadmin puede ser undefined
     return this.unidadesMedidaService.findAll(empresaId);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
+  findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.findOne(id, empresaId);
   }
 
   @Post()
-  create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @EmpresaId() empresaId: number) {
+  create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.create(createUnidadMedidaDto, empresaId);
   }
 
@@ -36,23 +49,39 @@ export class UnidadesMedidaController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUnidadMedidaDto: UpdateUnidadMedidaDto,
-    @EmpresaId() empresaId: number,
+    @Req() request: Request,
   ) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.update(id, updateUnidadMedidaDto, empresaId);
   }
 
   @Delete('bulk-delete')
-  bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @EmpresaId() empresaId: number) {
+  bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.bulkDelete(bulkDeleteDto.ids, empresaId);
   }
 
   @Get(':id/can-delete')
-  canDelete(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
+  canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.canDelete(id, empresaId);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number, @EmpresaId() empresaId: number) {
+  remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
+    const empresaId = request['user']?.empresa?.id;
+    if (!empresaId) {
+      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+    }
     return this.unidadesMedidaService.remove(id, empresaId);
   }
 }

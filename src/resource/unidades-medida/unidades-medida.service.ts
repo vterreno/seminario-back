@@ -18,13 +18,22 @@ export class UnidadesMedidaService {
    * @returns boolean indicando si está en uso
    */
   private isUnitInUse(abreviatura: string): boolean {
-    // Simulación: En un entorno real, esto haría una consulta a la tabla de productos
+    // TODO: Implementar consulta real a tabla productos cuando esté disponible
     // SELECT COUNT(*) FROM productos WHERE unidad_medida_abreviatura = ? AND empresa_id = ?
-    const unidadesEnUso = ['kg', 'unid', 'lts', 'm']; // Simulamos que estas abreviaturas están en uso
-    return unidadesEnUso.includes(abreviatura.toLowerCase());
+    
+    // Por ahora permitir eliminar todas las unidades
+    return false;
   }
 
-  async findAll(empresaId: number): Promise<UnidadMedida[]> {
+  async findAll(empresaId?: number): Promise<UnidadMedida[]> {
+    // Si no hay empresaId (como en el caso de superadmin), devolver todas las unidades
+    if (!empresaId) {
+      return this.unidadMedidaRepository.find({
+        relations: ['empresa'],
+        order: { nombre: 'ASC' },
+      });
+    }
+    
     return this.unidadMedidaRepository.find({
       where: { empresaId },
       order: { nombre: 'ASC' },

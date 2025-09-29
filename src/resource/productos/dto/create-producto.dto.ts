@@ -1,5 +1,4 @@
 import { IsNumber, Min, Validate, IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
-import { PrecioVentaMayorQueCosto } from '../validators/precios-validos.validator';
 
 export class CreateProductoDto {
     @IsString()
@@ -26,7 +25,6 @@ export class CreateProductoDto {
 
     @IsNumber()
     @Min(0.01, { message: 'El precio de venta debe ser mayor que 0' })
-    @Validate(PrecioVentaMayorQueCosto)
     precio_venta: number;
 
     @IsBoolean()

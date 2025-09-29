@@ -14,26 +14,22 @@ import {
 import { UnidadesMedidaService } from './unidades-medida.service';
 import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto, BulkDeleteUnidadMedidaDto } from './dto/unidad-medida.dto';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
-import { PermissionsGuard } from 'src/middlewares/permission.middleware';
-import { Entity } from 'src/middlewares/decorators/entity.decorator';
-import { Action } from 'src/middlewares/decorators/action.decorator';
 import { Request } from 'express';
 
 @Controller('unidades-medida')
-@Entity('unidad_medida')
-@UseGuards(AuthGuard, PermissionsGuard)
+@UseGuards(AuthGuard) // Solo verificar autenticación, sin permisos específicos
 export class UnidadesMedidaController {
   constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
 
   @Get()
-  @Action('ver')
+  // Removido: @Action('ver') - Accesible para todos los usuarios autenticados
   findAll(@Req() request: Request) {
     const empresaId = request['user']?.empresa?.id; // Para superadmin puede ser undefined
     return this.unidadesMedidaService.findAll(empresaId);
   }
 
   @Get(':id')
-  @Action('ver')
+  // Removido: @Action('ver') - Accesible para todos los usuarios autenticados
   findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -43,7 +39,7 @@ export class UnidadesMedidaController {
   }
 
   @Post()
-  @Action('agregar')
+  // Removido: @Action('agregar') - Accesible para todos los usuarios autenticados
   create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -53,7 +49,7 @@ export class UnidadesMedidaController {
   }
 
   @Patch(':id')
-  @Action('modificar')
+  // Removido: @Action('modificar') - Accesible para todos los usuarios autenticados
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUnidadMedidaDto: UpdateUnidadMedidaDto,
@@ -67,7 +63,7 @@ export class UnidadesMedidaController {
   }
 
   @Delete('bulk-delete')
-  @Action('eliminar')
+  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
   bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -77,7 +73,7 @@ export class UnidadesMedidaController {
   }
 
   @Get(':id/can-delete')
-  @Action('eliminar')
+  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
   canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
@@ -87,7 +83,7 @@ export class UnidadesMedidaController {
   }
 
   @Delete(':id')
-  @Action('eliminar')
+  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
   remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {

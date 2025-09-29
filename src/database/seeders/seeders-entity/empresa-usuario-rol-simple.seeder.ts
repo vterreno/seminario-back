@@ -48,7 +48,12 @@ export class EmpresaUsuarioRolSimpleSeeder {
                 { codigo: 'compras_ver' },
                 { codigo: 'cliente_ver' },
                 { codigo: 'proveedor_ver' },
-                { codigo: 'sucursal_ver' }
+                { codigo: 'sucursal_ver' },
+                // Permisos completos de unidades de medida para todos
+                { codigo: 'unidad_medida_ver' },
+                { codigo: 'unidad_medida_agregar' },
+                { codigo: 'unidad_medida_modificar' },
+                { codigo: 'unidad_medida_eliminar' }
             ]
         });
 
@@ -102,12 +107,25 @@ export class EmpresaUsuarioRolSimpleSeeder {
             descripcion: 'Administrador completo de FoodMarket'
         });
 
+        // 🔹 GESTOR@MAIL.COM - Usuario con permisos completos en TechCorp
+        await this.crearUsuarioYRol({
+            email: 'gestor@mail.com',
+            password: 'gestor123',
+            nombre: 'Gestor',
+            apellido: 'Mail',
+            rolNombre: 'GestorMail',
+            empresa: empresaTech,
+            permisos: todosLosPermisos,
+            descripcion: 'Gestor con permisos completos en TechCorp'
+        });
+
         console.log('\n🎉 Seed de usuarios y roles completado exitosamente!');
         console.log('\n📋 USUARIOS CREADOS:');
         console.log('1. superadmin@sistema.com / super123 - Superadmin (sin empresa)');
         console.log('2. admin@techcorp.com / tech123 - Admin completo TechCorp');
-        console.log('3. usuario@techcorp.com / user123 - Usuario limitado TechCorp');
+        console.log('3. usuario@techcorp.com / user123 - Usuario con unidades de medida TechCorp');
         console.log('4. admin@foodmarket.com / food123 - Admin completo FoodMarket');
+        console.log('5. gestor@mail.com / gestor123 - Gestor completo TechCorp');
     }
 
     private async crearUsuarioYRol(datos: {

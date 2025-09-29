@@ -136,6 +136,20 @@ export class EmpresaUsuarioRolSeeder {
             console.log('Usuario Gestor Productos creado');
         }
 
+        // 7.1. USUARIO GESTOR@MAIL.COM - Mismos permisos que gestor@test.com
+        let usuarioGestorMail = await this.userRepo.findOne({ where: { email: 'gestor@mail.com' } });
+        if (!usuarioGestorMail) {
+            usuarioGestorMail = this.userRepo.create({
+                nombre: 'Gestor',
+                apellido: 'Mail',
+                email: 'gestor@mail.com',
+                password: hashSync('gestor123', 10),
+                empresa: empresa
+            });
+            usuarioGestorMail = await this.userRepo.save(usuarioGestorMail);
+            console.log('Usuario Gestor Mail creado');
+        }
+
         // 8. ROL GESTOR DE PRODUCTOS - FORZAR ACTUALIZACIÓN
         let rolGestor = await this.roleRepo.findOne({ 
             where: { nombre: 'GestorPrueba', empresa_id: empresa.id }, 
@@ -205,6 +219,11 @@ export class EmpresaUsuarioRolSeeder {
         usuarioGestor.role = rolGestor;
         await this.userRepo.save(usuarioGestor);
         console.log('Rol GestorPrueba vinculado al usuario gestor@test.com');
+
+        // 9.1. Asociar rol GestorPrueba al usuario gestor@mail.com
+        usuarioGestorMail.role = rolGestor;
+        await this.userRepo.save(usuarioGestorMail);
+        console.log('Rol GestorPrueba vinculado al usuario gestor@mail.com');
 
         // 10. USUARIO GESTOR1 - Ver + Crear (sin modificar ni eliminar)
         let usuarioGestor1 = await this.userRepo.findOne({ where: { email: 'gestor1@test.com' } });

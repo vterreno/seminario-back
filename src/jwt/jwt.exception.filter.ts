@@ -5,6 +5,7 @@ import { ExceptionFilter, Catch, ArgumentsHost, UnauthorizedException, HttpExcep
 import { Response } from 'express';
 import { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 
+
 // Modificado para solo capturar errores específicos de JWT y UnauthorizedException
 // Las demás excepciones (como BadRequestException) serán manejadas por NestJS normalmente
 @Catch(TokenExpiredError, JsonWebTokenError, UnauthorizedException)

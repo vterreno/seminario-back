@@ -55,7 +55,6 @@ export class CategoriasService extends BaseService<categoriasEntity> {
 
   // Update category
   async updateCategoria(id: number, categoriaData: Partial<categoriasEntity>): Promise<categoriasEntity> {
-    console.log('Datos de categoría a actualizar:', categoriaData);
     // Check if category exists
     const categoria = await this.findById(id);
     if (!categoria) {
@@ -77,7 +76,6 @@ export class CategoriasService extends BaseService<categoriasEntity> {
     
     // Filtrar propiedades no pertenecientes a la entidad (como isEdit)
     const { isEdit, ...categoriaDataFiltered } = categoriaData as any;
-    console.log('Datos filtrados para actualizar:', categoriaDataFiltered);
     
     // Update basic category data
     await this.categoriasRepository.update(id, categoriaDataFiltered);

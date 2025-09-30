@@ -19,7 +19,6 @@ export class RolesController extends BaseController<RoleEntity>{
     @Action('ver')
     async getAllRoles(@Req() req: RequestWithUser) {
         const user = req.user;
-        
         // If user has a company, filter roles by that company
         if (user.empresa?.id) {
             return await this.roleService.getRolesByEmpresa(user.empresa.id);

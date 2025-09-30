@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { sucursalEntity } from '../core/sucursal.entity';
+import { sucursalEntity } from '../../core/sucursal.entity';
 
 export default class SucursalesSeeder {
     public async run(dataSource: DataSource): Promise<any> {

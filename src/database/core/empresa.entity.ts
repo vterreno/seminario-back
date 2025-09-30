@@ -4,6 +4,10 @@ import { sucursalEntity } from "./sucursal.entity";
 import { UserEntity } from "./user.entity";
 import { RoleEntity } from "./roles.entity";
 import { categoriasEntity } from "./categorias.entity";
+import { contactoEntity } from "./contacto.entity";
+import { MarcaEntity } from "./marcas.entity";
+import { MovimientoStockEntity } from "./movimientos-stock.entity";
+import { ProductoEntity } from "./producto.entity";
 
 @Entity("empresa")
 export class empresaEntity extends BaseEntity{
@@ -17,6 +21,19 @@ export class empresaEntity extends BaseEntity{
     usuarios: UserEntity[]
     @OneToMany(() => RoleEntity, role => role.empresa)
     roles: RoleEntity[]
+
     @OneToMany(() => categoriasEntity, categorias => categorias.empresa)
     categorias: categoriasEntity[]
+
+    @OneToMany(() => contactoEntity, contacto => contacto.empresa)
+    contactos: contactoEntity[]
+
+    @OneToMany(() => MarcaEntity, marca => marca.empresa)
+    marcas: MarcaEntity[];
+
+    @OneToMany(() => ProductoEntity, producto => producto.empresa)
+    productos: ProductoEntity[];
+
+    @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.empresa)
+    movimientos: MovimientoStockEntity[];
 }

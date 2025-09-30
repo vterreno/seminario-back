@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
+import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProductoEntity]),
+    TypeOrmModule.forFeature([ProductoEntity, MovimientoStockEntity]),
     JwtModule,
     UsersModule,
   ],

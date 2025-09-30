@@ -5,6 +5,7 @@ import { UserEntity } from "./user.entity";
 import { RoleEntity } from "./roles.entity";
 import { contactoEntity } from "./contacto.entity";
 import { MarcaEntity } from "./marcas.entity";
+import { MovimientoStockEntity } from "./movimientos-stock.entity";
 import { ProductoEntity } from "./producto.entity";
 
 @Entity("empresa")
@@ -28,4 +29,7 @@ export class empresaEntity extends BaseEntity{
 
     @OneToMany(() => ProductoEntity, producto => producto.empresa)
     productos: ProductoEntity[];
+
+    @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.empresa)
+    movimientos: MovimientoStockEntity[];
 }

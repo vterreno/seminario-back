@@ -15,6 +15,7 @@ import { ContactosModule } from './resource/contactos/contactos.module';
 import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
 import { MarcasModule } from './resource/marcas/marcas.module';
+import { MovimientosStockModule } from './resource/movimientos-stock/movimientos-stock.module';
 import { ProductosModule } from './resource/productos/productos.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { ProductosModule } from './resource/productos/productos.module';
     UbicacionesModule,
     MarcasModule,
     ProductosModule,
+    MovimientosStockModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

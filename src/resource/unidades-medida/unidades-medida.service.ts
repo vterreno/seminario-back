@@ -46,7 +46,7 @@ export class UnidadesMedidaService {
     });
 
     if (!unidad) {
-      throw new NotFoundException('Unidad de medida no encontrada');
+      throw new NotFoundException(`No se encontró la unidad de medida con ID ${id} para su empresa. Verifique que el ID sea correcto y que la unidad pertenezca a su empresa.`);
     }
 
     return unidad;
@@ -63,10 +63,10 @@ export class UnidadesMedidaService {
 
     if (existing) {
       if (existing.nombre === createDto.nombre) {
-        throw new ConflictException('Ya existe una unidad de medida con ese nombre');
+        throw new ConflictException(`No se puede crear la unidad de medida "${createDto.nombre}" porque ya existe una unidad con ese nombre. La unidad existente tiene la abreviatura "${existing.abreviatura}".`);
       }
       if (existing.abreviatura === createDto.abreviatura) {
-        throw new ConflictException('Ya existe una unidad de medida con esa abreviatura');
+        throw new ConflictException(`No se puede crear la unidad de medida con abreviatura "${createDto.abreviatura}" porque ya existe una unidad llamada "${existing.nombre}" con esa abreviatura. Por favor, use una abreviatura diferente.`);
       }
     }
 
@@ -97,10 +97,10 @@ export class UnidadesMedidaService {
 
       if (existing && existing.id !== id) {
         if (existing.nombre === updateDto.nombre) {
-          throw new ConflictException('Ya existe una unidad de medida con ese nombre');
+          throw new ConflictException(`No se puede actualizar la unidad de medida con el nombre "${updateDto.nombre}" porque ya existe otra unidad con ese nombre. La unidad existente tiene la abreviatura "${existing.abreviatura}".`);
         }
         if (existing.abreviatura === updateDto.abreviatura) {
-          throw new ConflictException('Ya existe una unidad de medida con esa abreviatura');
+          throw new ConflictException(`No se puede actualizar la unidad de medida con la abreviatura "${updateDto.abreviatura}" porque ya existe otra unidad llamada "${existing.nombre}" con esa abreviatura. Por favor, use una abreviatura diferente.`);
         }
       }
     }
@@ -138,7 +138,7 @@ export class UnidadesMedidaService {
   async bulkDelete(ids: number[], empresaId: number): Promise<{ message?: string }> {
     try {
       if (!ids || ids.length === 0) {
-        throw new NotFoundException('No se proporcionaron IDs para eliminar');
+        throw new NotFoundException('No se proporcionaron unidades de medida para eliminar. Seleccione al menos una unidad de medida.');
       }
 
       const unidades = await this.unidadMedidaRepository.find({
@@ -150,7 +150,7 @@ export class UnidadesMedidaService {
       const idsToDelete = ids.filter(id => validIds.includes(id));
 
       if (idsToDelete.length === 0) {
-        throw new NotFoundException('No se encontraron unidades de medida válidas para eliminar');
+        throw new NotFoundException('Las unidades de medida seleccionadas no existen o no pertenecen a su empresa. Verifique las unidades seleccionadas e intente nuevamente.');
       }
 
       // Verificar cuáles unidades se pueden eliminar

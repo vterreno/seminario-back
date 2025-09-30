@@ -33,7 +33,7 @@ export class UnidadesMedidaController {
   findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se puede acceder a la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.findOne(id, empresaId);
   }
@@ -43,7 +43,7 @@ export class UnidadesMedidaController {
   create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se puede crear la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.create(createUnidadMedidaDto, empresaId);
   }
@@ -57,7 +57,7 @@ export class UnidadesMedidaController {
   ) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se puede actualizar la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.update(id, updateUnidadMedidaDto, empresaId);
   }
@@ -67,7 +67,7 @@ export class UnidadesMedidaController {
   bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se pueden eliminar las unidades de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.bulkDelete(bulkDeleteDto.ids, empresaId);
   }
@@ -77,7 +77,7 @@ export class UnidadesMedidaController {
   canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se puede verificar si la unidad de medida puede ser eliminada porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.canDelete(id, empresaId);
   }
@@ -87,7 +87,7 @@ export class UnidadesMedidaController {
   remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
     const empresaId = request['user']?.empresa?.id;
     if (!empresaId) {
-      throw new ConflictException('El usuario debe pertenecer a una empresa para realizar esta operación');
+      throw new ConflictException('No se puede eliminar la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
     }
     return this.unidadesMedidaService.remove(id, empresaId);
   }

@@ -18,6 +18,12 @@ export class EmpresaController extends BaseController<empresaEntity>{
         super(empresaService);
     }
 
+    @Get('all')
+    @Action('ver')
+    async getAllEmpresas() {
+        return await this.empresaService.find();
+    }
+
     @Post('bulk/delete')
     @Action('eliminar')
     async deleteEmpresas(@Body() body: { ids: number[] }) {

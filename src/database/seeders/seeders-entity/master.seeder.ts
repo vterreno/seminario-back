@@ -5,6 +5,10 @@ import { RoleSeeder } from './role.seeder';
 import { UserSeeder } from './users.seeder';
 import { EmpresaUsuarioRolSimpleSeeder } from './empresa-usuario-rol-simple.seeder';
 import { MarcaSimpleSeeder } from './marca-simple.seeder';
+import { ConsumidorFinalSeeder } from './consumidor-final.seeder'; 
+import { ProductoSimpleSeeder } from './producto-simple.seeder';
+import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
+
 
 @Injectable()
 export class MasterSeeder {
@@ -15,6 +19,9 @@ export class MasterSeeder {
         private readonly userSeeder: UserSeeder,
         private readonly empresaUsuarioRolSimpleSeeder: EmpresaUsuarioRolSimpleSeeder,
         private readonly marcaSimpleSeeder: MarcaSimpleSeeder,
+        private readonly consumidorFinalSeeder: ConsumidorFinalSeeder,
+        private readonly productoSimpleSeeder: ProductoSimpleSeeder,
+        private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
     ) {}
 
     async run() {
@@ -23,34 +30,49 @@ export class MasterSeeder {
 
         try {
             // 1. Permisos (base del sistema)
-            console.log('📋 1/6 - Creando permisos...');
+            console.log('📋 1/7 - Creando permisos...');
             await this.permisosSeeder.run();
             console.log('✅ Permisos completados\n');
 
             // 2. Empresas
-            console.log('🏢 2/6 - Creando empresas...');
+            console.log('🏢 2/7 - Creando empresas...');
             await this.empresaSeeder.run();
             console.log('✅ Empresas completadas\n');
 
-            // 3. Rol Superadmin (necesario para el superusuario)
-            console.log('👑 3/6 - Creando rol superadmin...');
+            // 3. Consumidor Final
+            console.log('🧾 3/7 - Creando consumidores finales por empresa...');
+            await this.consumidorFinalSeeder.run();
+            console.log('✅ Consumidores finales completados\n');
+
+            // 4. Rol Superadmin (necesario para el superusuario)
+            console.log('👑 4/7 - Creando rol superadmin...');
             await this.roleSeeder.run();
             console.log('✅ Rol superadmin completado\n');
 
-            // 4. Usuario Superadmin inicial
-            console.log('👤 4/6 - Creando usuario superadmin inicial...');
+            // 5. Usuario Superadmin inicial
+            console.log('👤 5/7 - Creando usuario superadmin inicial...');
             await this.userSeeder.run();
             console.log('✅ Usuario superadmin completado\n');
 
-            // 5. Usuarios y roles por empresa
-            console.log('👥 5/6 - Creando usuarios y roles por empresa...');
+            // 6. Usuarios y roles por empresa
+            console.log('👥 6/7 - Creando usuarios y roles por empresa...');
             await this.empresaUsuarioRolSimpleSeeder.run();
             console.log('✅ Usuarios y roles por empresa completados\n');
 
-            // 6. Marcas por empresa
-            console.log('🏷️ 6/6 - Creando marcas por empresa...');
+            // 7. Marcas por empresa
+            console.log('🏷️ 7/7 - Creando marcas por empresa...');
             await this.marcaSimpleSeeder.run();
             console.log('✅ Marcas completadas\n');
+
+            // 7. Productos por empresa y marca
+            console.log('📦 7/8 - Creando productos por empresa y marca...');
+            await this.productoSimpleSeeder.run();
+            console.log('✅ Productos completados\n');
+
+            // 8. Movimientos de stock iniciales
+            console.log('📊 8/8 - Creando movimientos de stock iniciales...');
+            await this.movimientosStockInicialSeeder.run();
+            console.log('✅ Movimientos de stock completados\n');
 
             console.log('🎉 SEED COMPLETO FINALIZADO EXITOSAMENTE');
             console.log('=========================================');
@@ -64,9 +86,11 @@ export class MasterSeeder {
             console.log('│ admin@foodmarket.com                │ food123     │ Admin FoodMarket    │');
             console.log('└─────────────────────────────────────┴─────────────┴─────────────────────┘');
             
-            console.log('\n🏢 EMPRESAS Y SUS MARCAS:');
+            console.log('\n🏢 EMPRESAS, MARCAS Y PRODUCTOS:');
             console.log('• TechCorp S.A.: Apple, Samsung, Sony, LG, HP');
+            console.log('  - Productos: iPhone 15 Pro, MacBook Air M2, Galaxy S24, PlayStation 5, etc.');
             console.log('• FoodMarket Ltda.: Coca Cola, Nestlé, Unilever, Danone, Kelloggs');
+            console.log('  - Productos: Coca Cola 2.5L, Nestlé Nescafé, Dove Jabón, Yogurt Natural, etc.');
             
         } catch (error) {
             console.error('❌ Error durante el seed:', error);

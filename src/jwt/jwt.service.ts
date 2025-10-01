@@ -12,7 +12,7 @@ export class JwtService {
     },
     refresh: {
       secret: 'refreshSecret',
-      expiresIn: '1d',
+      expiresIn: '15d',
     },
   };
   generateToken(payload: { email: string }, type: 'refresh' | 'auth' = 'auth'): string {

@@ -94,6 +94,11 @@ export class PermisosSeeder {
 
             // Role permissions
             { nombre: 'Ver dashboard', codigo: 'dashboard_ver' },
+
+            // Movimiento stock permissions
+            { nombre: 'Ver movimientos de stock', codigo: 'movimiento_stock_ver' },
+            { nombre: 'Realizar ajuste de stock', codigo: 'movimiento_stock_ajustar' },
+            { nombre: 'Ver historial de movimientos de stock', codigo: 'movimiento_stock_historial' },
         ];
 
         for (const permiso of permisos) {

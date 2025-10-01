@@ -12,8 +12,13 @@ import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
 import { UnidadesMedidaModule } from './resource/unidades-medida/unidades-medida.module';
+import { ContactosModule } from './resource/contactos/contactos.module';
+import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
+import { CategoriasModule } from './resource/categorias/categorias.module';
 import { MarcasModule } from './resource/marcas/marcas.module';
+import { MovimientosStockModule } from './resource/movimientos-stock/movimientos-stock.module';
+import { ProductosModule } from './resource/productos/productos.module';
 
 @Module({
   imports: [
@@ -36,13 +41,18 @@ import { MarcasModule } from './resource/marcas/marcas.module';
     UsersModule,
     JwtModule,
     RolesModule,
-    PermisosModule,
+    PermisosModule, 
     SeedModule,
     MailServiceModule,
     EmpresaModule,
     SucursalesModule,
     UnidadesMedidaModule,
-    MarcasModule
+    CategoriasModule,
+    ContactosModule,
+    UbicacionesModule,
+    MarcasModule,
+    ProductosModule,
+    MovimientosStockModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

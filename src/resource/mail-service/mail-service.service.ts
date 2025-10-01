@@ -95,4 +95,32 @@ async sendMail(to: string) {
     const isMatch = compareSync(code, record.codigoHash);;
     return isMatch;
   }
+
+  async sendWelcomeMail(to: string, userName: string) {
+    const templatePath = path.join(process.cwd(), 'src', 'resource', 'mail-service', 'welcome-template.html');
+
+    try {
+      let htmlContent = fs.readFileSync(templatePath, 'utf8');
+
+      // Replace placeholders in the template
+      htmlContent = htmlContent.replace('{{userName}}', userName);
+
+      const mailOptions = {
+        from: '"MatePymes" <matepymer@zohomail.com>',
+        to,
+        subject: "¡Bienvenido a MatePymes!",
+        html: htmlContent,
+        text: `¡Hola ${userName}! Bienvenido a MatePymes. Tu cuenta ha sido creada exitosamente.`,
+      };
+      
+      const info = await this.transporter.sendMail(mailOptions);
+      return info;
+    } catch (err) {
+      console.error('Error al enviar correo de bienvenida:', err);
+      // No lanzamos error para que no afecte el registro si falla el envío del correo
+      return null;
+    }
+  }
+
+
 }

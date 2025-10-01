@@ -15,7 +15,7 @@ import { ProductoValidationPipe } from './pipes/producto-validation.pipe';
 @EntityDecorator('producto')
 @Controller('productos')
 export class ProductosController extends BaseController<ProductoEntity>{
-  constructor(protected readonly productoService: ProductosService){
+    constructor(protected readonly productoService: ProductosService){
         super(productoService);
     }
     @Get()

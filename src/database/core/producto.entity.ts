@@ -2,6 +2,7 @@ import { Column, Entity, JoinTable, ManyToMany, OneToMany, ManyToOne, JoinColumn
 import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
 import { MarcaEntity } from "./marcas.entity";
+import { MovimientoStockEntity } from "./movimientos-stock.entity";
 
 @Entity('productos')
 export class ProductoEntity extends BaseEntity{
@@ -55,4 +56,8 @@ export class ProductoEntity extends BaseEntity{
 
     @Column({ nullable: false, default: 0 })
     stock: number;
+
+    @OneToMany(() => MovimientoStockEntity  , movimiento => movimiento.producto)
+    @JoinColumn({ name: 'movimientos_id' })
+    movimientos: MovimientoStockEntity[];
 }

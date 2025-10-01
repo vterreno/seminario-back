@@ -48,7 +48,8 @@ export class EmpresaUsuarioRolSimpleSeeder {
                 { codigo: 'compras_ver' },
                 { codigo: 'cliente_ver' },
                 { codigo: 'proveedor_ver' },
-                { codigo: 'sucursal_ver' }
+                { codigo: 'sucursal_ver' },
+                { codigo: 'movimiento_stock_ver' }
             ]
         });
 

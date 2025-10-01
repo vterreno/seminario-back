@@ -36,6 +36,7 @@ export class UnidadesMedidaService {
     
     return this.unidadMedidaRepository.find({
       where: { empresaId },
+      relations: ['empresa'], // Incluir también para usuarios normales
       order: { nombre: 'ASC' },
     });
   }

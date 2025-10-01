@@ -41,13 +41,19 @@ export class UnidadesMedidaService {
     });
   }
 
-  async findOne(id: number, empresaId: number): Promise<UnidadMedida> {
+  async findOne(id: number, empresaId?: number): Promise<UnidadMedida> {
+    const whereCondition = empresaId ? { id, empresaId } : { id };
+    
     const unidad = await this.unidadMedidaRepository.findOne({
-      where: { id, empresaId },
+      where: whereCondition,
+      relations: ['empresa'],
     });
 
     if (!unidad) {
-      throw new NotFoundException(`No se encontró la unidad de medida con ID ${id} para su empresa. Verifique que el ID sea correcto y que la unidad pertenezca a su empresa.`);
+      const empresaMessage = empresaId 
+        ? `con ID ${id} para su empresa` 
+        : `con ID ${id}`;
+      throw new NotFoundException(`No se encontró la unidad de medida ${empresaMessage}. Verifique que el ID sea correcto.`);
     }
 
     return unidad;
@@ -79,17 +85,21 @@ export class UnidadesMedidaService {
     return this.unidadMedidaRepository.save(unidad);
   }
 
-  async update(id: number, updateDto: UpdateUnidadMedidaDto, empresaId: number): Promise<UnidadMedida> {
+  async update(id: number, updateDto: UpdateUnidadMedidaDto, empresaId?: number): Promise<UnidadMedida> {
+    // Primero buscar la unidad. Si empresaId es undefined (caso superadmin), buscar solo por ID
     const unidad = await this.findOne(id, empresaId);
+    
+    // Usar el empresaId de la unidad existente para las validaciones posteriores
+    const targetEmpresaId = unidad.empresaId;
 
     // Verificar conflictos si se está actualizando nombre o abreviatura
     if (updateDto.nombre || updateDto.abreviatura) {
       const conditions = [];
       if (updateDto.nombre) {
-        conditions.push({ nombre: updateDto.nombre, empresaId });
+        conditions.push({ nombre: updateDto.nombre, empresaId: targetEmpresaId });
       }
       if (updateDto.abreviatura) {
-        conditions.push({ abreviatura: updateDto.abreviatura, empresaId });
+        conditions.push({ abreviatura: updateDto.abreviatura, empresaId: targetEmpresaId });
       }
 
       const existing = await this.unidadMedidaRepository.findOne({
@@ -110,11 +120,14 @@ export class UnidadesMedidaService {
     return this.unidadMedidaRepository.save(unidad);
   }
 
-  async remove(id: number, empresaId: number): Promise<void> {
+  async remove(id: number, empresaId?: number): Promise<void> {
     const unidad = await this.findOne(id, empresaId);
     
+    // Usar el empresaId de la unidad si no se proporciona (caso superadmin)
+    const targetEmpresaId = empresaId || unidad.empresaId;
+    
     // Verificar si la unidad está siendo utilizada por productos
-    const canDeleteResult = await this.canDelete(id, empresaId);
+    const canDeleteResult = await this.canDelete(id, targetEmpresaId);
     
     if (!canDeleteResult.canDelete) {
       throw new ConflictException(canDeleteResult.message || 'No se puede eliminar la unidad de medida porque está en uso');
@@ -123,7 +136,7 @@ export class UnidadesMedidaService {
     await this.unidadMedidaRepository.remove(unidad);
   }
 
-  async canDelete(id: number, empresaId: number): Promise<{ canDelete: boolean; message?: string }> {
+  async canDelete(id: number, empresaId?: number): Promise<{ canDelete: boolean; message?: string }> {
     const unidad = await this.findOne(id, empresaId);
     
     if (this.isUnitInUse(unidad.abreviatura)) {
@@ -136,14 +149,16 @@ export class UnidadesMedidaService {
     return { canDelete: true };
   }
 
-  async bulkDelete(ids: number[], empresaId: number): Promise<{ message?: string }> {
+  async bulkDelete(ids: number[], empresaId?: number): Promise<{ message?: string }> {
     try {
       if (!ids || ids.length === 0) {
         throw new NotFoundException('No se proporcionaron unidades de medida para eliminar. Seleccione al menos una unidad de medida.');
       }
 
+      // Si empresaId se proporciona, filtrar por empresa. Si no (superadmin), permitir todas
+      const whereCondition = empresaId ? { empresaId } : {};
       const unidades = await this.unidadMedidaRepository.find({
-        where: { empresaId },
+        where: whereCondition,
         select: ['id']
       });
 
@@ -151,12 +166,19 @@ export class UnidadesMedidaService {
       const idsToDelete = ids.filter(id => validIds.includes(id));
 
       if (idsToDelete.length === 0) {
-        throw new NotFoundException('Las unidades de medida seleccionadas no existen o no pertenecen a su empresa. Verifique las unidades seleccionadas e intente nuevamente.');
+        const message = empresaId 
+          ? 'Las unidades de medida seleccionadas no existen o no pertenecen a su empresa. Verifique las unidades seleccionadas e intente nuevamente.'
+          : 'Las unidades de medida seleccionadas no existen. Verifique las unidades seleccionadas e intente nuevamente.';
+        throw new NotFoundException(message);
       }
 
       // Verificar cuáles unidades se pueden eliminar
+      const whereDeleteCondition = empresaId 
+        ? { id: In(idsToDelete), empresaId }
+        : { id: In(idsToDelete) };
+
       const unidadesCompletas = await this.unidadMedidaRepository.find({
-        where: { id: In(idsToDelete), empresaId },
+        where: whereDeleteCondition,
       });
 
       const unidadesNoEliminables = unidadesCompletas.filter(u => 
@@ -170,10 +192,7 @@ export class UnidadesMedidaService {
         );
       }
 
-      await this.unidadMedidaRepository.delete({
-        id: In(idsToDelete),
-        empresaId
-      });
+      await this.unidadMedidaRepository.delete(whereDeleteCondition);
 
       return { message: `${idsToDelete.length} unidades de medida eliminadas exitosamente` };
     } catch (error) {

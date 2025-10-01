@@ -12,6 +12,10 @@ export class CreateUnidadMedidaDto {
   @IsOptional()
   @IsBoolean({ message: 'El campo "acepta decimales" debe ser verdadero o falso' })
   aceptaDecimales?: boolean = false;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El ID de empresa debe ser un número válido' })
+  empresaId?: number;
 }
 
 export class UpdateUnidadMedidaDto {
@@ -28,6 +32,10 @@ export class UpdateUnidadMedidaDto {
   @IsOptional()
   @IsBoolean({ message: 'El campo "acepta decimales" debe ser verdadero o falso' })
   aceptaDecimales?: boolean;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El ID de empresa debe ser un número válido' })
+  empresaId?: number;
 }
 
 export class BulkDeleteUnidadMedidaDto {

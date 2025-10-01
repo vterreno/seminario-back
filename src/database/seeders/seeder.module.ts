@@ -22,10 +22,12 @@ import { ConsumidorFinalSeeder } from './seeders-entity/consumidor-final.seeder'
 import SucursalesSeeder from './seeders-entity/sucursales.seeder';
 import { contactoEntity } from '../core/contacto.entity';
 import { sucursalEntity } from '../core/sucursal.entity';
+import { categoriasEntity } from '../core/categorias.entity';
+import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity]),
+        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity, categoriasEntity]),
     ],
     providers: [
         // Seeders principales
@@ -40,6 +42,8 @@ import { sucursalEntity } from '../core/sucursal.entity';
         MarcaSimpleSeeder,
         ProductoSimpleSeeder,
         MovimientosStockInicialSeeder,
+        // Nuevos seeders
+        CategoriaSimpleSeeder,
         // Seeder maestro
         MasterSeeder,
         SeederService,

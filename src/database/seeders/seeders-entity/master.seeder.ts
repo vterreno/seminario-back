@@ -8,6 +8,7 @@ import { MarcaSimpleSeeder } from './marca-simple.seeder';
 import { ConsumidorFinalSeeder } from './consumidor-final.seeder'; 
 import { ProductoSimpleSeeder } from './producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
+import { CategoriaSimpleSeeder } from './categoria.seeder';
 
 
 @Injectable()
@@ -20,6 +21,7 @@ export class MasterSeeder {
         private readonly empresaUsuarioRolSimpleSeeder: EmpresaUsuarioRolSimpleSeeder,
         private readonly marcaSimpleSeeder: MarcaSimpleSeeder,
         private readonly consumidorFinalSeeder: ConsumidorFinalSeeder,
+        private readonly categoriaSeeder: CategoriaSimpleSeeder,
         private readonly productoSimpleSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
     ) {}
@@ -63,6 +65,11 @@ export class MasterSeeder {
             console.log('🏷️ 7/7 - Creando marcas por empresa...');
             await this.marcaSimpleSeeder.run();
             console.log('✅ Marcas completadas\n');
+
+            // 7. Categorías por empresa y marca
+            console.log('📂 7/8 - Creando categorías por empresa y marca...');
+            await this.categoriaSeeder.run();
+            console.log('✅ Categorías completadas\n');
 
             // 7. Productos por empresa y marca
             console.log('📦 7/8 - Creando productos por empresa y marca...');

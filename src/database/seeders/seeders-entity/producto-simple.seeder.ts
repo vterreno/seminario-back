@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
+import { categoriasEntity } from 'src/database/core/categorias.entity';
 
 @Injectable()
 export class ProductoSimpleSeeder {
@@ -14,6 +15,8 @@ export class ProductoSimpleSeeder {
         private readonly empresaRepo: Repository<empresaEntity>,
         @InjectRepository(MarcaEntity)
         private readonly marcaRepo: Repository<MarcaEntity>,
+        @InjectRepository(categoriasEntity)
+        private readonly categoriaRepo: Repository<categoriasEntity>,
     ) {}
 
     async run() {
@@ -44,7 +47,17 @@ export class ProductoSimpleSeeder {
             return;
         }
 
-        console.log(`✅ Creando productos para: ${empresaTech.name} (${marcasTech.length} marcas) y ${empresaFood.name} (${marcasFood.length} marcas)`);
+        // Obtener categorías
+        const categorias = await this.categoriaRepo.find();
+        const categoriaTecnologia = categorias.find(c => c.nombre === 'Celulares');
+        const categoriaAlimentos = categorias.find(c => c.nombre === 'Bebidas');
+
+        if (!categoriaTecnologia || !categoriaAlimentos) {
+            console.log('❌ No se encontraron las categorías necesarias (Celulares, Bebidas)');
+            return;
+        }
+
+        console.log(`✅ Creando productos para: ${empresaTech.name} y ${empresaFood.name}`);
 
         const productosData = [
             // === PRODUCTOS TECNOLÓGICOS (TechCorp S.A.) ===
@@ -53,6 +66,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'APL-IP15P-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
+                categoria_id: categoriaTecnologia.id, // 👈 asignar categoría
                 precio_costo: 800.00,
                 precio_venta: 1200.00,
                 stock_apertura: 25,
@@ -64,6 +78,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'APL-MBA-M2-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 1000.00,
                 precio_venta: 1500.00,
                 stock_apertura: 15,
@@ -75,6 +90,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'SAM-GS24-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 650.00,
                 precio_venta: 950.00,
                 stock_apertura: 30,
@@ -86,6 +102,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'SAM-TV55-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 400.00,
                 precio_venta: 650.00,
                 stock_apertura: 20,
@@ -97,6 +114,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'SNY-PS5-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 400.00,
                 precio_venta: 600.00,
                 stock_apertura: 12,
@@ -108,6 +126,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'SNY-WH1000-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 200.00,
                 precio_venta: 320.00,
                 stock_apertura: 40,
@@ -119,6 +138,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'LG-OLED65-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'LG')?.id || marcasTech[3].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 1200.00,
                 precio_venta: 1800.00,
                 stock_apertura: 8,
@@ -130,6 +150,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'HP-PAV-001',
                 empresa_id: empresaTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'HP')?.id || marcasTech[4].id,
+                categoria_id: categoriaTecnologia.id,
                 precio_costo: 500.00,
                 precio_venta: 750.00,
                 stock_apertura: 18,
@@ -143,6 +164,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'COC-25L-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 1.20,
                 precio_venta: 2.50,
                 stock_apertura: 200,
@@ -154,6 +176,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'COC-Z500-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 0.80,
                 precio_venta: 1.50,
                 stock_apertura: 150,
@@ -165,6 +188,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'NES-LC-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 2.00,
                 precio_venta: 3.50,
                 stock_apertura: 80,
@@ -176,6 +200,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'NES-NCF-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 4.50,
                 precio_venta: 7.00,
                 stock_apertura: 60,
@@ -187,6 +212,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'UNI-DOV-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Unilever')?.id || marcasFood[2].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 1.50,
                 precio_venta: 2.80,
                 stock_apertura: 120,
@@ -198,6 +224,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'DAN-YOG-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Danone')?.id || marcasFood[3].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 0.90,
                 precio_venta: 1.80,
                 stock_apertura: 100,
@@ -209,6 +236,7 @@ export class ProductoSimpleSeeder {
                 codigo: 'KEL-CF-001',
                 empresa_id: empresaFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Kelloggs')?.id || marcasFood[4].id,
+                categoria_id: categoriaAlimentos.id,
                 precio_costo: 3.00,
                 precio_venta: 5.50,
                 stock_apertura: 45,
@@ -228,11 +256,15 @@ export class ProductoSimpleSeeder {
                     continue;
                 }
 
-                // Verificar si el producto ya existe por código
-                const existeProducto = await this.productoRepo.findOne({ 
-                    where: { codigo: productoData.codigo }
-                });
+                // Verificar que la categoría existe
+                const categoria = await this.categoriaRepo.findOne({ where: { id: productoData.categoria_id } });
+                if (!categoria) {
+                    console.log(`⚠️ Categoría con ID ${productoData.categoria_id} no encontrada para producto ${productoData.nombre}`);
+                    continue;
+                }
 
+                // Verificar si el producto ya existe por código
+                const existeProducto = await this.productoRepo.findOne({ where: { codigo: productoData.codigo } });
                 if (existeProducto) {
                     console.log(`⚠️ Producto con código ${productoData.codigo} ya existe`);
                     continue;
@@ -243,7 +275,7 @@ export class ProductoSimpleSeeder {
                 await this.productoRepo.save(nuevoProducto);
                 productosCreados++;
 
-                console.log(`✅ Producto creado: ${productoData.nombre} (${productoData.codigo}) - Empresa: ${productoData.empresa_id}`);
+                console.log(`✅ Producto creado: ${productoData.nombre} (${productoData.codigo}) - Empresa: ${productoData.empresa_id} - Categoria: ${productoData.categoria_id}`);
 
             } catch (error) {
                 console.error(`❌ Error creando producto ${productoData.nombre}:`, error.message);

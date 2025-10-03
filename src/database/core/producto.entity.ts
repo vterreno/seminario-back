@@ -3,6 +3,8 @@ import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
 import { MarcaEntity } from "./marcas.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
+import { ListaPreciosEntity } from "./lista-precios.entity";
+import { ProductoListaPreciosEntity } from "./producto-lista-precios.entity";
 
 @Entity('productos')
 export class ProductoEntity extends BaseEntity{
@@ -60,4 +62,15 @@ export class ProductoEntity extends BaseEntity{
     @OneToMany(() => MovimientoStockEntity  , movimiento => movimiento.producto)
     @JoinColumn({ name: 'movimientos_id' })
     movimientos: MovimientoStockEntity[];
+
+    @ManyToMany(() => ListaPreciosEntity, listaPrecios => listaPrecios.productos)
+    @JoinTable({
+        name: 'producto_lista_precios',
+        joinColumn: { name: 'producto_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'lista_precios_id', referencedColumnName: 'id' }
+    })
+    listas_precios: ListaPreciosEntity[];
+
+    @OneToMany(() => ProductoListaPreciosEntity, productoListaPrecios => productoListaPrecios.producto)
+    productosListasPrecios: ProductoListaPreciosEntity[];
 }

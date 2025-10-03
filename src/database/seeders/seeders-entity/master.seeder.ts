@@ -8,6 +8,7 @@ import { MarcaSimpleSeeder } from './marca-simple.seeder';
 import { ConsumidorFinalSeeder } from './consumidor-final.seeder'; 
 import { ProductoSimpleSeeder } from './producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
+import { ListaPreciosSeeder } from './lista-precios.seeder';
 
 
 @Injectable()
@@ -22,6 +23,7 @@ export class MasterSeeder {
         private readonly consumidorFinalSeeder: ConsumidorFinalSeeder,
         private readonly productoSimpleSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
+        private readonly listaPreciosSeeder: ListaPreciosSeeder,
     ) {}
 
     async run() {
@@ -69,6 +71,9 @@ export class MasterSeeder {
             await this.productoSimpleSeeder.run();
             console.log('✅ Productos completados\n');
 
+            
+            await this.listaPreciosSeeder.run();
+            console.log('✅ Listas de precios completadas\n');
             // 8. Movimientos de stock iniciales
             console.log('📊 8/8 - Creando movimientos de stock iniciales...');
             await this.movimientosStockInicialSeeder.run();

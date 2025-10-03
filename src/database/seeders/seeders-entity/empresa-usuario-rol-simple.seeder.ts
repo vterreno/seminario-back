@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { empresaEntity } from '../../core/empresa.entity';
 import { UserEntity } from '../../core/user.entity';
 import { RoleEntity } from '../../core/roles.entity';
@@ -36,6 +36,15 @@ export class EmpresaUsuarioRolSimpleSeeder {
 
         // === 2. OBTENER PERMISOS ===
         const todosLosPermisos = await this.permisoRepo.find();
+        const permisosExcluidos = [
+                'empresa_ver',
+                'empresa_agregar',
+                'empresa_modificar',
+                'empresa_eliminar',
+        ];
+        const permisosParaAdministradores = await this.permisoRepo.find({
+        where: { codigo: Not(In(permisosExcluidos)) }
+        });
         const permisosLectura = await this.permisoRepo.find({
             where: [
                 { codigo: 'dashboard_ver' },
@@ -75,7 +84,7 @@ export class EmpresaUsuarioRolSimpleSeeder {
             apellido: 'TechCorp',
             rolNombre: 'AdminTech',
             empresa: empresaTech,
-            permisos: todosLosPermisos,
+            permisos: permisosParaAdministradores,
             descripcion: 'Administrador completo de TechCorp'
         });
 
@@ -99,7 +108,7 @@ export class EmpresaUsuarioRolSimpleSeeder {
             apellido: 'FoodMarket',
             rolNombre: 'AdminFood',
             empresa: empresaFood,
-            permisos: todosLosPermisos,
+            permisos: permisosParaAdministradores,
             descripcion: 'Administrador completo de FoodMarket'
         });
 

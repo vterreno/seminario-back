@@ -18,6 +18,7 @@ import { CategoriasModule } from './resource/categorias/categorias.module';
 import { MarcasModule } from './resource/marcas/marcas.module';
 import { MovimientosStockModule } from './resource/movimientos-stock/movimientos-stock.module';
 import { ProductosModule } from './resource/productos/productos.module';
+import { ListaPreciosModule } from './resource/lista-precios/lista-precios.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ProductosModule } from './resource/productos/productos.module';
     MarcasModule,
     ProductosModule,
     MovimientosStockModule,
+    ListaPreciosModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

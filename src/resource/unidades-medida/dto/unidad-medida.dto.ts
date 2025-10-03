@@ -16,6 +16,10 @@ export class CreateUnidadMedidaDto {
   @IsOptional()
   @IsNumber({}, { message: 'El ID de empresa debe ser un número válido' })
   empresaId?: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'El estado debe ser verdadero o falso' })
+  estado?: boolean = true;
 }
 
 export class UpdateUnidadMedidaDto {
@@ -36,6 +40,10 @@ export class UpdateUnidadMedidaDto {
   @IsOptional()
   @IsNumber({}, { message: 'El ID de empresa debe ser un número válido' })
   empresaId?: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'El estado debe ser verdadero o falso' })
+  estado?: boolean = true;
 }
 
 export class BulkDeleteUnidadMedidaDto {

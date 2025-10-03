@@ -1,203 +1,159 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { UnidadMedida } from '../../database/core/unidad-medida.entity';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { Repository, In, FindOneOptions, FindManyOptions } from 'typeorm';
+import { UnidadMedidaEntity } from '../../database/core/unidad-medida.entity';
 import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto } from './dto/unidad-medida.dto';
+import { BaseService } from 'src/base-service/base-service.service';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Injectable()
-export class UnidadesMedidaService {
-  constructor(
-    @InjectRepository(UnidadMedida)
-    private readonly unidadMedidaRepository: Repository<UnidadMedida>,
-  ) {}
-
-  /**
-   * Verifica si una unidad de medida está siendo utilizada por productos
-   * TODO: Reemplazar simulación con consulta real a tabla de productos
-   * @param abreviatura - Abreviatura de la unidad de medida
-   * @returns boolean indicando si está en uso
-   */
-  private isUnitInUse(abreviatura: string): boolean {
-    // TODO: Implementar consulta real a tabla productos cuando esté disponible
-    // SELECT COUNT(*) FROM productos WHERE unidad_medida_abreviatura = ? AND empresa_id = ?
+export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
+    findManyOptions: FindManyOptions<UnidadMedidaEntity> = {};
+    findOneOptions: FindOneOptions<UnidadMedidaEntity> = {};
     
-    // Por ahora permitir eliminar todas las unidades
-    return false;
-  }
-
-  async findAll(empresaId?: number): Promise<UnidadMedida[]> {
-    // Si no hay empresaId (como en el caso de superadmin), devolver todas las unidades
-    if (!empresaId) {
-      return this.unidadMedidaRepository.find({
-        relations: ['empresa'],
-        order: { nombre: 'ASC' },
-      });
+    constructor(
+        @InjectRepository(UnidadMedidaEntity) 
+        protected unidadesMedidaRepository: Repository<UnidadMedidaEntity>,
+        @InjectRepository(ProductoEntity)
+        protected productosRepository: Repository<ProductoEntity>,
+    ){
+        super(unidadesMedidaRepository);
     }
-    
-    return this.unidadMedidaRepository.find({
-      where: { empresaId },
-      relations: ['empresa'], // Incluir también para usuarios normales
-      order: { nombre: 'ASC' },
-    });
-  }
-
-  async findOne(id: number, empresaId?: number): Promise<UnidadMedida> {
-    const whereCondition = empresaId ? { id, empresaId } : { id };
-    
-    const unidad = await this.unidadMedidaRepository.findOne({
-      where: whereCondition,
-      relations: ['empresa'],
-    });
-
-    if (!unidad) {
-      const empresaMessage = empresaId 
-        ? `con ID ${id} para su empresa` 
-        : `con ID ${id}`;
-      throw new NotFoundException(`No se encontró la unidad de medida ${empresaMessage}. Verifique que el ID sea correcto.`);
+    // Get unidades filtered by company
+    async getUnidadesByEmpresa(empresaId: number): Promise<UnidadMedidaEntity[]> {
+        return await this.unidadesMedidaRepository.find({
+            where: { empresa_id: empresaId },
+            relations: ['empresa'],
+        });
     }
 
-    return unidad;
-  }
-
-  async create(createDto: CreateUnidadMedidaDto, empresaId: number): Promise<UnidadMedida> {
-    // Verificar si ya existe una unidad con el mismo nombre o abreviatura
-    const existing = await this.unidadMedidaRepository.findOne({
-      where: [
-        { nombre: createDto.nombre, empresaId },
-        { abreviatura: createDto.abreviatura, empresaId },
-      ],
-    });
-
-    if (existing) {
-      if (existing.nombre === createDto.nombre) {
-        throw new ConflictException(`No se puede crear la unidad de medida "${createDto.nombre}" porque ya existe una unidad con ese nombre. La unidad existente tiene la abreviatura "${existing.abreviatura}".`);
-      }
-      if (existing.abreviatura === createDto.abreviatura) {
-        throw new ConflictException(`No se puede crear la unidad de medida con abreviatura "${createDto.abreviatura}" porque ya existe una unidad llamada "${existing.nombre}" con esa abreviatura. Por favor, use una abreviatura diferente.`);
-      }
+    // Get all unidades (for superadmin)
+    async getAllUnidades(): Promise<UnidadMedidaEntity[]> {
+        return await this.unidadesMedidaRepository.find({
+            relations: ['empresa'],
+        });
     }
 
-    const unidad = this.unidadMedidaRepository.create({
-      ...createDto,
-      empresaId,
-    });
-
-    return this.unidadMedidaRepository.save(unidad);
-  }
-
-  async update(id: number, updateDto: UpdateUnidadMedidaDto, empresaId?: number): Promise<UnidadMedida> {
-    // Primero buscar la unidad. Si empresaId es undefined (caso superadmin), buscar solo por ID
-    const unidad = await this.findOne(id, empresaId);
-    
-    // Usar el empresaId de la unidad existente para las validaciones posteriores
-    const targetEmpresaId = unidad.empresaId;
-
-    // Verificar conflictos si se está actualizando nombre o abreviatura
-    if (updateDto.nombre || updateDto.abreviatura) {
-      const conditions = [];
-      if (updateDto.nombre) {
-        conditions.push({ nombre: updateDto.nombre, empresaId: targetEmpresaId });
-      }
-      if (updateDto.abreviatura) {
-        conditions.push({ abreviatura: updateDto.abreviatura, empresaId: targetEmpresaId });
-      }
-
-      const existing = await this.unidadMedidaRepository.findOne({
-        where: conditions,
-      });
-
-      if (existing && existing.id !== id) {
-        if (existing.nombre === updateDto.nombre) {
-          throw new ConflictException(`No se puede actualizar la unidad de medida con el nombre "${updateDto.nombre}" porque ya existe otra unidad con ese nombre. La unidad existente tiene la abreviatura "${existing.abreviatura}".`);
+    // Create unidad
+    async createUnidad(unidadData: CreateUnidadMedidaDto): Promise<UnidadMedidaEntity> {
+        try {
+            const unidad = this.unidadesMedidaRepository.create({
+                ...unidadData,
+                estado: unidadData.estado ?? true, // Default to true if not provided
+            });
+            return await this.unidadesMedidaRepository.save(unidad);
+        } catch (error) {
+            // Log internal error but don't expose it to client
+            console.error('Internal error creating unidad:', error);
+            throw new BadRequestException('Error al crear la unidad. Por favor, verifica los datos e intenta nuevamente.');
         }
-        if (existing.abreviatura === updateDto.abreviatura) {
-          throw new ConflictException(`No se puede actualizar la unidad de medida con la abreviatura "${updateDto.abreviatura}" porque ya existe otra unidad llamada "${existing.nombre}" con esa abreviatura. Por favor, use una abreviatura diferente.`);
+    }
+    // Update unidad
+    async updateUnidad(id: number, unidadData: UpdateUnidadMedidaDto): Promise<UnidadMedidaEntity> {
+        const unidad = await this.findById(id);
+
+        if (!unidad) {
+            throw new BadRequestException(`❌ No se encontró la unidad que intentas actualizar. Verifica que el ID sea correcto.`);
         }
-      }
+        const existenProductos = await this.productosRepository.find({
+            where: { unidad_medida_id: id }
+        });
+        // Si hay productos asociados, no permitir cambiar nombre, abreviatura o empresa
+        if (existenProductos.length > 0) {
+            const nombresProductos = existenProductos.map(p => `"${p.nombre}"`).join(', ');
+            throw new BadRequestException(`No se puede modificar la unidad "${unidad.nombre}" porque tiene productos asociados: ${nombresProductos}. Primero debe reasignar o eliminar esos productos.`);
+        }
+        // Validar que no se pueda cambiar la empresa si hay productos asociados
+        if (unidadData.empresaId && unidadData.empresaId !== unidad.empresa_id) {
+            throw new BadRequestException(`❌ No se puede cambiar la empresa de la unidad "${unidad.nombre}" porque tiene productos asociados. Primero debe reasignar o eliminar esos productos.`);
+        }
+        // Validar que no se pueda cambiar la abreviatura si hay productos asociados
+        if (unidadData.abreviatura && unidadData.abreviatura !== unidad.abreviatura) {
+            throw new BadRequestException(`❌ No se puede cambiar la abreviatura de la unidad "${unidad.nombre}" porque tiene productos asociados. Primero debe reasignar o eliminar esos productos.`);
+        }
+
+        await this.unidadesMedidaRepository.update(id, unidadData);
+        return await this.findById(id);
     }
 
-    Object.assign(unidad, updateDto);
-    return this.unidadMedidaRepository.save(unidad);
-  }
-
-  async remove(id: number, empresaId?: number): Promise<void> {
-    const unidad = await this.findOne(id, empresaId);
-    
-    // Usar el empresaId de la unidad si no se proporciona (caso superadmin)
-    const targetEmpresaId = empresaId || unidad.empresaId;
-    
-    // Verificar si la unidad está siendo utilizada por productos
-    const canDeleteResult = await this.canDelete(id, targetEmpresaId);
-    
-    if (!canDeleteResult.canDelete) {
-      throw new ConflictException(canDeleteResult.message || 'No se puede eliminar la unidad de medida porque está en uso');
+    // Find unidad by id with relations
+    async findById(id: number): Promise<UnidadMedidaEntity> {
+        return await this.unidadesMedidaRepository.findOne({
+            where: { id },
+            relations: ['empresa'],
+        });
     }
-    
-    await this.unidadMedidaRepository.remove(unidad);
-  }
 
-  async canDelete(id: number, empresaId?: number): Promise<{ canDelete: boolean; message?: string }> {
-    const unidad = await this.findOne(id, empresaId);
-    
-    if (this.isUnitInUse(unidad.abreviatura)) {
-      return {
-        canDelete: false,
-        message: `No se puede eliminar la unidad de medida "${unidad.nombre}" porque está siendo utilizada por uno o más productos de la empresa.`
-      };
+    async deleteUnidad(id: number): Promise<void> {
+        const existenProductos = await this.productosRepository.find({
+            where: { unidad_medida_id: id }
+        });
+        if (existenProductos.length > 0) {
+            const nombresProductos = existenProductos.map(p => `"${p.nombre}"`).join(', ');
+            throw new BadRequestException(`No se puede eliminar la unidad porque está asociada a los siguientes productos: ${nombresProductos}. Primero debe reasignar o eliminar esos productos.`);
+        }
+
+        await this.unidadesMedidaRepository.delete(id);
     }
-    
-    return { canDelete: true };
-  }
 
-  async bulkDelete(ids: number[], empresaId?: number): Promise<{ message?: string }> {
-    try {
-      if (!ids || ids.length === 0) {
-        throw new NotFoundException('No se proporcionaron unidades de medida para eliminar. Seleccione al menos una unidad de medida.');
-      }
+    // Bulk delete productos
+    async bulkDeleteUnidades(ids: number[], empresaId?: number): Promise<void> {
+        // If empresa validation is needed, check unidades belong to the company
+        if (empresaId) {
+            const unidades = await this.unidadesMedidaRepository.find({
+                where: { id: In(ids), empresa_id: empresaId }
+            });
 
-      // Si empresaId se proporciona, filtrar por empresa. Si no (superadmin), permitir todas
-      const whereCondition = empresaId ? { empresaId } : {};
-      const unidades = await this.unidadMedidaRepository.find({
-        where: whereCondition,
-        select: ['id']
-      });
+            if (unidades.length !== ids.length) {
+                throw new BadRequestException('❌ Algunas unidades que intentas eliminar no pertenecen a tu empresa o no existen.');
+            }
+        }
 
-      const validIds = unidades.map(u => u.id);
-      const idsToDelete = ids.filter(id => validIds.includes(id));
-
-      if (idsToDelete.length === 0) {
-        const message = empresaId 
-          ? 'Las unidades de medida seleccionadas no existen o no pertenecen a su empresa. Verifique las unidades seleccionadas e intente nuevamente.'
-          : 'Las unidades de medida seleccionadas no existen. Verifique las unidades seleccionadas e intente nuevamente.';
-        throw new NotFoundException(message);
-      }
-
-      // Verificar cuáles unidades se pueden eliminar
-      const whereDeleteCondition = empresaId 
-        ? { id: In(idsToDelete), empresaId }
-        : { id: In(idsToDelete) };
-
-      const unidadesCompletas = await this.unidadMedidaRepository.find({
-        where: whereDeleteCondition,
-      });
-
-      const unidadesNoEliminables = unidadesCompletas.filter(u => 
-        this.isUnitInUse(u.abreviatura)
-      );
-
-      if (unidadesNoEliminables.length > 0) {
-        const nombresEnUso = unidadesNoEliminables.map(u => u.nombre).join(', ');
-        throw new ConflictException(
-          `No se pueden eliminar las siguientes unidades de medida porque están siendo utilizadas por productos: ${nombresEnUso}`
-        );
-      }
-
-      await this.unidadMedidaRepository.delete(whereDeleteCondition);
-
-      return { message: `${idsToDelete.length} unidades de medida eliminadas exitosamente` };
-    } catch (error) {
-      console.error('Error in bulkDelete:', error);
-      throw error;
+        await this.unidadesMedidaRepository.delete(ids);
     }
-  }
+
+    // Bulk update unidad status (activate/deactivate)
+    async bulkUpdateUnidadStatus(ids: number[], estado: boolean, empresaId?: number): Promise<UnidadMedidaEntity[]> {
+        // If empresa validation is needed, check unidades belong to the company
+        if (empresaId) {
+            const unidades = await this.unidadesMedidaRepository.find({
+                where: { id: In(ids), empresa_id: empresaId }
+            });
+
+            if (unidades.length !== ids.length) {
+                throw new BadRequestException('❌ Algunas unidades que intentas modificar no pertenecen a tu empresa o no existen.');
+            }
+        }
+        // Si se intenta inactivar unidades, validar que no tengan stock > 0
+        if (estado === false) {
+            const existenProductos = await this.productosRepository.find({
+                where: { unidad_medida_id: In(ids) }
+            });
+            if (existenProductos.length > 0) {
+                const nombresUnidades = existenProductos.map(p => `"${p.nombre}"`).join(', ');
+                throw new BadRequestException(`No se pueden inactivar las siguientes unidades porque están asociadas a productos: ${nombresUnidades}. Primero debe reasignar o eliminar esos productos.`);
+            }
+        }
+
+        // Update the unidades
+        await this.unidadesMedidaRepository.update(ids, { estado });
+
+        // Return updated unidades with relations
+        return await this.unidadesMedidaRepository.find({
+            where: { id: In(ids) },
+            relations: ['empresa']
+        });
+    }
+
+    // Soft delete (set estado to false instead of hard delete)
+    async softDeleteUnidad(id: number): Promise<UnidadMedidaEntity> {
+        await this.unidadesMedidaRepository.update(id, { estado: false });
+        return await this.findById(id);
+    }
+
+    // Bulk soft delete
+    async bulkSoftDeleteUnidades(ids: number[]): Promise<void> {
+        await this.unidadesMedidaRepository.update(ids, { estado: false });
+    }
+
 }

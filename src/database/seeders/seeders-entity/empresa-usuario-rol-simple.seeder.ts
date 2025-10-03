@@ -51,9 +51,6 @@ export class EmpresaUsuarioRolSimpleSeeder {
                 { codigo: 'sucursal_ver' },
                 // Permisos completos de unidades de medida para todos
                 { codigo: 'unidad_medida_ver' },
-                { codigo: 'unidad_medida_agregar' },
-                { codigo: 'unidad_medida_modificar' },
-                { codigo: 'unidad_medida_eliminar' },
                 { codigo: 'movimiento_stock_ver' }
             ]
         });

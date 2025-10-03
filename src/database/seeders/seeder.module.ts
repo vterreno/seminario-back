@@ -22,12 +22,12 @@ import { ConsumidorFinalSeeder } from './seeders-entity/consumidor-final.seeder'
 import SucursalesSeeder from './seeders-entity/sucursales.seeder';
 import { contactoEntity } from '../core/contacto.entity';
 import { sucursalEntity } from '../core/sucursal.entity';
-import { UnidadesMedidaSeeder } from './unidades-medida.seeder';
-import { UnidadMedida } from '../core/unidad-medida.entity';
+import { UnidadMedidaEntity } from '../core/unidad-medida.entity';
+import { UnidadMedidaSeeder } from './seeders-entity/unidad-medida.seeder';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity, UnidadMedida]),
+        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity, UnidadMedidaEntity ]),
     ],
     providers: [
         // Seeders principales
@@ -42,9 +42,10 @@ import { UnidadMedida } from '../core/unidad-medida.entity';
         MarcaSimpleSeeder,
         ProductoSimpleSeeder,
         MovimientosStockInicialSeeder,
+        UnidadMedidaSeeder,
         // Seeder maestro
         MasterSeeder,
-        UnidadesMedidaSeeder,
+        UnidadMedidaSeeder,
         SeederService,
     ],
     exports: [SeederService],

@@ -1,128 +1,154 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  ParseIntPipe,
-  Req,
-  UseGuards,
-  ConflictException,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Delete,
+    Req,
+    UseGuards,
+    BadRequestException,
+    Put,
 } from '@nestjs/common';
 import { UnidadesMedidaService } from './unidades-medida.service';
-import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto, BulkDeleteUnidadMedidaDto } from './dto/unidad-medida.dto';
+import { CreateUnidadMedidaDto, UpdateUnidadMedidaDto } from './dto/unidad-medida.dto';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
-import { Request } from 'express';
+import { Action } from 'src/middlewares/decorators/action.decorator';
+import { RequestWithUser } from '../users/interface/request-user';
+import { UnidadMedidaEntity } from 'src/database/core/unidad-medida.entity';
+import { BaseController } from 'src/base-service/base-controller.controller';
+import { PermissionsGuard } from 'src/middlewares/permission.middleware';
+import { Entity as EntityDecorator } from 'src/middlewares/decorators/entity.decorator';
 
-@Controller('unidades-medida')
-@UseGuards(AuthGuard) // Solo verificar autenticación, sin permisos específicos
-export class UnidadesMedidaController {
-  constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
-
-  @Get()
-  // Removido: @Action('ver') - Accesible para todos los usuarios autenticados
-  findAll(@Req() request: Request) {
-    const empresaId = request['user']?.empresa?.id; // Para superadmin puede ser undefined
-    return this.unidadesMedidaService.findAll(empresaId);
-  }
-
-  @Get(':id')
-  // Removido: @Action('ver') - Accesible para todos los usuarios autenticados
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const user = request['user'];
-    const empresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    if (!empresaId && !isSuperAdmin) {
-      throw new ConflictException('No se puede acceder a la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
+@Controller('unidad-medida')
+@EntityDecorator('unidad_medida')
+@UseGuards(AuthGuard, PermissionsGuard)
+export class UnidadesMedidaController extends BaseController<UnidadMedidaEntity>{
+    constructor(protected readonly unidadMedidaService: UnidadesMedidaService){
+        super(unidadMedidaService);
     }
-    
-    return this.unidadesMedidaService.findOne(id, empresaId);
-  }
+    @Get()
+    @Action('ver')
+    async getAllUnidades(@Req() req: RequestWithUser) {
+        const user = req.user;
 
-  @Post()
-  // Removido: @Action('agregar') - Accesible para todos los usuarios autenticados
-  create(@Body() createUnidadMedidaDto: CreateUnidadMedidaDto, @Req() request: Request) {
-    const user = request['user'];
-    const userEmpresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    // Para usuarios normales, usar su empresa. Para superadmin, usar la empresa del DTO
-    const empresaId = isSuperAdmin ? createUnidadMedidaDto.empresaId : userEmpresaId;
-    
-    if (!empresaId) {
-      if (isSuperAdmin) {
-        throw new ConflictException('Como superadmin, debe especificar el ID de la empresa para crear la unidad de medida.');
-      } else {
-        throw new ConflictException('No se puede crear la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
-      }
-    }
-    
-    return this.unidadesMedidaService.create(createUnidadMedidaDto, empresaId);
-  }
+        // If user has a company, filter unidades by that company
+        if (user.empresa?.id) {
+            return await this.unidadMedidaService.getUnidadesByEmpresa(user.empresa.id);
+        }
 
-  @Patch(':id')
-  // Removido: @Action('modificar') - Accesible para todos los usuarios autenticados
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUnidadMedidaDto: UpdateUnidadMedidaDto,
-    @Req() request: Request,
-  ) {
-    const user = request['user'];
-    const userEmpresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    if (!userEmpresaId && !isSuperAdmin) {
-      throw new ConflictException('No se puede actualizar la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
+        // If no company (superadmin), return all unidades
+        return await this.unidadMedidaService.getAllUnidades();
     }
-    
-    // Para usuarios normales, usar su empresa. Para superadmin, permitir empresaId del DTO o undefined
-    const empresaId = isSuperAdmin ? updateUnidadMedidaDto.empresaId : userEmpresaId;
-    
-    return this.unidadesMedidaService.update(id, updateUnidadMedidaDto, empresaId);
-  }
 
-  @Delete('bulk-delete')
-  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
-  bulkDelete(@Body() bulkDeleteDto: BulkDeleteUnidadMedidaDto, @Req() request: Request) {
-    const user = request['user'];
-    const empresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    if (!empresaId && !isSuperAdmin) {
-      throw new ConflictException('No se pueden eliminar las unidades de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
+    @Get(':id')
+    @Action('ver')
+    async getUnidadById(@Param('id') id: number) {
+        return await this.unidadMedidaService.findOne({where: { id }});
     }
-    
-    return this.unidadesMedidaService.bulkDelete(bulkDeleteDto.ids, empresaId);
-  }
 
-  @Get(':id/can-delete')
-  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
-  canDelete(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const user = request['user'];
-    const empresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    if (!empresaId && !isSuperAdmin) {
-      throw new ConflictException('No se puede verificar si la unidad de medida puede ser eliminada porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
+    @Get('empresa/:id')
+    @Action('ver')
+    async getUnidadesByEmpresa(@Param('id') id: number) {
+        return await this.unidadMedidaService.getUnidadesByEmpresa(id);
     }
-    
-    return this.unidadesMedidaService.canDelete(id, empresaId);
-  }
 
-  @Delete(':id')
-  // Removido: @Action('eliminar') - Accesible para todos los usuarios autenticados
-  remove(@Param('id', ParseIntPipe) id: number, @Req() request: Request) {
-    const user = request['user'];
-    const empresaId = user?.empresa?.id;
-    const isSuperAdmin = user?.role?.nombre === 'Superadmin';
-    
-    if (!empresaId && !isSuperAdmin) {
-      throw new ConflictException('No se puede eliminar la unidad de medida porque el usuario debe pertenecer a una empresa para realizar esta operación. Contacte al administrador del sistema.');
+    @Post()
+    @Action('agregar')
+    async createUnidad(@Body() unidadData: CreateUnidadMedidaDto, @Req() req: RequestWithUser) {
+        const user = req.user;
+        // If user has a company and empresaId is not provided, assign that company to the unidad
+        if (user.empresa?.id && !unidadData.empresaId) {
+            unidadData.empresaId = user.empresa.id;
+        }
+
+        return await this.unidadMedidaService.createUnidad(unidadData);
     }
-    
-    return this.unidadesMedidaService.remove(id, empresaId);
-  }
+
+    @Put(':id')
+    @Action('modificar')
+    async updateUnidad(@Param('id') id: number, @Body() unidadData: UpdateUnidadMedidaDto, @Req() req: RequestWithUser) {
+        const user = req.user;
+
+        // Verify the unidad belongs to the user's company (if user has a company)
+        if (user.empresa?.id) {
+            const existingUnidad = await this.unidadMedidaService.findOne({
+                where: { id },
+            });
+            if (!existingUnidad) {
+                throw new BadRequestException('Unidad no encontrada');
+            }
+            if (existingUnidad.empresa_id !== user.empresa.id) {
+                throw new BadRequestException('No tienes permisos para modificar esta unidad');
+            }
+            // Ensure company_id doesn't change for regular users
+            if (unidadData.empresaId && unidadData.empresaId !== user.empresa.id) {
+                throw new BadRequestException('No puedes cambiar la empresa de la unidad');
+            }
+        }
+
+        return await this.unidadMedidaService.updateUnidad(id, unidadData);
+    }
+
+    @Delete(':id')
+    @Action('eliminar')
+    async deleteUnidad(@Param('id') id: number, @Req() req: RequestWithUser) {
+        const user = req.user;
+        // Verify the unidad belongs to the user's company (if user has a company)
+        if (user.empresa?.id) {
+            const existingUnidad = await this.unidadMedidaService.findOne({
+                where: { id },
+            });
+            if (existingUnidad.empresa_id !== user.empresa.id) {
+                throw new BadRequestException('No tienes permisos para eliminar esta unidad');
+            }
+        }
+
+        await this.unidadMedidaService.deleteUnidad(id);
+        return { message: 'Unidad eliminada exitosamente' };
+    }
+
+    @Delete('bulk/delete')
+    @Action('eliminar')
+    async bulkDeleteUnidades(@Body() body: { ids: number[] }, @Req() req: RequestWithUser) {
+        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
+        //validacion de que no se pueda eliminar una marca que este asociada a un producto
+        const user = req.user;
+        const { ids } = body;
+
+        try {
+            await this.unidadMedidaService.bulkDeleteUnidades(
+                ids, 
+                user.empresa?.id
+            );
+            return { message: `${ids.length} unidades eliminadas exitosamente` };
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
+    }
+
+    @Put('bulk/status')
+    @Action('modificar')
+    async bulkUpdateUnidadStatus(@Body() body: { ids: number[], estado: boolean }, @Req() req: RequestWithUser) {
+        const user = req.user;
+        const { ids, estado } = body;
+
+        try {
+            const updatedUnidades = await this.unidadMedidaService.bulkUpdateUnidadStatus(
+                ids, 
+                estado, 
+                user.empresa?.id
+            );
+            
+            const action = estado ? 'activadas' : 'desactivadas';
+            return { 
+                message: `${ids.length} unidades ${action} exitosamente`,
+                updatedUnidades: updatedUnidades
+            };
+        } catch (error) {
+            // Si el error viene del servicio con un mensaje específico (como validación de stock),
+            // pasarlo directamente sin agregar texto adicional
+            throw new BadRequestException(error.message);
+        }
+    }
 }

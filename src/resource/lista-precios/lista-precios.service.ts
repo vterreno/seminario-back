@@ -70,7 +70,7 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             // Si hay productos, crear las relaciones con precios específicos
             if (productos && productos.length > 0) {
                 // Verificar que todos los productos existan
-                const productoIds = productos.map(p => p.productoId);
+                const productoIds = productos.map(p => p.producto_id);
                 const existingProductos = await this.productoRepository.find({
                     where: { id: In(productoIds) }
                 });
@@ -83,8 +83,8 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                 const productosListasPrecios = productos.map(p => 
                     this.productoListaPreciosRepository.create({
                         lista_precios_id: savedListaPrecio.id,
-                        producto_id: p.productoId,
-                        precio_venta_especifico: p.precioEspecifico,
+                        producto_id: p.producto_id,
+                        precio_venta_especifico: p.precio_venta_especifico,
                     })
                 );
 
@@ -123,7 +123,7 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             await this.productoListaPreciosRepository.delete({ lista_precios_id: id });
 
             // Verificar que todos los productos existan
-            const productoIds = productos.map(p => p.productoId);
+            const productoIds = productos.map(p => p.producto_id);
             const existingProductos = await this.productoRepository.find({
                 where: { id: In(productoIds) }
             });
@@ -136,8 +136,8 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             const productosListasPrecios = productos.map(p => 
                 this.productoListaPreciosRepository.create({
                     lista_precios_id: id,
-                    producto_id: p.productoId,
-                    precio_venta_especifico: p.precioEspecifico,
+                    producto_id: p.producto_id,
+                    precio_venta_especifico: p.precio_venta_especifico,
                 })
             );
 

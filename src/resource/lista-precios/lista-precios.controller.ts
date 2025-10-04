@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, BadRequestException, Put, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, BadRequestException, Put, Req } from '@nestjs/common';
 import { ListaPreciosService } from './lista-precios.service';
 import { CreateListaPrecioDto } from './dto/create-lista-precio.dto';
 import { UpdateListaPrecioDto } from './dto/update-lista-precio.dto';
@@ -8,7 +8,6 @@ import { PermissionsGuard } from 'src/middlewares/permission.middleware';
 import { Action } from 'src/middlewares/decorators/action.decorator';
 import { RequestWithUser } from '../users/interface/request-user';
 import { BaseController } from 'src/base-service/base-controller.controller';
-import { ProductoEntity } from 'src/database/core/producto.entity';
 import { ListaPreciosEntity } from 'src/database/core/lista-precios.entity';
 
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -36,7 +35,6 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
     @Get(':id')
     @Action('ver')
     async getListaPrecioById(@Param('id') id: number) {
-        console.log('ID de la lista de precios solicitada:', id);
         return await this.listaPreciosService.findById(id);
     }
 

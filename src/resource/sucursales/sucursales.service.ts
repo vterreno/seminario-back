@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, Repository, In } from 'typeorm';
 
 
 @Injectable()
@@ -46,7 +46,7 @@ export class SucursalesService extends BaseService<sucursalEntity> {
 
   async deleteSucursales(ids: number[]): Promise<{ message: string }> {
     // Verificar que todas las sucursales estén inactivas antes de eliminar
-    const sucursales = await this.repository.findByIds(ids);
+    const sucursales = await this.repository.find({ where: { id: In(ids) } });
     const activeSucursales = sucursales.filter(s => s.estado === true);
     
     if (activeSucursales.length > 0) {

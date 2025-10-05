@@ -42,10 +42,12 @@ export class EmpresaUsuarioRolSeeder {
             usuario = await this.userRepo.save(usuario);
             console.log('Usuario de prueba creado');
         }
-        // 3. Crear rol con todos los permisos asociado a la empresa
+        // 3. Crear rol con todos los permisos asociado a la empresa - FORZAR ACTUALIZACIÓN
         let rol = await this.roleRepo.findOne({ where: { nombre: 'AdminPrueba', empresa_id: empresa.id }, relations: ['permissions'] });
+        
+        const permisos = await this.permisoRepo.find();
+        
         if (!rol) {
-            const permisos = await this.permisoRepo.find();
             rol = this.roleRepo.create({
                 nombre: 'AdminPrueba',
                 empresa_id: empresa.id,
@@ -56,13 +58,11 @@ export class EmpresaUsuarioRolSeeder {
             rol = await this.roleRepo.save(rol);
             console.log('Rol de prueba creado con todos los permisos');
         } else {
-            // Si el rol ya existe, asegurar que esté activo
-            if (!rol.estado) {
-                rol.estado = true;
-                await this.roleRepo.save(rol);
-                console.log('Rol AdminPrueba reactivado');
-            }
-            console.log('Rol AdminPrueba ya existe y está activo');
+            // ACTUALIZAR EL ROL EXISTENTE CON TODOS LOS PERMISOS
+            rol.permissions = permisos;
+            rol.estado = true;
+            await this.roleRepo.save(rol);
+            console.log(`Rol AdminPrueba actualizado con ${permisos.length} permisos (incluyendo unidades de medida)`);
         }
         // 4. Asociar el rol al usuario
         usuario.role = rol;
@@ -98,7 +98,8 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'marca_ver' },
                     { codigo: 'categoria_ver' },
                     { codigo: 'ventas_ver' },
-                    { codigo: 'compras_ver' }
+                    { codigo: 'compras_ver' },
+                    { codigo: 'unidad_medida_ver' } // Añadido permiso para ver unidades de medida
                 ]
             });
             
@@ -135,44 +136,64 @@ export class EmpresaUsuarioRolSeeder {
             console.log('Usuario Gestor Productos creado');
         }
 
-        // 8. ROL GESTOR DE PRODUCTOS
+        // 7.1. USUARIO GESTOR@MAIL.COM - Mismos permisos que gestor@test.com
+        let usuarioGestorMail = await this.userRepo.findOne({ where: { email: 'gestor@mail.com' } });
+        if (!usuarioGestorMail) {
+            usuarioGestorMail = this.userRepo.create({
+                nombre: 'Gestor',
+                apellido: 'Mail',
+                email: 'gestor@mail.com',
+                password: hashSync('gestor123', 10),
+                empresa: empresa
+            });
+            usuarioGestorMail = await this.userRepo.save(usuarioGestorMail);
+            console.log('Usuario Gestor Mail creado');
+        }
+
+        // 8. ROL GESTOR DE PRODUCTOS - FORZAR ACTUALIZACIÓN
         let rolGestor = await this.roleRepo.findOne({ 
             where: { nombre: 'GestorPrueba', empresa_id: empresa.id }, 
             relations: ['permissions'] 
         });
+        
+        const permisosGestor = await this.permisoRepo.find({
+            where: [
+                { codigo: 'usuario_ver'},
+                { codigo: 'usuario_agregar'},
+                { codigo: 'usuario_modificar'},
+                { codigo: 'usuario_eliminar'},
+                { codigo: 'producto_ver' },
+                { codigo: 'producto_agregar' },
+                { codigo: 'producto_modificar' },
+                { codigo: 'producto_eliminar' },
+                { codigo: 'marca_ver' },
+                { codigo: 'marca_agregar' },
+                { codigo: 'marca_modificar' },
+                { codigo: 'marca_eliminar' },
+                { codigo: 'categoria_ver' },
+                { codigo: 'categoria_agregar' },
+                { codigo: 'categoria_modificar' },
+                { codigo: 'categoria_eliminar' },
+                { codigo: 'roles_ver' },
+                { codigo: 'roles_agregar' },
+                { codigo: 'roles_modificar' },
+                { codigo: 'roles_eliminar' },
+                { codigo: 'sucursal_ver' },
+                { codigo: 'sucursal_agregar' },
+                { codigo: 'sucursal_modificar' },
+                { codigo: 'sucursal_eliminar' },
+                { codigo: 'ventas_ver' },
+                { codigo: 'compras_ver' },
+                { codigo: 'configuracion_empresa'},
+                // Añadidos permisos para unidades de medida
+                { codigo: 'unidad_medida_ver' },
+                { codigo: 'unidad_medida_agregar' },
+                { codigo: 'unidad_medida_modificar' },
+                { codigo: 'unidad_medida_eliminar' },
+            ]
+        });
+
         if (!rolGestor) {
-            const permisosGestor = await this.permisoRepo.find({
-                where: [
-                    { codigo: 'usuario_ver'},
-                    { codigo: 'usuario_agregar'},
-                    { codigo: 'usuario_modificar'},
-                    { codigo: 'usuario_eliminar'},
-                    { codigo: 'producto_ver' },
-                    { codigo: 'producto_agregar' },
-                    { codigo: 'producto_modificar' },
-                    { codigo: 'producto_eliminar' },
-                    { codigo: 'marca_ver' },
-                    { codigo: 'marca_agregar' },
-                    { codigo: 'marca_modificar' },
-                    { codigo: 'marca_eliminar' },
-                    { codigo: 'categoria_ver' },
-                    { codigo: 'categoria_agregar' },
-                    { codigo: 'categoria_modificar' },
-                    { codigo: 'categoria_eliminar' },
-                    { codigo: 'roles_ver' },
-                    { codigo: 'roles_agregar' },
-                    { codigo: 'roles_modificar' },
-                    { codigo: 'roles_eliminar' },
-                    { codigo: 'sucursal_ver' },
-                    { codigo: 'sucursal_agregar' },
-                    { codigo: 'sucursal_modificar' },
-                    { codigo: 'sucursal_eliminar' },
-                    { codigo: 'ventas_ver' },
-                    { codigo: 'compras_ver' },
-                    { codigo: 'configuracion_empresa'},
-                ]
-            });
-            
             rolGestor = this.roleRepo.create({
                 nombre: 'GestorPrueba',
                 empresa_id: empresa.id,
@@ -183,13 +204,11 @@ export class EmpresaUsuarioRolSeeder {
             rolGestor = await this.roleRepo.save(rolGestor);
             console.log('Rol GestorPrueba creado con gestión completa de productos + lectura ventas/compras');
         } else {
-            // Si el rol ya existe, asegurar que esté activo
-            if (!rolGestor.estado) {
-                rolGestor.estado = true;
-                await this.roleRepo.save(rolGestor);
-                console.log('Rol GestorPrueba reactivado');
-            }
-            console.log('Rol GestorPrueba ya existe y está activo');
+            // ACTUALIZAR EL ROL EXISTENTE CON LOS NUEVOS PERMISOS
+            rolGestor.permissions = permisosGestor;
+            rolGestor.estado = true;
+            await this.roleRepo.save(rolGestor);
+            console.log(`Rol GestorPrueba actualizado con ${permisosGestor.length} permisos (incluyendo unidades de medida)`);
         }
 
         // 9. Asociar roles a los nuevos usuarios
@@ -200,6 +219,11 @@ export class EmpresaUsuarioRolSeeder {
         usuarioGestor.role = rolGestor;
         await this.userRepo.save(usuarioGestor);
         console.log('Rol GestorPrueba vinculado al usuario gestor@test.com');
+
+        // 9.1. Asociar rol GestorPrueba al usuario gestor@mail.com
+        usuarioGestorMail.role = rolGestor;
+        await this.userRepo.save(usuarioGestorMail);
+        console.log('Rol GestorPrueba vinculado al usuario gestor@mail.com');
 
         // 10. USUARIO GESTOR1 - Ver + Crear (sin modificar ni eliminar)
         let usuarioGestor1 = await this.userRepo.findOne({ where: { email: 'gestor1@test.com' } });
@@ -233,6 +257,7 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'compras_ver' },
                     { codigo: 'dashboard_ver' },
                     { codigo: 'configuracion_empresa'},
+                    { codigo: 'unidad_medida_ver' }, // Añadido
                     // Permisos de AGREGAR/CREAR
                     { codigo: 'usuario_agregar'},
                     { codigo: 'roles_agregar' },
@@ -240,7 +265,8 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'sucursal_agregar' },
                     { codigo: 'producto_agregar' },
                     { codigo: 'ventas_agregar' },
-                    { codigo: 'compras_agregar' }
+                    { codigo: 'compras_agregar' },
+                    { codigo: 'unidad_medida_agregar' } // Añadido
                 ]
             });
             
@@ -354,6 +380,7 @@ export class EmpresaUsuarioRolSeeder {
                     { codigo: 'ventas_modificar' },
                     { codigo: 'dashboard_ver' },
                     { codigo: 'sucursal_ver' },
+                    { codigo: 'unidad_medida_ver' }, // Añadido para que puedan ver unidades de medida
                     // Puede ver usuarios pero no modificarlos
                     { codigo: 'usuario_ver'}
                 ]

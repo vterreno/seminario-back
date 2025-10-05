@@ -55,11 +55,11 @@ export class PermisosSeeder {
             { nombre: 'Modificar marca', codigo: 'marca_modificar' },
             { nombre: 'Eliminar marca', codigo: 'marca_eliminar' },
             
-            // Unidad permissions
-            { nombre: 'Ver unidad', codigo: 'unidad_ver' },
-            { nombre: 'Crear unidad', codigo: 'unidad_agregar' },
-            { nombre: 'Modificar unidad', codigo: 'unidad_modificar' },
-            { nombre: 'Eliminar unidad', codigo: 'unidad_eliminar' },
+            // Unidades de medida permissions
+            { nombre: 'Ver unidad de medida', codigo: 'unidad_medida_ver' },
+            { nombre: 'Crear unidad de medida', codigo: 'unidad_medida_agregar' },
+            { nombre: 'Modificar unidad de medida', codigo: 'unidad_medida_modificar' },
+            { nombre: 'Eliminar unidad de medida', codigo: 'unidad_medida_eliminar' },
             
             // Categoría permissions
             { nombre: 'Ver categoría', codigo: 'categoria_ver' },

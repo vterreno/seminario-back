@@ -64,7 +64,7 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
     }
 
     // Create lista precio
-    async createListaPrecio(listaPrecioData: CreateListaPrecioDto): Promise<ListaPreciosEntity> {
+    async createListaPrecio(listaPrecioData: CreateListaPrecioDto): Promise<any> {
         try {
             const nombre = listaPrecioData.nombre.trim();
             // Verificar si ya existe una lista de precios con el mismo nombre
@@ -72,12 +72,22 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             if (existeListaPrecio) {
                 throw new BadRequestException(`Ya existe una lista de precios con el nombre "${listaPrecioData.nombre}" en la empresa seleccionada. Por favor, utiliza un nombre diferente.`);
             }
+            
             const generarPermiso = generarCodigoPermiso(nombre, 'ver');
-            const permisoVer = this.permissionRepository.create({
-                nombre: `Ver lista de precios ${nombre}`,
-                codigo: generarPermiso,
+            
+            // Verificar si el permiso ya existe antes de crearlo
+            let permisoVer = await this.permissionRepository.findOne({
+                where: { codigo: generarPermiso }
             });
-            await this.permissionRepository.save(permisoVer);
+            
+            if (!permisoVer) {
+                // Crear el permiso solo si no existe
+                permisoVer = this.permissionRepository.create({
+                    nombre: `Ver lista de precios ${nombre}`,
+                    codigo: generarPermiso,
+                });
+                await this.permissionRepository.save(permisoVer);
+            }
             
             // Asignar el permiso "ver" al administrador de la empresa
             const roleAdmin = await this.roleRepository.findOne({
@@ -93,8 +103,6 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                         .relation(RoleEntity, 'permissions')
                         .of(roleAdmin)
                         .add(permisoVer);
-                } else {
-                    throw new BadRequestException(`Dicho nombre de lista de precios ya tiene el permiso asignado al rol Administrador. Por favor, cambia el nombre de la lista.`);
                 }
             } else {
                 throw new BadRequestException(`No se encontró el rol Administrador para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Administrador antes de crear una lista de precios.`);
@@ -114,11 +122,7 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                         .relation(RoleEntity, 'permissions')
                         .of(roleSuperAdmin)
                         .add(permisoVer);
-                } else {
-                    throw new BadRequestException(`Dicho nombre de lista de precios ya tiene el permiso asignado al rol Superadmin. Por favor, cambia el nombre de la lista.`);
                 }
-            } else {
-                throw new BadRequestException(`No se encontró el rol Superadmin para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Superadmin antes de crear una lista de precios.`);
             }
             // Extraer productos antes de crear la lista
             const { productos, ...listaPrecioInfo } = listaPrecioData;
@@ -155,9 +159,18 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
 
                 await this.productoListaPreciosRepository.save(productosListasPrecios);
             }
-
-            // Retornar la lista de precios con sus relaciones
-            return await this.findById(savedListaPrecio.id);
+            
+            // Retornar la lista de precios con el permiso creado
+            const listaCompleta = await this.findById(savedListaPrecio.id);
+            
+            return {
+                ...listaCompleta,
+                permisoCreado: {
+                    id: permisoVer.id,
+                    codigo: permisoVer.codigo,
+                    nombre: permisoVer.nombre
+                }
+            };
         } catch (error) {
             console.error('Internal error creating lista precio:', error);
             throw new BadRequestException(

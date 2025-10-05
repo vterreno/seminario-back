@@ -56,20 +56,31 @@ export class UsersService extends BaseService<UserEntity> {
   }
 
   async me(user: UserI) {
+    // Obtener datos actualizados del usuario desde la base de datos
+    // para asegurar que los permisos estén siempre actualizados
+    const freshUser = await this.repository.findOne({
+      where: { email: user.email },
+      relations: ['role', 'role.permissions', 'empresa']
+    });
+
+    if (!freshUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
     const response = {
-      name: `${user.nombre} ${user.apellido}`,
-      email: user.email,
-      empresa: user.empresa ? {
-        id: user.empresa.id,
-        nombre: user.empresa.name
+      name: `${freshUser.nombre} ${freshUser.apellido}`,
+      email: freshUser.email,
+      empresa: freshUser.empresa ? {
+        id: freshUser.empresa.id,
+        nombre: freshUser.empresa.name
       } : {
         id: null,
         nombre: null
       },
-      roles: user.role ? [{
-        id: user.role.id,
-        nombre: user.role.nombre,
-        permissions: user.role.permissions ? user.role.permissions.map(permission => ({
+      roles: freshUser.role ? [{
+        id: freshUser.role.id,
+        nombre: freshUser.role.nombre,
+        permissions: freshUser.role.permissions ? freshUser.role.permissions.map(permission => ({
           id: permission.id,
           nombre: permission.nombre,
           codigo: permission.codigo

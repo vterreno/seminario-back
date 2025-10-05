@@ -147,7 +147,8 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
     async getProductosByListaPrecio(@Param('id') id: number, @Req() req: RequestWithUser) {
         const user = req.user;
 
-        // Verify the lista precio belongs to the user's company (if user has a company)
+        // El superadmin (sin empresa) puede ver productos de cualquier lista
+        // Usuarios normales solo pueden ver productos de listas de su empresa
         if (user.empresa?.id) {
             const existingListaPrecio = await this.listaPreciosService.findById(id);
             if (!existingListaPrecio) {
@@ -157,6 +158,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
                 throw new BadRequestException('No tienes permisos para ver los productos de esta lista de precios');
             }
         }
+        // Si no tiene empresa (superadmin), puede ver productos de cualquier lista
 
         return await this.listaPreciosService.getProductosByListaPrecio(id);
     }

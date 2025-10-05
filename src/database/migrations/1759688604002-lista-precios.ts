@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class ListaPrecios1759369153618 implements MigrationInterface {
-    name = 'ListaPrecios1759369153618'
+export class ListaPrecios1759688604002 implements MigrationInterface {
+    name = 'ListaPrecios1759688604002'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "ciudades" DROP CONSTRAINT "FK_ciudades_provincia"`);
@@ -27,6 +27,7 @@ export class ListaPrecios1759369153618 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" ADD "precio_venta_especifico" numeric(10,2) NOT NULL`);
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" DROP CONSTRAINT "PK_a44030885de8046a0a08650646d"`);
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" ADD CONSTRAINT "PK_5a0c09978b089c2479350ccbdf1" PRIMARY KEY ("producto_id", "lista_precios_id")`);
+        await queryRunner.query(`ALTER TABLE "permisos" ADD CONSTRAINT "UQ_40d964f2742b2f4e3f379d3f460" UNIQUE ("codigo")`);
         await queryRunner.query(`ALTER TABLE "movimiento-stock" ALTER COLUMN "tipo_movimiento" SET DEFAULT 'STOCK_APERTURA'`);
         await queryRunner.query(`CREATE INDEX "IDX_bc9af6033b3462afefe9b1e294" ON "producto_lista_precios" ("producto_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_4ff0544939ce1c8797b0c85734" ON "producto_lista_precios" ("lista_precios_id") `);
@@ -50,6 +51,7 @@ export class ListaPrecios1759369153618 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX "public"."IDX_4ff0544939ce1c8797b0c85734"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_bc9af6033b3462afefe9b1e294"`);
         await queryRunner.query(`ALTER TABLE "movimiento-stock" ALTER COLUMN "tipo_movimiento" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "permisos" DROP CONSTRAINT "UQ_40d964f2742b2f4e3f379d3f460"`);
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" DROP CONSTRAINT "PK_5a0c09978b089c2479350ccbdf1"`);
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" ADD CONSTRAINT "PK_a44030885de8046a0a08650646d" PRIMARY KEY ("producto_id", "lista_precios_id", "id")`);
         await queryRunner.query(`ALTER TABLE "producto_lista_precios" DROP COLUMN "precio_venta_especifico"`);

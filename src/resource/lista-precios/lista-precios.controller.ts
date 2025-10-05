@@ -11,7 +11,7 @@ import { BaseController } from 'src/base-service/base-controller.controller';
 import { ListaPreciosEntity } from 'src/database/core/lista-precios.entity';
 
 @UseGuards(AuthGuard, PermissionsGuard)
-@EntityDecorator('lista_precios')
+@EntityDecorator('modulo_listas')
 @Controller('lista-precios')
 export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
     constructor(protected readonly listaPreciosService: ListaPreciosService) {

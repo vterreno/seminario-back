@@ -8,12 +8,22 @@ import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductoListaPreciosEntity } from 'src/database/core/producto-lista-precios.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { RoleEntity } from 'src/database/core/roles.entity';
+import { PermissionEntity } from 'src/database/core/permission.entity';
 
+type Accion = 'ver' | 'agregar' | 'modificar' | 'eliminar'; 
+function generarCodigoPermiso(modulo: string, accion: Accion | string): string {
+    // normalizamos todo: pasamos a minusculas y reemplazamos espacios por guines bajos
+    const mod = modulo.trim().toLowerCase().replace(/\s+/g, '_');
+    const acc = accion.trim().toLowerCase().replace(/\s+/g, '_');
+    // agregamos el prefijo "lista_" para evitar conflictos con permisos generales
+    return `lista_${mod}_${acc}`;
+}
 @Injectable()
 export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
     findManyOptions: FindManyOptions<ListaPreciosEntity> = {};
     findOneOptions: FindOneOptions<ListaPreciosEntity> = {};
-    
+
     constructor(
         @InjectRepository(ListaPreciosEntity) 
         protected listaPreciosRepository: Repository<ListaPreciosEntity>,
@@ -21,6 +31,10 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         protected productoListaPreciosRepository: Repository<ProductoListaPreciosEntity>,
         @InjectRepository(ProductoEntity)
         protected productoRepository: Repository<ProductoEntity>,
+        @InjectRepository(RoleEntity)
+        protected roleRepository: Repository<RoleEntity>,
+        @InjectRepository(PermissionEntity)
+        protected permissionRepository: Repository<PermissionEntity>,
     ){
         super(listaPreciosRepository);
     }
@@ -39,22 +53,73 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         });
     }
 
-    // Check if lista precio codigo exists (case insensitive)
-    async findByCodigo(codigo: string, empresaId?: number): Promise<ListaPreciosEntity | null> {
+    async findByNombre(nombre: string, empresaId?: number): Promise<ListaPreciosEntity | null> {
         const query = this.listaPreciosRepository.createQueryBuilder('lista_precio')
-            .where('LOWER(lista_precio.codigo) = LOWER(:codigo)', { codigo });
-
+            .where('LOWER(lista_precio.nombre) = LOWER(:nombre)', { nombre });
         // If empresa is provided, check uniqueness within that empresa
         if (empresaId) {
             query.andWhere('lista_precio.empresa_id = :empresaId', { empresaId });
         }
-        
         return await query.getOne();
     }
 
     // Create lista precio
     async createListaPrecio(listaPrecioData: CreateListaPrecioDto): Promise<ListaPreciosEntity> {
         try {
+            const nombre = listaPrecioData.nombre.trim();
+            // Verificar si ya existe una lista de precios con el mismo nombre
+            const existeListaPrecio = await this.findByNombre(listaPrecioData.nombre, listaPrecioData.empresa_id);
+            if (existeListaPrecio) {
+                throw new BadRequestException(`Ya existe una lista de precios con el nombre "${listaPrecioData.nombre}" en la empresa seleccionada. Por favor, utiliza un nombre diferente.`);
+            }
+            const generarPermiso = generarCodigoPermiso(nombre, 'ver');
+            const permisoVer = this.permissionRepository.create({
+                nombre: `Ver lista de precios ${nombre}`,
+                codigo: generarPermiso,
+            });
+            await this.permissionRepository.save(permisoVer);
+            
+            // Asignar el permiso "ver" al administrador de la empresa
+            const roleAdmin = await this.roleRepository.findOne({
+                where: { nombre: 'Administrador', empresa_id: listaPrecioData.empresa_id },
+                relations: ['permissions'],
+            });
+            if (roleAdmin) {
+                // Verificar si el permiso ya está asignado
+                const permisoYaAsignado = roleAdmin.permissions?.some(p => p.id === permisoVer.id);
+                if (!permisoYaAsignado) {
+                    await this.roleRepository
+                        .createQueryBuilder()
+                        .relation(RoleEntity, 'permissions')
+                        .of(roleAdmin)
+                        .add(permisoVer);
+                } else {
+                    throw new BadRequestException(`Dicho nombre de lista de precios ya tiene el permiso asignado al rol Administrador. Por favor, cambia el nombre de la lista.`);
+                }
+            } else {
+                throw new BadRequestException(`No se encontró el rol Administrador para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Administrador antes de crear una lista de precios.`);
+            }
+            // Asignar el permiso "ver" al superadmin (empresa_id es null)
+            const roleSuperAdmin = await this.roleRepository.findOne({
+                where: { nombre: 'Superadmin', empresa_id: null },
+                relations: ['permissions'],
+            });
+            
+            if (roleSuperAdmin) {                
+                // Verificar si el permiso ya está asignado
+                const permisoYaAsignado = roleSuperAdmin.permissions?.some(p => p.id === permisoVer.id);
+                if (!permisoYaAsignado) {
+                    await this.roleRepository
+                        .createQueryBuilder()
+                        .relation(RoleEntity, 'permissions')
+                        .of(roleSuperAdmin)
+                        .add(permisoVer);
+                } else {
+                    throw new BadRequestException(`Dicho nombre de lista de precios ya tiene el permiso asignado al rol Superadmin. Por favor, cambia el nombre de la lista.`);
+                }
+            } else {
+                throw new BadRequestException(`No se encontró el rol Superadmin para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Superadmin antes de crear una lista de precios.`);
+            }
             // Extraer productos antes de crear la lista
             const { productos, ...listaPrecioInfo } = listaPrecioData;
 
@@ -157,6 +222,48 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
 
     // Delete single lista precio
     async deleteListaPrecio(id: number): Promise<void> {
+        // Tenemos que eliminar el permiso asociado a esta lista de precios
+        const listaPrecio = await this.findById(id);
+        if (!listaPrecio) {
+            throw new BadRequestException('❌ No se encontró la lista de precios que intentas eliminar.');
+        }
+
+        const codigoPermiso = generarCodigoPermiso(listaPrecio.nombre, 'ver');
+        console.log(`Eliminando lista de precios "${listaPrecio.nombre}" y su permiso asociado "${codigoPermiso}"`);
+        
+        const permiso = await this.permissionRepository.findOne({ 
+            where: { codigo: codigoPermiso } 
+        });
+        
+        if (permiso) {
+            console.log(`✓ Permiso encontrado (ID: ${permiso.id}). Removiendo de roles...`);
+            
+            // Obtener todos los roles que tienen este permiso
+            const rolesConPermiso = await this.roleRepository.createQueryBuilder('role')
+                .leftJoinAndSelect('role.permissions', 'permission')
+                .where('permission.id = :permisoId', { permisoId: permiso.id })
+                .getMany();
+
+            console.log(`✓ Encontrados ${rolesConPermiso.length} roles con este permiso`);
+            
+            // Remover el permiso de cada rol usando QueryBuilder
+            for (const role of rolesConPermiso) {
+                await this.roleRepository
+                    .createQueryBuilder()
+                    .relation(RoleEntity, 'permissions')
+                    .of(role)
+                    .remove(permiso);
+                console.log(`✓ Permiso removido del rol "${role.nombre}" (ID: ${role.id})`);
+            }
+
+            // Ahora eliminar el permiso
+            await this.permissionRepository.delete(permiso.id);
+            console.log(`✓ Permiso "${codigoPermiso}" eliminado exitosamente`);
+        } else {
+            console.warn(`⚠ No se encontró el permiso "${codigoPermiso}"`);
+        }
+
+        // Eliminar la lista de precios
         await this.listaPreciosRepository.delete(id);
     }
 

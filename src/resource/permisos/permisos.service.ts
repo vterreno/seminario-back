@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { PermissionEntity } from 'src/database/core/permission.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, Repository, DeepPartial } from 'typeorm';
 
 @Injectable()
 export class PermisosService extends BaseService<PermissionEntity> {
@@ -15,6 +15,31 @@ export class PermisosService extends BaseService<PermissionEntity> {
         protected permisoService: Repository<PermissionEntity>,
     ){
         super(permisoService);
+    }
+
+    async crearPermiso(codigo: string, nombre: string, descripcion?: string) {
+        let permiso = await this.permisoService.findOne({ where: { codigo } });
+        if (!permiso) {
+            permiso = this.permisoService.create({ codigo, nombre, descripcion } as DeepPartial<PermissionEntity>);
+            await this.permisoService.save(permiso);
+        }
+        return permiso;
+    }
+
+    async obtenerPermisoPorCodigo(codigo: string) {
+        try {
+            return await this.permisoService.findOne({ where: { codigo } });
+        }catch (error) {
+            throw new BadRequestException('Error al obtener el permiso por código');
+        }
+    }
+
+    async eliminarPermiso(codigo: string) {
+        const permiso = await this.permisoService.findOne({ where: { codigo } });
+        if (permiso) {
+            await this.permisoService.softDelete(permiso);
+        }
+        return permiso;
     }
     async getPermisosByEmpresa(empresaId: number): Promise<PermissionEntity[]> {
         // Obtener todos los permisos generales (que NO empiezan con 'lista_') incluyendo los permisos del módulo de gestión

@@ -10,6 +10,8 @@ import { ProductoListaPreciosEntity } from 'src/database/core/producto-lista-pre
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { PermissionEntity } from 'src/database/core/permission.entity';
+import { PermisosService } from '../permisos/permisos.service';
+import { RolesService } from '../roles/roles.service';
 
 type Accion = 'ver' | 'agregar' | 'modificar' | 'eliminar'; 
 function generarCodigoPermiso(modulo: string, accion: Accion | string): string {
@@ -31,10 +33,9 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         protected productoListaPreciosRepository: Repository<ProductoListaPreciosEntity>,
         @InjectRepository(ProductoEntity)
         protected productoRepository: Repository<ProductoEntity>,
-        @InjectRepository(RoleEntity)
-        protected roleRepository: Repository<RoleEntity>,
-        @InjectRepository(PermissionEntity)
-        protected permissionRepository: Repository<PermissionEntity>,
+
+        private readonly permisoService: PermisosService,
+        private readonly roleService: RolesService,
     ){
         super(listaPreciosRepository);
     }
@@ -72,67 +73,19 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             if (existeListaPrecio) {
                 throw new BadRequestException(`Ya existe una lista de precios con el nombre "${listaPrecioData.nombre}" en la empresa seleccionada. Por favor, utiliza un nombre diferente.`);
             }
-            
             const generarPermiso = generarCodigoPermiso(nombre, 'ver');
-            
-            // Verificar si el permiso ya existe antes de crearlo
-            let permisoVer = await this.permissionRepository.findOne({
-                where: { codigo: generarPermiso }
-            });
-            
-            if (!permisoVer) {
-                // Crear el permiso solo si no existe
-                permisoVer = this.permissionRepository.create({
-                    nombre: `Ver lista de precios ${nombre}`,
-                    codigo: generarPermiso,
-                });
-                await this.permissionRepository.save(permisoVer);
+            const permisoCreado = await this.permisoService.crearPermiso(generarPermiso, `Ver lista de precios ${nombre}`);
+            if (!permisoCreado) {
+                throw new BadRequestException('Error al crear el permiso asociado a la lista de precios. Por favor, intenta nuevamente.');
             }
-            
-            // Asignar el permiso "ver" al administrador de la empresa
-            const roleAdmin = await this.roleRepository.findOne({
-                where: { nombre: 'Administrador', empresa_id: listaPrecioData.empresa_id },
-                relations: ['permissions'],
-            });
-            if (roleAdmin) {
-                // Verificar si el permiso ya está asignado
-                const permisoYaAsignado = roleAdmin.permissions?.some(p => p.id === permisoVer.id);
-                if (!permisoYaAsignado) {
-                    await this.roleRepository
-                        .createQueryBuilder()
-                        .relation(RoleEntity, 'permissions')
-                        .of(roleAdmin)
-                        .add(permisoVer);
-                }
-            } else {
-                throw new BadRequestException(`No se encontró el rol Administrador para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Administrador antes de crear una lista de precios.`);
-            }
-            // Asignar el permiso "ver" al superadmin (empresa_id es null)
-            const roleSuperAdmin = await this.roleRepository.findOne({
-                where: { nombre: 'Superadmin', empresa_id: null },
-                relations: ['permissions'],
-            });
-            
-            if (roleSuperAdmin) {                
-                // Verificar si el permiso ya está asignado
-                const permisoYaAsignado = roleSuperAdmin.permissions?.some(p => p.id === permisoVer.id);
-                if (!permisoYaAsignado) {
-                    await this.roleRepository
-                        .createQueryBuilder()
-                        .relation(RoleEntity, 'permissions')
-                        .of(roleSuperAdmin)
-                        .add(permisoVer);
-                }
-            }
-            // Extraer productos antes de crear la lista
+            await this.roleService.asignarPermisosArol('Administrador', listaPrecioData.empresa_id, permisoCreado);
+            await this.roleService.asignarPermisosArol('Superadmin', null, permisoCreado);
             const { productos, ...listaPrecioInfo } = listaPrecioData;
-
             // Crear la lista de precios sin productos
             const listaPrecio = this.listaPreciosRepository.create({
                 ...listaPrecioInfo,
                 estado: listaPrecioData.estado ?? true,
             });
-
             // Guardar la lista de precios
             const savedListaPrecio = await this.listaPreciosRepository.save(listaPrecio);
 
@@ -143,11 +96,9 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                 const existingProductos = await this.productoRepository.find({
                     where: { id: In(productoIds) }
                 });
-
                 if (existingProductos.length !== productoIds.length) {
                     throw new BadRequestException('❌ Uno o más productos no existen.');
                 }
-
                 // Crear las relaciones en la tabla intermedia
                 const productosListasPrecios = productos.map(p => 
                     this.productoListaPreciosRepository.create({
@@ -156,23 +107,19 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                         precio_venta_especifico: p.precio_venta_especifico,
                     })
                 );
-
                 await this.productoListaPreciosRepository.save(productosListasPrecios);
             }
-            
             // Retornar la lista de precios con el permiso creado
             const listaCompleta = await this.findById(savedListaPrecio.id);
-            
             return {
                 ...listaCompleta,
                 permisoCreado: {
-                    id: permisoVer.id,
-                    codigo: permisoVer.codigo,
-                    nombre: permisoVer.nombre
+                    id: permisoCreado.id,
+                    codigo: permisoCreado.codigo,
+                    nombre: permisoCreado.nombre
                 }
             };
         } catch (error) {
-            console.error('Internal error creating lista precio:', error);
             throw new BadRequestException(
                 error.message || 'Error al crear la lista precio. Por favor, verifica los datos e intenta nuevamente.',
             );
@@ -238,46 +185,14 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         // Tenemos que eliminar el permiso asociado a esta lista de precios
         const listaPrecio = await this.findById(id);
         if (!listaPrecio) {
-            throw new BadRequestException('❌ No se encontró la lista de precios que intentas eliminar.');
+            throw new BadRequestException('No se encontró la lista de precios que intentas eliminar.');
         }
-
         const codigoPermiso = generarCodigoPermiso(listaPrecio.nombre, 'ver');
-        console.log(`Eliminando lista de precios "${listaPrecio.nombre}" y su permiso asociado "${codigoPermiso}"`);
-        
-        const permiso = await this.permissionRepository.findOne({ 
-            where: { codigo: codigoPermiso } 
-        });
-        
-        if (permiso) {
-            console.log(`✓ Permiso encontrado (ID: ${permiso.id}). Removiendo de roles...`);
-            
-            // Obtener todos los roles que tienen este permiso
-            const rolesConPermiso = await this.roleRepository.createQueryBuilder('role')
-                .leftJoinAndSelect('role.permissions', 'permission')
-                .where('permission.id = :permisoId', { permisoId: permiso.id })
-                .getMany();
-
-            console.log(`✓ Encontrados ${rolesConPermiso.length} roles con este permiso`);
-            
-            // Remover el permiso de cada rol usando QueryBuilder
-            for (const role of rolesConPermiso) {
-                await this.roleRepository
-                    .createQueryBuilder()
-                    .relation(RoleEntity, 'permissions')
-                    .of(role)
-                    .remove(permiso);
-                console.log(`✓ Permiso removido del rol "${role.nombre}" (ID: ${role.id})`);
-            }
-
-            // Ahora eliminar el permiso
-            await this.permissionRepository.delete(permiso.id);
-            console.log(`✓ Permiso "${codigoPermiso}" eliminado exitosamente`);
-        } else {
-            console.warn(`⚠ No se encontró el permiso "${codigoPermiso}"`);
-        }
-
+        const permiso = await this.permisoService.obtenerPermisoPorCodigo(codigoPermiso)
+        await this.roleService.eliminarPermisoDeRoles(permiso)
+        await this.permisoService.eliminarPermiso(codigoPermiso);
         // Eliminar la lista de precios
-        await this.listaPreciosRepository.delete(id);
+        await this.listaPreciosRepository.softDelete(id);
     }
 
     // Bulk delete lista precios
@@ -308,38 +223,31 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                 throw new BadRequestException('❌ Algunos lista precios que intentas modificar no pertenecen a tu empresa o no existen.');
             }
         }
-
         // Update the lista precios
         await this.listaPreciosRepository.update(ids, { estado });
-
         // Return updated lista precios with relations
         return await this.listaPreciosRepository.find({
             where: { id: In(ids) },
             relations: ['empresa']
         });
     }
-
     // Soft delete (set estado to false instead of hard delete)
     async softDeleteListaPrecio(id: number): Promise<ListaPreciosEntity> {
         await this.listaPreciosRepository.update(id, { estado: false });
         return await this.findById(id);
     }
-
     // Bulk soft delete
     async bulkSoftDeleteListaPrecios(ids: number[]): Promise<void> {
         await this.listaPreciosRepository.update(ids, { estado: false });
     }
-
     async getProductosByListaPrecio(id: number): Promise<any[]> {
         const listaPrecio = await this.listaPreciosRepository.findOne({
             where: { id },
             relations: ['productosListasPrecios', 'productosListasPrecios.producto', 'productosListasPrecios.producto.marca'],
         });
-
         if (!listaPrecio) {
             throw new BadRequestException(`❌ No se encontró la lista de precios con ID ${id}.`);
         }
-
         // Mapear productos con sus precios específicos de la tabla intermedia
         return listaPrecio.productosListasPrecios.map(plp => ({
             id: plp.producto.id,
@@ -362,20 +270,16 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         const listaPrecio = await this.listaPreciosRepository.findOne({
             where: { id: listaId },
         });
-
         if (!listaPrecio) {
             throw new BadRequestException(`❌ No se encontró la lista de precios con ID ${listaId}.`);
         }
-
         // Verificar que el producto existe
         const producto = await this.productoRepository.findOne({
             where: { id: productoId },
         });
-
         if (!producto) {
             throw new BadRequestException(`❌ No se encontró el producto con ID ${productoId}.`);
         }
-
         // Buscar la relación en la tabla intermedia
         const productoListaPrecio = await this.productoListaPreciosRepository.findOne({
             where: { 
@@ -383,11 +287,9 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                 producto_id: productoId 
             },
         });
-
         if (!productoListaPrecio) {
             throw new BadRequestException(`❌ El producto con ID ${productoId} no está asociado a la lista de precios con ID ${listaId}.`);
         }
-
         // Actualizar el precio específico en la tabla intermedia
         productoListaPrecio.precio_venta_especifico = nuevoPrecio;
         await this.productoListaPreciosRepository.save(productoListaPrecio);
@@ -399,7 +301,6 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         const listaPrecio = await this.listaPreciosRepository.findOne({
             where: { id: listaId },
         });
-
         if (!listaPrecio) {
             throw new BadRequestException(`❌ No se encontró la lista de precios con ID ${listaId}.`);
         }

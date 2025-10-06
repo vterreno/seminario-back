@@ -7,14 +7,16 @@ import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { ProductoListaPreciosEntity } from 'src/database/core/producto-lista-precios.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
-import { RoleEntity } from 'src/database/core/roles.entity';
-import { PermissionEntity } from 'src/database/core/permission.entity';
+import { PermisosModule } from '../permisos/permisos.module';
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ListaPreciosEntity, ProductoListaPreciosEntity, ProductoEntity, RoleEntity, PermissionEntity]),
+    TypeOrmModule.forFeature([ListaPreciosEntity, ProductoListaPreciosEntity, ProductoEntity]),
     JwtModule,
-    UsersModule
+    UsersModule,
+    PermisosModule,
+    RolesModule,
   ],
   controllers: [ListaPreciosController],
   providers: [ListaPreciosService],

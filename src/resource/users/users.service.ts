@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDTO } from 'src/resource/users/dto/login.dto';
 import { RegisterDTO } from 'src/resource/users/dto/register.dto';
 import { UserI } from 'src/resource/users/interface/user.interface';
@@ -13,13 +13,15 @@ import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { MailServiceService } from '../mail-service/mail-service.service';
+import { ContactosService } from '../contactos/contactos.service';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
+  
     constructor(
     private jwtService: JwtService,
     private mailService: MailServiceService,
-
+    private contactoService: ContactosService,
 
     @InjectRepository(UserEntity)
     protected readonly userRepository: Repository<UserEntity>,
@@ -94,7 +96,6 @@ export class UsersService extends BaseService<UserEntity> {
     try {
       const rol= new RoleEntity();
       rol.nombre = "Administrador";
-      
       // Filtrar permisos excluyendo los de empresa directamente en la consulta
       const permisosExcluidos = [
         'empresa_ver',
@@ -108,6 +109,8 @@ export class UsersService extends BaseService<UserEntity> {
       rol.permissions = permisos;
       const empresa = new empresaEntity();
       empresa.name = body.empresa;
+
+      this.contactoService.crearConsumidorFinal(empresa);
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
@@ -120,7 +123,7 @@ export class UsersService extends BaseService<UserEntity> {
       const userName = `${user.nombre} ${user.apellido}`;
 
       try {
-        await this.mailService.sendWelcomeMail(user.email, userName);
+        this.mailService.sendWelcomeMail(user.email, userName);
       } catch (err) {
         console.error('Error enviando correo de bienvenida:', err);
       }

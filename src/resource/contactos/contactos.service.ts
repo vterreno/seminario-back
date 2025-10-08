@@ -186,6 +186,19 @@ export class ContactosService extends BaseService<contactoEntity> {
     await this.contactosRepository.softDelete(id);
     return { message: 'deleted' };
   }
+  async crearConsumidorFinal(empresa: empresaEntity){
+    const nuevoConsumidor = this.contactosRepository.create({
+        nombre_razon_social: 'Consumidor Final',
+        condicion_iva: 'Consumidor Final',
+        rol: 'cliente',
+        es_consumidor_final: true,
+        estado: true,
+        empresa: empresa,
+        tipo_identificacion: 'DNI',
+        numero_identificacion: '00-00000000-0',
+    });
+    return nuevoConsumidor;
+  }
 }
 
 

@@ -110,15 +110,16 @@ export class UsersService extends BaseService<UserEntity> {
       const empresa = new empresaEntity();
       empresa.name = body.empresa;
 
-      this.contactoService.crearConsumidorFinal(empresa);
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
       user.empresa = empresa;
       user.role = rol;
       user.status = true;
+      
       await this.roleRepository.save(rol);
       await this.empresaRepository.save(empresa);
+      await this.contactoService.crearConsumidorFinal(empresa);
       await this.userRepository.save(user);
       const userName = `${user.nombre} ${user.apellido}`;
 

@@ -197,6 +197,7 @@ export class ContactosService extends BaseService<contactoEntity> {
         tipo_identificacion: 'DNI',
         numero_identificacion: '00-00000000-0',
     });
+    await this.contactosRepository.save(nuevoConsumidor);
     return nuevoConsumidor;
   }
 }

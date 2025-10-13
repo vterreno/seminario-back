@@ -3,6 +3,7 @@ import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
 import { MarcaEntity } from "./marcas.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
+import { categoriasEntity } from "./categorias.entity";
 import { UnidadMedidaEntity } from "./unidad-medida.entity";
 
 @Entity('productos')
@@ -21,12 +22,12 @@ export class ProductoEntity extends BaseEntity{
     empresa_id: number;
 
     //Relacion con Categoria
-    //@ManyToOne(() => categoriaEntity, categoria => categoria.productos, { nullable: true })
-    //@JoinColumn({ name: 'categoria_id' })
-    //categoria?: categoriaEntity;
+    @ManyToOne(() => categoriasEntity, categoria => categoria.productos, { nullable: true })
+    @JoinColumn({ name: 'categoria_id' })
+    categoria?: categoriasEntity;
 
-    //@Column({ nullable: true })
-    //categoria_id: number;
+    @Column({ nullable: true })
+    categoria_id: number;
 
     @ManyToOne(() => MarcaEntity, marca => marca.productos, { nullable: true })
     @JoinColumn({ name: 'marca_id' })

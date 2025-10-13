@@ -27,14 +27,14 @@ export class ProductosService extends BaseService<ProductoEntity>{
     async getProductosByEmpresa(empresaId: number): Promise<ProductoEntity[]> {
         return await this.productosRepository.find({
             where: { empresa_id: empresaId },
-            relations: ['empresa', 'marca', 'unidadMedida'],
+            relations: ['empresa', 'marca', 'categoria', 'unidadMedida'],
         });
     }
 
     // Get all productos (for superadmin)
     async getAllProductos(): Promise<ProductoEntity[]> {
         return await this.productosRepository.find({
-            relations: ['empresa', 'marca', 'unidadMedida'],
+            relations: ['empresa', 'marca', 'categoria', 'unidadMedida'],
         });
     }
 

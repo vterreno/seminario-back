@@ -1,9 +1,14 @@
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { sucursalEntity } from '../../core/sucursal.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 export default class SucursalesSeeder {
-    public async run(dataSource: DataSource): Promise<any> {
-        const repository = dataSource.getRepository(sucursalEntity);
+    constructor(
+        @InjectRepository(sucursalEntity)
+        private readonly sucursalRepo: Repository<sucursalEntity>,
+    ) {}
+    async run(): Promise<any> {
+        const repository = this.sucursalRepo;
 
         // Check if sucursales already exist
         const existingSucursales = await repository.find();
@@ -19,6 +24,7 @@ export default class SucursalesSeeder {
                 direccion: 'Av. Principal 123, Ciudad Central',
                 estado: true,
                 empresa_id: 1,
+                numero_venta: 1,
             },
             {
                 nombre: 'Sucursal Norte',
@@ -26,6 +32,7 @@ export default class SucursalesSeeder {
                 direccion: 'Calle Norte 456, Zona Norte',
                 estado: true,
                 empresa_id: 1,
+                numero_venta: 1,
             },
             {
                 nombre: 'Sucursal Sur',
@@ -33,6 +40,7 @@ export default class SucursalesSeeder {
                 direccion: 'Av. Sur 789, Zona Sur',
                 estado: true,
                 empresa_id: 1,
+                numero_venta: 1,
             },
             {
                 nombre: 'Sucursal Este',
@@ -40,6 +48,7 @@ export default class SucursalesSeeder {
                 direccion: 'Boulevard Este 321, Zona Este',
                 estado: false,
                 empresa_id: 1,
+                numero_venta: 1,
             },
             {
                 nombre: 'Sucursal Oeste',
@@ -47,6 +56,7 @@ export default class SucursalesSeeder {
                 direccion: 'Calle Oeste 654, Zona Oeste',
                 estado: true,
                 empresa_id: 2,
+                numero_venta: 1,
             },
         ];
 

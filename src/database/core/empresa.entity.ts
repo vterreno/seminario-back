@@ -8,6 +8,7 @@ import { contactoEntity } from "./contacto.entity";
 import { MarcaEntity } from "./marcas.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
 import { ProductoEntity } from "./producto.entity";
+import { pagoEntity } from "./pago.entity";
 
 @Entity("empresa")
 export class empresaEntity extends BaseEntity{

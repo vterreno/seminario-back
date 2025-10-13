@@ -8,6 +8,8 @@ import { MarcaSimpleSeeder } from './marca-simple.seeder';
 import { ConsumidorFinalSeeder } from './consumidor-final.seeder'; 
 import { ProductoSimpleSeeder } from './producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
+import { VentaSeeder } from './venta.seeder';
+import SucursalesSeeder from './sucursales.seeder';
 
 
 @Injectable()
@@ -15,6 +17,7 @@ export class MasterSeeder {
     constructor(
         private readonly permisosSeeder: PermisosSeeder,
         private readonly empresaSeeder: EmpresaSeeder,
+        private readonly sucursalesSeeder: SucursalesSeeder,
         private readonly roleSeeder: RoleSeeder,
         private readonly userSeeder: UserSeeder,
         private readonly empresaUsuarioRolSimpleSeeder: EmpresaUsuarioRolSimpleSeeder,
@@ -22,6 +25,7 @@ export class MasterSeeder {
         private readonly consumidorFinalSeeder: ConsumidorFinalSeeder,
         private readonly productoSimpleSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
+        private readonly ventaSeeder: VentaSeeder,
     ) {}
 
     async run() {
@@ -38,6 +42,11 @@ export class MasterSeeder {
             console.log('🏢 2/7 - Creando empresas...');
             await this.empresaSeeder.run();
             console.log('✅ Empresas completadas\n');
+
+            // 2. Sucursales
+            console.log('🏢 2/7 - Creando sucursales...');
+            await this.sucursalesSeeder.run();
+            console.log('✅ Sucursales completadas\n');
 
             // 3. Consumidor Final
             console.log('🧾 3/7 - Creando consumidores finales por empresa...');
@@ -70,9 +79,14 @@ export class MasterSeeder {
             console.log('✅ Productos completados\n');
 
             // 8. Movimientos de stock iniciales
-            console.log('📊 8/8 - Creando movimientos de stock iniciales...');
+            console.log('📊 8/9 - Creando movimientos de stock iniciales...');
             await this.movimientosStockInicialSeeder.run();
             console.log('✅ Movimientos de stock completados\n');
+
+            // 9. Ventas con detalles
+            console.log('💰 9/9 - Creando ventas con múltiples detalles...');
+            await this.ventaSeeder.run();
+            console.log('✅ Ventas completadas\n');
 
             console.log('🎉 SEED COMPLETO FINALIZADO EXITOSAMENTE');
             console.log('=========================================');

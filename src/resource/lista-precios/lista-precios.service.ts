@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateListaPrecioDto } from './dto/create-lista-precio.dto';
 import { UpdateListaPrecioDto } from './dto/update-lista-precio.dto';
-import { extend } from 'dayjs';
 import { BaseService } from 'src/base-service/base-service.service';
 import { ListaPreciosEntity } from 'src/database/core/lista-precios.entity';
 import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';

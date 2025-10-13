@@ -126,7 +126,7 @@ export class UsersService extends BaseService<UserEntity> {
       try {
         this.mailService.sendWelcomeMail(user.email, userName);
       } catch (err) {
-        console.error('Error enviando correo de bienvenida:', err);
+        throw err;
       }
       return { 
         accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
@@ -187,7 +187,6 @@ export class UsersService extends BaseService<UserEntity> {
       
       return userWithRelations;
     } catch (error) {
-      console.error('Error al crear usuario:', error);
       if (error.code === '23505') { // PostgreSQL unique violation error code
         throw new BadRequestException('El email ya está registrado');
       }
@@ -313,7 +312,6 @@ export class UsersService extends BaseService<UserEntity> {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error in cambiarContrasena:', error);
       throw new HttpException('Error al cambiar la contraseña', 500);
     }
   }
@@ -364,7 +362,6 @@ export class UsersService extends BaseService<UserEntity> {
         status: status
       };
     } catch (error) {
-      console.error('Error al actualizar usuarios:', error);
       throw new HttpException(`Error al actualizar usuarios: ${error.message}`, 500);
     }
   }

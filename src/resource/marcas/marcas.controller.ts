@@ -115,7 +115,6 @@ export class MarcasController extends BaseController<MarcaEntity>{
             );
             return { message: `${ids.length} marcas eliminadas exitosamente` };
         } catch (error) {
-            console.error('Error en bulk delete de marcas:', error);
             throw new BadRequestException(`Error al eliminar marcas: ${error.message}`);
         }
     }
@@ -139,7 +138,6 @@ export class MarcasController extends BaseController<MarcaEntity>{
                 updatedMarcas: updatedMarcas
             };
         } catch (error) {
-            console.error('Error en bulk update de marcas:', error);
             throw new BadRequestException(`Error al actualizar marcas: ${error.message}`);
         }
     }

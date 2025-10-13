@@ -63,7 +63,6 @@ export class ContactosService extends BaseService<contactoEntity> {
         throw new BadRequestException(`Ya existe un contacto con ${data.tipo_identificacion} ${data.numero_identificacion} en esta empresa`);
       }
       
-      console.error('Error creating contacto:', error);
       throw new BadRequestException('Error al crear el contacto');
     }
   }
@@ -142,7 +141,6 @@ export class ContactosService extends BaseService<contactoEntity> {
         throw new BadRequestException(`Ya existe un contacto con esa identificación en esta empresa`);
       }
       
-      console.error('Error updating contacto:', error);
       throw new BadRequestException('Error al actualizar el contacto');
     }
   }

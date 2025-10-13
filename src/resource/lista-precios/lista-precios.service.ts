@@ -14,7 +14,7 @@ import { RolesService } from '../roles/roles.service';
 
 type Accion = 'ver' | 'agregar' | 'modificar' | 'eliminar'; 
 function generarCodigoPermiso(modulo: string, accion: Accion | string): string {
-    // normalizamos todo: pasamos a minusculas y reemplazamos espacios por guines bajos
+    // normalizamos todo: pasamos a minúsculas y reemplazamos espacios por guiones bajos
     const mod = modulo.trim().toLowerCase().replace(/\s+/g, '_');
     const acc = accion.trim().toLowerCase().replace(/\s+/g, '_');
     // agregamos el prefijo "lista_" para evitar conflictos con permisos generales

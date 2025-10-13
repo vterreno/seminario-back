@@ -9,6 +9,8 @@ import { ConsumidorFinalSeeder } from './consumidor-final.seeder';
 import { ProductoSimpleSeeder } from './producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
 import { ListaPreciosSeeder } from './lista-precios.seeder';
+import { CategoriaSimpleSeeder } from './categoria.seeder';
+import { UnidadMedidaSeeder } from './unidad-medida.seeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -23,6 +25,9 @@ export class MasterSeeder {
         private readonly productoSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
         private readonly listaPreciosSeeder: ListaPreciosSeeder,
+        private readonly categoriaSeeder: CategoriaSimpleSeeder,
+        private readonly productoSimpleSeeder: ProductoSimpleSeeder,
+        private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
     ) {}
 
     async run() {
@@ -50,12 +55,27 @@ export class MasterSeeder {
 
             // 6️⃣  Usuarios y roles por empresa
             await this.ejecutarPaso(6, 8, 'Usuarios y roles por empresa', () => this.empresaUsuarioRolSeeder.run());
+            // 6. Usuarios y roles por empresa
+            console.log('👥 6/7 - Creando usuarios y roles por empresa...');
+            await this.empresaUsuarioRolSeeder.run();
+            console.log('✅ Usuarios y roles por empresa completados\n');
+            
+            // 8. Unidades de medida por empresa
+            console.log('⚖️ 8/8 - Creando unidades de medida por empresa...');
+            await this.unidadesMedidaSeeder.run();
+            console.log('✅ Unidades de medida completadas\n');
 
             // 7️⃣  Marcas por empresa
             await this.ejecutarPaso(7, 8, 'Marcas', () => this.marcaSeeder.run());
 
             // 8️⃣  Productos por empresa y marca
             await this.ejecutarPaso(8, 8, 'Productos', () => this.productoSeeder.run());
+            console.log('✅ Categorías completadas\n');
+
+            // 7. Productos por empresa y marca
+            console.log('📦 7/8 - Creando productos por empresa y marca...');
+            await this.productoSimpleSeeder.run();
+            console.log('✅ Productos completados\n');
 
             // 9️⃣  Listas de precios
             console.log('\n📋 Paso opcional - Listas de precios...');

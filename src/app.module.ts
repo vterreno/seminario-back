@@ -11,6 +11,7 @@ import { SeedModule } from './database/seeders/seeder.module';
 import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
+import { UnidadesMedidaModule } from './resource/unidades-medida/unidades-medida.module';
 import { ContactosModule } from './resource/contactos/contactos.module';
 import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
@@ -46,6 +47,7 @@ import { ListaPreciosModule } from './resource/lista-precios/lista-precios.modul
     MailServiceModule,
     EmpresaModule,
     SucursalesModule,
+    UnidadesMedidaModule,
     CategoriasModule,
     ContactosModule,
     UbicacionesModule,

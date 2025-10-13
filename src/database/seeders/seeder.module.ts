@@ -25,10 +25,28 @@ import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entit
 import { MasterSeeder } from './seeders-entity/master.seeder';
 import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
 import { MarcaSeeder } from './seeders-entity/marca.seeder';
+import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
+import { UnidadMedidaEntity } from '../core/unidad-medida.entity';
+import { UnidadMedidaSeeder } from './seeders-entity/unidad-medida.seeder';
+import { categoriasEntity } from '../core/categorias.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([RoleEntity, PermissionEntity, UserEntity, empresaEntity, MarcaEntity, ProductoEntity, MovimientoStockEntity, contactoEntity, sucursalEntity, ListaPreciosEntity,ProductoListaPreciosEntity]),
+        TypeOrmModule.forFeature([
+            RoleEntity, 
+            PermissionEntity, 
+            UserEntity, 
+            empresaEntity, 
+            MarcaEntity, 
+            ProductoEntity, 
+            MovimientoStockEntity, 
+            contactoEntity, 
+            sucursalEntity, 
+            categoriasEntity,
+            UnidadMedidaEntity,
+            ListaPreciosEntity,
+            ProductoListaPreciosEntity
+        ]),
     ],
     providers: [
         // Seeders principales
@@ -44,6 +62,9 @@ import { MarcaSeeder } from './seeders-entity/marca.seeder';
         MovimientosStockInicialSeeder,
         MarcaSeeder,
         ListaPreciosSeeder,
+        // Seeders de entidades adicionales
+        CategoriaSimpleSeeder,
+        UnidadMedidaSeeder,
         // Seeder maestro
         MasterSeeder,
         SeederService,
@@ -51,4 +72,3 @@ import { MarcaSeeder } from './seeders-entity/marca.seeder';
     exports: [SeederService],
 })
 export class SeedModule {}
-

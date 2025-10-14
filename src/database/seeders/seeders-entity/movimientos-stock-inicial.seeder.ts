@@ -24,9 +24,9 @@ export class MovimientosStockInicialSeeder {
             return;
         }
 
-        // Obtener todos los productos
+        // Obtener todos los productos con su sucursal para acceder a empresa_id
         const productos = await this.productoRepo.find({
-            relations: ['empresa']
+            relations: ['sucursal', 'sucursal.empresa']
         });
 
         if (productos.length === 0) {
@@ -39,8 +39,8 @@ export class MovimientosStockInicialSeeder {
         const movimientos: Partial<MovimientoStockEntity>[] = [];
 
         for (const producto of productos) {
-            // Solo crear movimiento si el producto tiene stock inicial
-            if (producto.stock_apertura && producto.stock_apertura > 0) {
+            // Solo crear movimiento si el producto tiene stock inicial y sucursal
+            if (producto.stock_apertura && producto.stock_apertura > 0 && producto.sucursal?.id) {
                 const movimiento = {
                     fecha: new Date(),
                     tipo_movimiento: TipoMovimientoStock.STOCK_APERTURA,
@@ -48,7 +48,7 @@ export class MovimientosStockInicialSeeder {
                     cantidad: producto.stock_apertura,
                     stock_resultante: producto.stock_apertura,
                     producto_id: producto.id,
-                    empresa_id: producto.empresa_id
+                    sucursal_id: producto.sucursal.id
                 };
                 movimientos.push(movimiento);
             }

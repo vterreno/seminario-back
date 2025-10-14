@@ -1,6 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "./base.entity";
-import { empresaEntity } from "./empresa.entity";
+import { sucursalEntity } from "./sucursal.entity";
 import { MarcaEntity } from "./marcas.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
 
@@ -12,12 +12,12 @@ export class ProductoEntity extends BaseEntity{
     @Column({ unique: true })
     codigo: string;
 
-    @ManyToOne(() => empresaEntity, empresa => empresa.productos, { nullable: true })
-    @JoinColumn({ name: 'empresa_id' })
-    empresa?: empresaEntity;
+    @ManyToOne(() => sucursalEntity, sucursal => sucursal.productos, { nullable: true })
+    @JoinColumn({ name: 'sucursal_id' })
+    sucursal?: sucursalEntity;
 
     @Column({ nullable: true })
-    empresa_id: number;
+    sucursal_id: number;
 
     //Relacion con Categoria
     //@ManyToOne(() => categoriaEntity, categoria => categoria.productos, { nullable: true })

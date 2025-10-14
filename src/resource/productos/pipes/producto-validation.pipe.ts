@@ -33,26 +33,26 @@ export class ProductoValidationPipe implements PipeTransform {
             const currentId = parseInt(this.request.params?.id as string);
             existingProducto = await this.productosService.findByCodigo(
                 value.codigo,
-                value.empresa_id
+                value.sucursal_id
             );
             
             // Si existe y no es el mismo producto que se está actualizando
             if (existingProducto && existingProducto.id !== currentId) {
                 throw new BadRequestException(
-                    `Ya existe un producto con el código "${value.codigo}". Por favor, elige un código diferente.`
+                    `Ya existe un producto con el código "${value.codigo}" en esta sucursal. Por favor, elige un código diferente.`
                 );
             }
         } else {
-            // Para creación: buscar cualquier producto con ese código en la empresa
+            // Para creación: buscar cualquier producto con ese código en la sucursal
             existingProducto = await this.productosService.findByCodigo(
                 value.codigo,
-                value.empresa_id
+                value.sucursal_id
             );
             
             // Si existe, lanzar error
             if (existingProducto) {
                 throw new BadRequestException(
-                    `Ya existe un producto con el código "${value.codigo}". Por favor, elige un código diferente.`
+                    `Ya existe un producto con el código "${value.codigo}" en esta sucursal. Por favor, elige un código diferente.`
                 );
             }
         }

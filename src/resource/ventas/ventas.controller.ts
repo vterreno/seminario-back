@@ -60,28 +60,6 @@ export class VentasController extends BaseController<ventaEntity>{
         return await this.ventasService.createVenta(ventaData);
     }
 
-    @Put(':id')
-    @Action('modificar')
-    async updateVenta(@Param('id') id: number, @Body() ventaData: UpdateVentaDto, @Req() req: RequestWithUser) {
-        const user = req.user;
-
-        // Verify the venta belongs to the user's company (if user has a company)
-        if (user.empresa?.id) {
-            const existingVenta = await this.ventasService.findById(id);
-            if (!existingVenta) {
-                throw new BadRequestException('Venta no encontrada');
-            }
-            if (existingVenta.sucursal.id !== user.empresa.id) {
-                throw new BadRequestException('No tienes permisos para modificar esta venta');
-            }
-            // Ensure sucursal_id doesn't change for regular users
-            if (ventaData.sucursal_id && ventaData.sucursal_id !== user.empresa.id) {
-                throw new BadRequestException('No puedes cambiar la sucursal de la venta');
-            }
-        }
-
-        return await this.ventasService.updateVenta(id, ventaData);
-    }
 
     @Delete(':id')
     @Action('eliminar')

@@ -8,6 +8,8 @@ import { CreateVentaDto } from './dto/create-venta.dto';
 import { UpdateVentaDto } from './dto/update-venta.dto';
 import { PagoService } from '../pago/pago.service';
 import { DetalleVentaService } from '../detalle-venta/detalle-venta.service';
+import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.service';
+import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 
 @Injectable()
 export class VentasService extends BaseService<ventaEntity>{
@@ -21,8 +23,16 @@ export class VentasService extends BaseService<ventaEntity>{
         protected sucursalRepository: Repository<sucursalEntity>,
         private readonly pagoService: PagoService,
         private readonly detalleVentaService: DetalleVentaService,
+        private readonly movimientosStockService: MovimientosStockService,
     ){
         super(ventaRepository);
+    }
+    // Get ventas filtered by empresa
+    async getVentasByEmpresa(empresaId: number): Promise<ventaEntity[]> {
+        return await this.ventaRepository.find({
+            where: { sucursal: { empresa: { id: empresaId } } },
+            relations: ['sucursal', 'sucursal.empresa', 'contacto', 'pago'],
+        });
     }
 
     // Get ventas filtered by sucursal
@@ -30,14 +40,6 @@ export class VentasService extends BaseService<ventaEntity>{
         return await this.ventaRepository.find({
             where: { sucursal: { id: sucursalId } },
             relations: ['sucursal', 'contacto', 'pago'],
-        });
-    }
-
-    // Get ventas filtered by empresa
-    async getVentasByEmpresa(empresaId: number): Promise<ventaEntity[]> {
-        return await this.ventaRepository.find({
-            where: { sucursal: { empresa: { id: empresaId } } },
-            relations: ['sucursal', 'sucursal.empresa', 'contacto', 'pago'],
         });
     }
 
@@ -91,11 +93,27 @@ export class VentasService extends BaseService<ventaEntity>{
 
             // Paso 7: Crear los detalles usando el servicio de detalle-venta
             // Esto manejará la validación de stock y actualización automáticamente
+            // Y crear movimientos de stock tipo VENTA por cada detalle (solo registro)
             for (const detalle of ventaData.detalles) {
+                // Crear el detalle (esto reduce el stock del producto)
                 await this.detalleVentaService.createDetalle({
                     ...detalle,
                     venta_id: savedVenta.id, // Asignar la venta recién creada
                 });
+
+                // Obtener el producto actualizado para saber el stock resultante
+                const productoActualizado = await this.movimientosStockService['productoRepository'].findOne({
+                    where: { id: detalle.producto_id }
+                });
+
+                // Crear movimiento de stock tipo VENTA (solo registro, no modifica stock)
+                await this.movimientosStockService.createMovimientoRegistro({
+                    tipo_movimiento: TipoMovimientoStock.VENTA,
+                    descripcion: `Venta #${nuevoNumeroVenta} - Producto vendido`,
+                    cantidad: -detalle.cantidad, // Negativo porque es una salida
+                    producto_id: detalle.producto_id,
+                    sucursal_id: ventaData.sucursal_id,
+                }, productoActualizado.stock);
             }
 
             // Paso 8: Retornar la venta completa con todas sus relaciones
@@ -112,56 +130,6 @@ export class VentasService extends BaseService<ventaEntity>{
             throw new BadRequestException('Error al crear la venta. Por favor, verifica los datos e intenta nuevamente.');
         }
     }
-    // // Update venta
-    async updateVenta(id: number, ventaData: UpdateVentaDto): Promise<ventaEntity> {
-        const venta = await this.ventaRepository.findOne({
-            where: { id },
-            relations: ['pago', 'detalles', 'sucursal', 'contacto'],
-        });
-
-        if (!venta) {
-            throw new BadRequestException(`❌ No se encontró la venta que intentas actualizar. Verifica que el ID sea correcto.`);
-        }
-
-        // Actualizar campos básicos de la venta
-        if (ventaData.fecha_venta !== undefined) venta.fecha_venta = new Date(ventaData.fecha_venta);
-        if (ventaData.monto_total !== undefined) venta.monto_total = ventaData.monto_total;
-
-        // Actualizar relaciones si se proporcionan
-        if (ventaData.sucursal_id !== undefined) {
-            venta.sucursal = { id: ventaData.sucursal_id } as any;
-        }
-        
-        if (ventaData.contacto_id !== undefined) {
-            venta.contacto = ventaData.contacto_id ? { id: ventaData.contacto_id } as any : null;
-        }
-
-        // Actualizar el pago si se proporciona
-        if (ventaData.pago && venta.pago) {
-            if (ventaData.pago.fecha_pago !== undefined) {
-                venta.pago.fecha_pago = new Date(ventaData.pago.fecha_pago);
-            }
-            if (ventaData.pago.monto_pago !== undefined) {
-                venta.pago.monto_pago = ventaData.pago.monto_pago;
-            }
-            if (ventaData.pago.metodo_pago !== undefined) {
-                venta.pago.metodo_pago = ventaData.pago.metodo_pago as 'efectivo' | 'transferencia';
-            }
-            if (ventaData.pago.sucursal_id !== undefined) {
-                venta.pago.sucursal = { id: ventaData.pago.sucursal_id } as any;
-            }
-        }
-
-        // Guardar los cambios
-        const savedVenta = await this.ventaRepository.save(venta);
-
-        // Retornar la venta actualizada con todas sus relaciones
-        return await this.ventaRepository.findOne({
-            where: { id: savedVenta.id },
-            relations: ['sucursal', 'contacto', 'pago',],
-        });
-    }
-
     // Find venta by id with relations
     async findById(id: number): Promise<ventaEntity> {
         return await this.ventaRepository.findOne({
@@ -169,19 +137,33 @@ export class VentasService extends BaseService<ventaEntity>{
             relations: ['sucursal', 'contacto', 'pago', 'detalles', 'detalles.producto'],
         });
     }
+
     // Delete single venta
     async deleteVenta(id: number): Promise<void> {
         try {
             // Primero obtenemos la venta con todas sus relaciones
             const venta = await this.ventaRepository.findOne({
                 where: { id },
-                relations: ['detalles', 'pago'],
+                relations: ['detalles', 'detalles.producto', 'pago', 'sucursal'],
             });
 
             if (!venta) {
                 throw new BadRequestException(`❌ No se encontró la venta con ID ${id} que intentas eliminar.`);
             }
 
+            // PASO 0.5: Crear movimientos de stock tipo AJUSTE_MANUAL para devolver el stock
+            // Estos movimientos SÍ modificarán el stock del producto (devolución)
+            if (venta.detalles && venta.detalles.length > 0) {
+                for (const detalle of venta.detalles) {
+                    await this.movimientosStockService.create({
+                        tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
+                        descripcion: `Devolución por eliminación de venta #${venta.numero_venta}`,
+                        cantidad: detalle.cantidad, // Cantidad positiva para devolver stock
+                        producto_id: detalle.producto.id,
+                        sucursal_id: venta.sucursal.id,
+                    });
+                }
+            }
 
             // PASO 1: Eliminar los detalles de venta primero
             // La restricción FK tiene ON DELETE NO ACTION, así que debemos eliminarlos manualmente
@@ -246,7 +228,7 @@ export class VentasService extends BaseService<ventaEntity>{
         // Obtener todas las ventas con sus relaciones
         const ventas = await this.ventaRepository.find({
             where: { id: In(ids) },
-            relations: ['detalles', 'pago', 'sucursal'],
+            relations: ['detalles', 'detalles.producto', 'pago', 'sucursal'],
         });
 
         // Validar que existan ventas
@@ -265,6 +247,22 @@ export class VentasService extends BaseService<ventaEntity>{
         // Verificar que todas las ventas solicitadas fueron encontradas
         if (ventas.length !== ids.length) {
             throw new BadRequestException('❌ Algunas ventas que intentas eliminar no existen.');
+        }
+
+        // PASO 0.5: Crear movimientos de stock tipo AJUSTE_MANUAL para devolver el stock de todas las ventas
+        // Estos movimientos SÍ modificarán el stock del producto (devolución)
+        for (const venta of ventas) {
+            if (venta.detalles && venta.detalles.length > 0) {
+                for (const detalle of venta.detalles) {
+                    await this.movimientosStockService.create({
+                        tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
+                        descripcion: `Devolución por eliminación de venta #${venta.numero_venta}`,
+                        cantidad: detalle.cantidad, // Cantidad positiva para devolver stock
+                        producto_id: detalle.producto.id,
+                        sucursal_id: venta.sucursal.id,
+                    });
+                }
+            }
         }
 
         // PASO 1: Eliminar todos los detalles de las ventas primero

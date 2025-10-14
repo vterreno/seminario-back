@@ -7,6 +7,8 @@ import { pagoEntity } from 'src/database/core/pago.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { contactoEntity } from 'src/database/core/contacto.entity';
+import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
+import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 
 @Injectable()
 export class VentaSeeder {
@@ -23,6 +25,8 @@ export class VentaSeeder {
         private readonly sucursalRepo: Repository<sucursalEntity>,
         @InjectRepository(contactoEntity)
         private readonly contactoRepo: Repository<contactoEntity>,
+        @InjectRepository(MovimientoStockEntity)
+        private readonly movimientoStockRepo: Repository<MovimientoStockEntity>,
     ) {}
 
     async run() {
@@ -105,7 +109,17 @@ export class VentaSeeder {
                     .slice(0, cantidadDetalles);
 
                 for (const producto of productosSeleccionados) {
-                    const cantidad = Math.floor(Math.random() * 5) + 1; // 1 a 5 unidades
+                    // Verificar que hay stock suficiente
+                    const cantidad = Math.min(
+                        Math.floor(Math.random() * 5) + 1, // Intentar vender 1 a 5 unidades
+                        producto.stock // Pero no más del stock disponible
+                    );
+                    
+                    if (cantidad === 0) {
+                        console.log(`   ⚠️ Saltando producto "${producto.nombre}" - sin stock`);
+                        continue;
+                    }
+
                     const precioUnitario = Number(producto.precio_venta);
                     const subtotal = cantidad * precioUnitario;
                     montoTotal += subtotal;
@@ -118,6 +132,16 @@ export class VentaSeeder {
                     });
 
                     detalles.push(detalle);
+                    
+                    // Reducir el stock del producto
+                    producto.stock -= cantidad;
+                }
+
+                // Si no hay detalles (por falta de stock), saltar esta venta
+                if (detalles.length === 0) {
+                    console.log(`   ⚠️ Venta #${1000 + i} saltada - no hay productos con stock`);
+                    await this.pagoRepo.remove(pagoGuardado);
+                    continue;
                 }
 
                 // Crear la venta con los detalles
@@ -131,11 +155,33 @@ export class VentaSeeder {
                     detalles: detalles,
                 });
 
-                await this.ventaRepo.save(venta);
+                const ventaGuardada = await this.ventaRepo.save(venta);
 
                 // Actualizar el monto del pago
                 pagoGuardado.monto_pago = montoTotal;
                 await this.pagoRepo.save(pagoGuardado);
+
+                // Guardar cambios de stock en productos y crear movimientos de stock
+                for (const detalle of detalles) {
+                    // Guardar el producto con stock reducido
+                    await this.productoRepo.save(detalle.producto);
+                    
+                    // Crear movimiento de stock tipo VENTA (solo registro histórico)
+                    const movimiento = this.movimientoStockRepo.create({
+                        fecha: fechaVenta,
+                        tipo_movimiento: TipoMovimientoStock.VENTA,
+                        descripcion: `Venta #${venta.numero_venta} - Producto vendido (seeder)`,
+                        cantidad: -detalle.cantidad, // Negativo porque es salida
+                        stock_resultante: detalle.producto.stock, // Stock después de la venta
+                        producto_id: detalle.producto.id,
+                        sucursal_id: sucursal.id,
+                    });
+                    await this.movimientoStockRepo.save(movimiento);
+                }
+
+                // Actualizar el número de venta en la sucursal
+                sucursal.numero_venta = venta.numero_venta;
+                await this.sucursalRepo.save(sucursal);
 
                 console.log(`   ✅ Venta #${venta.numero_venta} creada: ${detalles.length} productos, Total: $${montoTotal.toFixed(2)}, Pago: ${metodoPago}`);
 

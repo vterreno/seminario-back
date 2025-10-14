@@ -8,6 +8,7 @@ import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { PagoModule } from '../pago/pago.module';
 import { DetalleVentaModule } from '../detalle-venta/detalle-venta.module';
+import { MovimientosStockModule } from '../movimientos-stock/movimientos-stock.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DetalleVentaModule } from '../detalle-venta/detalle-venta.module';
       UsersModule,
       PagoModule,
       DetalleVentaModule,
+      MovimientosStockModule,
     ],
   controllers: [VentasController],
   providers: [VentasService],

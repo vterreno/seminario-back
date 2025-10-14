@@ -10,8 +10,8 @@ export class CreateProductoDto {
     codigo: string;
 
     @IsNumber()
-    @IsNotEmpty({ message: 'La empresa es obligatoria' })
-    empresa_id: number;
+    @IsNotEmpty({ message: 'La sucursal es obligatoria' })
+    sucursal_id: number;
 
     @IsNumber()
     @IsOptional()

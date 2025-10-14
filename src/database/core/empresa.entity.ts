@@ -8,6 +8,7 @@ import { contactoEntity } from "./contacto.entity";
 import { MarcaEntity } from "./marcas.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
 import { ProductoEntity } from "./producto.entity";
+import { ListaPreciosEntity } from "./lista-precios.entity";
 import { UnidadMedidaEntity } from "./unidad-medida.entity";
 
 @Entity("empresa")
@@ -38,6 +39,8 @@ export class empresaEntity extends BaseEntity{
     @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.empresa)
     movimientos: MovimientoStockEntity[];
 
+    @OneToMany(() => ListaPreciosEntity, listaPrecios => listaPrecios.empresa)
+    listas_precios: ListaPreciosEntity[];
     @OneToMany(() => UnidadMedidaEntity, unidadMedida => unidadMedida.empresa)
     unidadesMedida: UnidadMedidaEntity[];
 }

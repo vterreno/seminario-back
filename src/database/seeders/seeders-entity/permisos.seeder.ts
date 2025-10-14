@@ -83,8 +83,11 @@ export class PermisosSeeder {
             // Configuraciones permissions
             { nombre: 'Configuración de empresa', codigo: 'configuracion_empresa' },
             
-            // Listas de precios permissions
-            { nombre: 'Lista de precios predeterminada', codigo: 'lista_precios_predeterminada' },
+            // Listas de precios permissions (módulo general de gestión)
+            { nombre: 'Ver módulo de listas de precios', codigo: 'modulo_listas_ver' },
+            { nombre: 'Crear lista de precios', codigo: 'modulo_listas_agregar' },
+            { nombre: 'Modificar lista de precios', codigo: 'modulo_listas_modificar' },
+            { nombre: 'Eliminar lista de precios', codigo: 'modulo_listas_eliminar' },
 
             // Role permissions
             { nombre: 'Ver roles', codigo: 'roles_ver' },

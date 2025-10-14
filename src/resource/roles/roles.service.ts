@@ -154,4 +154,41 @@ export class RolesService extends BaseService<RoleEntity> {
     async bulkSoftDeleteRoles(ids: number[]): Promise<void> {
         await this.roleRepository.update(ids, { estado: false });
     }
+
+    async asignarPermisosArol(nombre: string, empresaId: number | null, permisoCreado: PermissionEntity) {
+        const role = await this.roleRepository.findOne({
+            where: { nombre, empresa_id: empresaId },
+            relations: ['permissions']
+        });
+        if (role) {
+            // Verificar si el permiso ya está asignado
+            const permisoYaAsignado = role.permissions?.some(p => p.id === permisoCreado.id);
+            if (!permisoYaAsignado) {
+                await this.roleRepository
+                    .createQueryBuilder()
+                    .relation(RoleEntity, 'permissions')
+                    .of(role)
+                    .add(permisoCreado);
+            }
+        } else {
+            throw new BadRequestException(`No se encontró el rol Administrador para la empresa seleccionada. Por favor, verifica que la empresa tenga un rol Administrador antes de crear una lista de precios.`);
+        }
+    }
+
+    async eliminarPermisoDeRoles(permisoEliminado: PermissionEntity) {
+        const rolesConPermiso = await this.roleRepository.createQueryBuilder('role')
+            .leftJoinAndSelect('role.permissions', 'permission')
+            .where('permission.id = :permisoId', { permisoId: permisoEliminado.id })
+            .getMany();
+
+        // Remover el permiso de cada rol usando QueryBuilder
+        for (const role of rolesConPermiso) {
+            await this.roleRepository
+                .createQueryBuilder()
+                .relation(RoleEntity, 'permissions')
+                .of(role)
+                .remove(permisoEliminado);
+        }
+
+    }
 }

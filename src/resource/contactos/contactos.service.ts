@@ -63,7 +63,6 @@ export class ContactosService extends BaseService<contactoEntity> {
         throw new BadRequestException(`Ya existe un contacto con ${data.tipo_identificacion} ${data.numero_identificacion} en esta empresa`);
       }
       
-      console.error('Error creating contacto:', error);
       throw new BadRequestException('Error al crear el contacto');
     }
   }
@@ -142,7 +141,6 @@ export class ContactosService extends BaseService<contactoEntity> {
         throw new BadRequestException(`Ya existe un contacto con esa identificación en esta empresa`);
       }
       
-      console.error('Error updating contacto:', error);
       throw new BadRequestException('Error al actualizar el contacto');
     }
   }
@@ -185,6 +183,20 @@ export class ContactosService extends BaseService<contactoEntity> {
     }
     await this.contactosRepository.softDelete(id);
     return { message: 'deleted' };
+  }
+  async crearConsumidorFinal(empresa: empresaEntity){
+    const nuevoConsumidor = this.contactosRepository.create({
+        nombre_razon_social: 'Consumidor Final',
+        condicion_iva: 'Consumidor Final',
+        rol: 'cliente',
+        es_consumidor_final: true,
+        estado: true,
+        empresa: empresa,
+        tipo_identificacion: 'DNI',
+        numero_identificacion: '00-00000000-0',
+    });
+    await this.contactosRepository.save(nuevoConsumidor);
+    return nuevoConsumidor;
   }
 }
 

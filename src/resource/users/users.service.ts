@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDTO } from 'src/resource/users/dto/login.dto';
 import { RegisterDTO } from 'src/resource/users/dto/register.dto';
 import { UserI } from 'src/resource/users/interface/user.interface';
@@ -13,13 +13,15 @@ import { empresaEntity } from 'src/database/core/empresa.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { MailServiceService } from '../mail-service/mail-service.service';
+import { ContactosService } from '../contactos/contactos.service';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
+  
     constructor(
     private jwtService: JwtService,
     private mailService: MailServiceService,
-
+    private contactoService: ContactosService,
 
     @InjectRepository(UserEntity)
     protected readonly userRepository: Repository<UserEntity>,
@@ -56,20 +58,31 @@ export class UsersService extends BaseService<UserEntity> {
   }
 
   async me(user: UserI) {
+    // Obtener datos actualizados del usuario desde la base de datos
+    // para asegurar que los permisos estén siempre actualizados
+    const freshUser = await this.repository.findOne({
+      where: { email: user.email },
+      relations: ['role', 'role.permissions', 'empresa']
+    });
+
+    if (!freshUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
     const response = {
-      name: `${user.nombre} ${user.apellido}`,
-      email: user.email,
-      empresa: user.empresa ? {
-        id: user.empresa.id,
-        nombre: user.empresa.name
+      name: `${freshUser.nombre} ${freshUser.apellido}`,
+      email: freshUser.email,
+      empresa: freshUser.empresa ? {
+        id: freshUser.empresa.id,
+        nombre: freshUser.empresa.name
       } : {
         id: null,
         nombre: null
       },
-      roles: user.role ? [{
-        id: user.role.id,
-        nombre: user.role.nombre,
-        permissions: user.role.permissions ? user.role.permissions.map(permission => ({
+      roles: freshUser.role ? [{
+        id: freshUser.role.id,
+        nombre: freshUser.role.nombre,
+        permissions: freshUser.role.permissions ? freshUser.role.permissions.map(permission => ({
           id: permission.id,
           nombre: permission.nombre,
           codigo: permission.codigo
@@ -83,7 +96,6 @@ export class UsersService extends BaseService<UserEntity> {
     try {
       const rol= new RoleEntity();
       rol.nombre = "Administrador";
-      
       // Filtrar permisos excluyendo los de empresa directamente en la consulta
       const permisosExcluidos = [
         'empresa_ver',
@@ -97,21 +109,24 @@ export class UsersService extends BaseService<UserEntity> {
       rol.permissions = permisos;
       const empresa = new empresaEntity();
       empresa.name = body.empresa;
+
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
       user.empresa = empresa;
       user.role = rol;
       user.status = true;
+      
       await this.roleRepository.save(rol);
       await this.empresaRepository.save(empresa);
+      await this.contactoService.crearConsumidorFinal(empresa);
       await this.userRepository.save(user);
       const userName = `${user.nombre} ${user.apellido}`;
 
       try {
-        await this.mailService.sendWelcomeMail(user.email, userName);
+        this.mailService.sendWelcomeMail(user.email, userName);
       } catch (err) {
-        console.error('Error enviando correo de bienvenida:', err);
+        throw err;
       }
       return { 
         accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),
@@ -172,7 +187,6 @@ export class UsersService extends BaseService<UserEntity> {
       
       return userWithRelations;
     } catch (error) {
-      console.error('Error al crear usuario:', error);
       if (error.code === '23505') { // PostgreSQL unique violation error code
         throw new BadRequestException('El email ya está registrado');
       }
@@ -298,7 +312,6 @@ export class UsersService extends BaseService<UserEntity> {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error in cambiarContrasena:', error);
       throw new HttpException('Error al cambiar la contraseña', 500);
     }
   }
@@ -349,7 +362,6 @@ export class UsersService extends BaseService<UserEntity> {
         status: status
       };
     } catch (error) {
-      console.error('Error al actualizar usuarios:', error);
       throw new HttpException(`Error al actualizar usuarios: ${error.message}`, 500);
     }
   }

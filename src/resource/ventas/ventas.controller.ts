@@ -79,7 +79,7 @@ export class VentasController extends BaseController<ventaEntity>{
                     throw new BadRequestException('La venta no tiene una sucursal asociada');
                 }
                 
-                if (existingVenta.sucursal.id !== user.empresa.id) {
+                if (existingVenta.sucursal.empresa?.id !== user.empresa.id) {
                     throw new BadRequestException('No tienes permisos para eliminar esta venta');
                 }
             }

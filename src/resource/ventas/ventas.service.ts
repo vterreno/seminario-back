@@ -309,13 +309,13 @@ export class VentasService extends BaseService<ventaEntity>{
 
     // Soft delete (set estado to false instead of hard delete)
     async softDeleteVenta(id: number): Promise<ventaEntity> {
-        await this.ventaRepository.update(id, { deleted_at: false });
+        await this.ventaRepository.softDelete(id);
         return await this.findById(id);
     }
 
     // Bulk soft delete
     async bulkSoftDeleteVentas(ids: number[]): Promise<void> {
-        await this.ventaRepository.update(ids, { deleted_at: false });
+        await this.ventaRepository.softDelete(ids);
     }
 
 

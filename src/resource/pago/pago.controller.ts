@@ -112,7 +112,7 @@ export class PagoController extends BaseController<pagoEntity> {
     // Verify the pago belongs to the user's company (if user has a company)
     if (user.empresa?.id) {
       const existingPago = await this.pagoService.findById(id);
-      if (existingPago.sucursal.id !== user.empresa.id) {
+      if (existingPago.sucursal.empresa.id !== user.empresa.id) {
         throw new BadRequestException('No tienes permisos para eliminar este pago');
       }
     }

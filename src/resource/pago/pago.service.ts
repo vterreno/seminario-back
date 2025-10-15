@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { pagoEntity } from 'src/database/core/pago.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { FindManyOptions, FindOneOptions, IsNull, Repository, In } from 'typeorm';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class PagoService extends BaseService<pagoEntity> {
   constructor(
     @InjectRepository(pagoEntity)
     protected pagoRepository: Repository<pagoEntity>,
+    @InjectRepository(sucursalEntity)
+    private sucursalRepository: Repository<sucursalEntity>,
   ) {
     super(pagoRepository);
   }
@@ -77,6 +80,20 @@ export class PagoService extends BaseService<pagoEntity> {
     }
 
     return pago;
+  }
+
+  // Get sucursal by id
+  async getSucursalById(id: number): Promise<sucursalEntity> {
+    const sucursal = await this.sucursalRepository.findOne({
+      where: { id, deleted_at: IsNull() },
+      relations: ['empresa'],
+    });
+
+    if (!sucursal) {
+      throw new NotFoundException(`Sucursal con id ${id} no encontrada`);
+    }
+
+    return sucursal;
   }
 
   // Hard delete single pago

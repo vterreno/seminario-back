@@ -53,8 +53,8 @@ export class VentasController extends BaseController<ventaEntity>{
     async createVenta(@Body() ventaData: CreateVentaDto, @Req() req: RequestWithUser) {
         const user = req.user;
         // If user has a company and sucursal_id is not provided, assign that company to the venta
-        if (user.empresa?.id && !ventaData.sucursal_id) {
-            ventaData.sucursal_id = user.empresa.id;
+        if (!ventaData.sucursal_id) {
+            throw new BadRequestException('Debes proporcionar un sucursal_id válido para la venta');
         }
 
         return await this.ventasService.createVenta(ventaData);

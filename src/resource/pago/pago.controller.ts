@@ -73,12 +73,16 @@ export class PagoController extends BaseController<pagoEntity> {
       if (!existingPago) {
         throw new BadRequestException('Pago no encontrado');
       }
-      if (existingPago.sucursal.id !== user.empresa.id) {
+      if (existingPago.sucursal.empresa.id !== user.empresa.id) {
         throw new BadRequestException('No tienes permisos para modificar este pago');
       }
-      // Ensure sucursal_id doesn't change for regular users
-      if (pagoData.sucursal_id && pagoData.sucursal_id !== user.empresa.id) {
-        throw new BadRequestException('No puedes cambiar la sucursal del pago');
+      // Ensure sucursal_id doesn't change to a sucursal outside the user's empresa
+      if (pagoData.sucursal_id) {
+        // Fetch the sucursal to check its empresa
+        const sucursal = await this.pagoService.getSucursalById(pagoData.sucursal_id);
+        if (!sucursal || sucursal.empresa.id !== user.empresa.id) {
+          throw new BadRequestException('No puedes cambiar la sucursal del pago');
+        }
       }
     }
 

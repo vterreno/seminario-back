@@ -5,6 +5,8 @@ import { ProductoEntity } from 'src/database/core/producto.entity';
 import { empresaEntity } from 'src/database/core/empresa.entity';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
+import { categoriasEntity } from 'src/database/core/categorias.entity';
+import { UnidadMedidaEntity } from 'src/database/core/unidad-medida.entity';
 
 @Injectable()
 export class ProductoSimpleSeeder {
@@ -17,11 +19,15 @@ export class ProductoSimpleSeeder {
         private readonly sucursalRepo: Repository<sucursalEntity>,
         @InjectRepository(MarcaEntity)
         private readonly marcaRepo: Repository<MarcaEntity>,
+        @InjectRepository(categoriasEntity)
+        private readonly categoriaRepo: Repository<categoriasEntity>,
+        @InjectRepository(UnidadMedidaEntity)
+        private readonly unidadRepo: Repository<UnidadMedidaEntity>,
     ) {}
 
     async run() {
         console.log('📦 Iniciando seed simplificado de productos...');
-        
+
         // Verificar si ya existen productos
         const existingProductos = await this.productoRepo.count();
         if (existingProductos > 0) {
@@ -29,7 +35,7 @@ export class ProductoSimpleSeeder {
             return;
         }
 
-        // Obtener empresas
+        // === EMPRESAS ===
         const empresaTech = await this.empresaRepo.findOne({ where: { name: 'TechCorp S.A.' } });
         const empresaFood = await this.empresaRepo.findOne({ where: { name: 'FoodMarket Ltda.' } });
 
@@ -69,6 +75,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'APL-IP15P-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 800.00,
                 precio_venta: 1200.00,
                 stock_apertura: 25,
@@ -80,6 +88,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'APL-MBA-M2-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 1000.00,
                 precio_venta: 1500.00,
                 stock_apertura: 15,
@@ -91,6 +101,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'SAM-GS24-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 650.00,
                 precio_venta: 950.00,
                 stock_apertura: 30,
@@ -102,6 +114,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'SAM-TV55-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 400.00,
                 precio_venta: 650.00,
                 stock_apertura: 20,
@@ -113,6 +127,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'SNY-PS5-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 400.00,
                 precio_venta: 600.00,
                 stock_apertura: 12,
@@ -124,6 +140,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'SNY-WH1000-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 200.00,
                 precio_venta: 320.00,
                 stock_apertura: 40,
@@ -135,6 +153,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'LG-OLED65-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'LG')?.id || marcasTech[3].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 1200.00,
                 precio_venta: 1800.00,
                 stock_apertura: 8,
@@ -146,6 +166,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'HP-PAV-001',
                 sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'HP')?.id || marcasTech[4].id,
+                categoria_id: categoriaTecnologia.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 500.00,
                 precio_venta: 750.00,
                 stock_apertura: 18,
@@ -159,6 +181,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'COC-25L-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: litro.id,
                 precio_costo: 1.20,
                 precio_venta: 2.50,
                 stock_apertura: 200,
@@ -170,6 +194,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'COC-Z500-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: litro.id,
                 precio_costo: 0.80,
                 precio_venta: 1.50,
                 stock_apertura: 150,
@@ -181,6 +207,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'NES-LC-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: paquete.id,
                 precio_costo: 2.00,
                 precio_venta: 3.50,
                 stock_apertura: 80,
@@ -192,6 +220,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'NES-NCF-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: paquete.id,
                 precio_costo: 4.50,
                 precio_venta: 7.00,
                 stock_apertura: 60,
@@ -203,6 +233,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'UNI-DOV-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Unilever')?.id || marcasFood[2].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: unidad.id,
                 precio_costo: 1.50,
                 precio_venta: 2.80,
                 stock_apertura: 120,
@@ -214,6 +246,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'DAN-YOG-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Danone')?.id || marcasFood[3].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: kilogramo.id,
                 precio_costo: 0.90,
                 precio_venta: 1.80,
                 stock_apertura: 100,
@@ -225,6 +259,8 @@ export class ProductoSimpleSeeder {
                 codigo: 'KEL-CF-001',
                 sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Kelloggs')?.id || marcasFood[4].id,
+                categoria_id: categoriaAlimentos.id,
+                unidad_medida_id: paquete.id,
                 precio_costo: 3.00,
                 precio_venta: 5.50,
                 stock_apertura: 45,
@@ -244,11 +280,22 @@ export class ProductoSimpleSeeder {
                     continue;
                 }
 
-                // Verificar si el producto ya existe por código
-                const existeProducto = await this.productoRepo.findOne({ 
-                    where: { codigo: productoData.codigo }
-                });
+                // Verificar que la categoría existe
+                const categoria = await this.categoriaRepo.findOne({ where: { id: productoData.categoria_id } });
+                if (!categoria) {
+                    console.log(`⚠️ Categoría con ID ${productoData.categoria_id} no encontrada para producto ${productoData.nombre}`);
+                    continue;
+                }
 
+                // Verificar que la unidad de medida existe
+                const unidadMedida = await this.unidadRepo.findOne({ where: { id: productoData.unidad_medida_id } });
+                if (!unidadMedida) {
+                    console.log(`⚠️ Unidad de medida con ID ${productoData.unidad_medida_id} no encontrada para producto ${productoData.nombre}`);
+                    continue;
+                }
+
+                // Verificar si el producto ya existe por código
+                const existeProducto = await this.productoRepo.findOne({ where: { codigo: productoData.codigo } });
                 if (existeProducto) {
                     console.log(`⚠️ Producto con código ${productoData.codigo} ya existe`);
                     continue;

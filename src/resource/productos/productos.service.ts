@@ -123,7 +123,6 @@ export class ProductosService extends BaseService<ProductoEntity>{
             return await this.findById(savedProducto.id);
         } catch (error) {
             // Log internal error but don't expose it to client
-            console.error('Internal error creating producto:', error);
             throw new BadRequestException('Error al crear el producto. Por favor, verifica los datos e intenta nuevamente.');
         }
     }

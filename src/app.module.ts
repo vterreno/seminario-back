@@ -11,6 +11,7 @@ import { SeedModule } from './database/seeders/seeder.module';
 import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
+import { UnidadesMedidaModule } from './resource/unidades-medida/unidades-medida.module';
 import { ContactosModule } from './resource/contactos/contactos.module';
 import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
@@ -21,6 +22,7 @@ import { ProductosModule } from './resource/productos/productos.module';
 import { VentasModule } from './resource/ventas/ventas.module';
 import { PagoModule } from './resource/pago/pago.module';
 import { DetalleVentaModule } from './resource/detalle-venta/detalle-venta.module';
+import { ListaPreciosModule } from './resource/lista-precios/lista-precios.module';
 
 @Module({
   imports: [
@@ -48,6 +50,7 @@ import { DetalleVentaModule } from './resource/detalle-venta/detalle-venta.modul
     MailServiceModule,
     EmpresaModule,
     SucursalesModule,
+    UnidadesMedidaModule,
     CategoriasModule,
     ContactosModule,
     UbicacionesModule,
@@ -57,6 +60,7 @@ import { DetalleVentaModule } from './resource/detalle-venta/detalle-venta.modul
     VentasModule,
     PagoModule,
     DetalleVentaModule
+    ListaPreciosModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

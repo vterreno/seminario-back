@@ -8,11 +8,11 @@ export class JwtService {
   config = {
     auth: {
       secret: 'authSecret',
-      expiresIn: '15m',
+      expiresIn: '12h',
     },
     refresh: {
       secret: 'refreshSecret',
-      expiresIn: '15d',
+      expiresIn: '1d',
     },
   };
   generateToken(payload: { email: string }, type: 'refresh' | 'auth' = 'auth'): string {

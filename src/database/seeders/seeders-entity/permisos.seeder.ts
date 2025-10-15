@@ -55,11 +55,11 @@ export class PermisosSeeder {
             { nombre: 'Modificar marca', codigo: 'marca_modificar' },
             { nombre: 'Eliminar marca', codigo: 'marca_eliminar' },
             
-            // Unidad permissions
-            { nombre: 'Ver unidad', codigo: 'unidad_ver' },
-            { nombre: 'Crear unidad', codigo: 'unidad_agregar' },
-            { nombre: 'Modificar unidad', codigo: 'unidad_modificar' },
-            { nombre: 'Eliminar unidad', codigo: 'unidad_eliminar' },
+            // Unidades de medida permissions
+            { nombre: 'Ver unidad de medida', codigo: 'unidad_medida_ver' },
+            { nombre: 'Crear unidad de medida', codigo: 'unidad_medida_agregar' },
+            { nombre: 'Modificar unidad de medida', codigo: 'unidad_medida_modificar' },
+            { nombre: 'Eliminar unidad de medida', codigo: 'unidad_medida_eliminar' },
             
             // Categoría permissions
             { nombre: 'Ver categoría', codigo: 'categoria_ver' },
@@ -83,8 +83,11 @@ export class PermisosSeeder {
             // Configuraciones permissions
             { nombre: 'Configuración de empresa', codigo: 'configuracion_empresa' },
             
-            // Listas de precios permissions
-            { nombre: 'Lista de precios predeterminada', codigo: 'lista_precios_predeterminada' },
+            // Listas de precios permissions (módulo general de gestión)
+            { nombre: 'Ver módulo de listas de precios', codigo: 'modulo_listas_ver' },
+            { nombre: 'Crear lista de precios', codigo: 'modulo_listas_agregar' },
+            { nombre: 'Modificar lista de precios', codigo: 'modulo_listas_modificar' },
+            { nombre: 'Eliminar lista de precios', codigo: 'modulo_listas_eliminar' },
 
             // Role permissions
             { nombre: 'Ver roles', codigo: 'roles_ver' },

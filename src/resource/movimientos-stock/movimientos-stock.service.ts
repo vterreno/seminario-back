@@ -98,7 +98,6 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
                     throw error;
                 }
                 // Para otros errores, mostrar mensaje genérico pero loggear el error real
-                console.error('Error al crear movimiento de stock:', error);
                 throw new BadRequestException('Error interno al crear el movimiento de stock.');
             }
         });

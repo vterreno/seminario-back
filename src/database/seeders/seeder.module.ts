@@ -12,9 +12,6 @@ import { EmpresaSeeder } from './seeders-entity/empresa.seeder';
 import { empresaEntity } from '../core/empresa.entity';
 import { MarcaEntity } from '../core/marcas.entity';
 import { ProductoEntity } from '../core/producto.entity';
-import { MasterSeeder } from './seeders-entity/master.seeder';
-import { EmpresaUsuarioRolSimpleSeeder } from './seeders-entity/empresa-usuario-rol-simple.seeder';
-import { MarcaSimpleSeeder } from './seeders-entity/marca-simple.seeder';
 import { ProductoSimpleSeeder } from './seeders-entity/producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './seeders-entity/movimientos-stock-inicial.seeder';
 import { MovimientoStockEntity } from '../core/movimientos-stock.entity';
@@ -53,9 +50,8 @@ import { pagoEntity } from '../core/pago.entity';
         SucursalesSeeder,
         ConsumidorFinalSeeder,
         // Seeders simplificados
-        EmpresaUsuarioRolSimpleSeeder,
-        MarcaSimpleSeeder,
         ProductoSimpleSeeder,
+        EmpresaUsuarioRolSeeder,
         MovimientosStockInicialSeeder,
         VentaSeeder,
         // Seeder maestro
@@ -65,4 +61,3 @@ import { pagoEntity } from '../core/pago.entity';
     exports: [SeederService],
 })
 export class SeedModule {}
-

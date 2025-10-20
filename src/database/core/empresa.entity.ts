@@ -20,13 +20,10 @@ export class empresaEntity extends BaseEntity{
     usuarios: UserEntity[]
     @OneToMany(() => RoleEntity, role => role.empresa)
     roles: RoleEntity[]
-
     @OneToMany(() => categoriasEntity, categorias => categorias.empresa)
     categorias: categoriasEntity[]
-
     @OneToMany(() => contactoEntity, contacto => contacto.empresa)
     contactos: contactoEntity[]
-
     @OneToMany(() => MarcaEntity, marca => marca.empresa)
     marcas: MarcaEntity[];
 }

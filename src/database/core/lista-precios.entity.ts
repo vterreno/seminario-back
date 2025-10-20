@@ -3,6 +3,7 @@ import { BaseEntity } from "./base.entity";
 import { ProductoEntity } from "./producto.entity";
 import { empresaEntity } from "./empresa.entity";
 import { ProductoListaPreciosEntity } from "./producto-lista-precios.entity";
+import { sucursalEntity } from "./sucursal.entity";
 
 
 @Entity("lista_precios")
@@ -23,10 +24,10 @@ export class ListaPreciosEntity extends BaseEntity{
     @OneToMany(() => ProductoListaPreciosEntity, productoListaPrecios => productoListaPrecios.listaPrecios)
     productosListasPrecios: ProductoListaPreciosEntity[];
 
-    @ManyToOne(() => empresaEntity, empresa => empresa.listas_precios, { nullable: true })
-    @JoinColumn({ name: 'empresa_id' })
-    empresa?: empresaEntity;
+    @ManyToOne(() => sucursalEntity, sucursal => sucursal.listas_precios, { nullable: true })
+    @JoinColumn({ name: 'sucursal_id' })
+    sucursal?: sucursalEntity;
 
     @Column({ nullable: true })
-    empresa_id: number;
+    sucursal_id: number;
 }

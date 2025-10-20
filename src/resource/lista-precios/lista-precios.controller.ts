@@ -67,7 +67,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista precio no encontrada');
             }
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para modificar esta lista precio');
             }
             // Ensure company_id doesn't change for regular users
@@ -90,7 +90,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
         // Verify the lista precio belongs to the user's company (if user has a company)
         if (user.empresa?.id) {
             const existingListaPrecio = await this.listaPreciosService.findById(id);
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para eliminar esta lista precio');
             }
         }
@@ -154,7 +154,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista de precios no encontrada');
             }
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para ver los productos de esta lista de precios');
             }
         }
@@ -174,7 +174,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista de precios no encontrada');
             }
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para modificar los productos de esta lista de precios');
             }
         }
@@ -193,7 +193,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista de precios no encontrada');
             }
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para modificar esta lista de precios');
             }
         }
@@ -212,7 +212,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista de precios no encontrada');
             }
-            if (existingListaPrecio.empresa_id !== user.empresa.id) {
+            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para modificar esta lista de precios');
             }
         }

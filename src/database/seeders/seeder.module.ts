@@ -23,6 +23,8 @@ import { VentaSeeder } from './seeders-entity/venta.seeder';
 import { ventaEntity } from '../core/venta.entity';
 import { detalleVentaEntity } from '../core/detalleVenta.entity';
 import { pagoEntity } from '../core/pago.entity';
+import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
+import { MasterSeeder } from './seeders-entity/master.seeder';
 
 @Module({
     imports: [

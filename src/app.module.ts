@@ -59,7 +59,7 @@ import { ListaPreciosModule } from './resource/lista-precios/lista-precios.modul
     MovimientosStockModule,
     VentasModule,
     PagoModule,
-    DetalleVentaModule
+    DetalleVentaModule,
     ListaPreciosModule,
     ],
   controllers: [AppController],

@@ -49,7 +49,7 @@ export class UnidadMedidaSeeder {
         for (const unidad of unidadesConEmpresa) {
         // Verificar si ya existe
         const existente = await this.unidadMedidaRepo.findOne({
-            where: { nombre: unidad.nombre, empresa_id: unidad.empresa_id },
+            where: { nombre: unidad.nombre, sucursal_id: unidad.empresa_id },
         });
 
         if (!existente) {
@@ -57,7 +57,7 @@ export class UnidadMedidaSeeder {
             nombre: unidad.nombre,
             abreviatura: unidad.abreviatura,
             aceptaDecimales: unidad.aceptaDecimales,
-            empresa_id: unidad.empresa_id,
+            sucursal_id: unidad.empresa_id,
             });
             await this.unidadMedidaRepo.save(nuevaUnidad);
             creadas++;

@@ -10,6 +10,7 @@ import { ProductoSimpleSeeder } from './producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seeder';
 import { VentaSeeder } from './venta.seeder';
 import SucursalesSeeder from './sucursales.seeder';
+import { UnidadMedidaSeeder } from './unidad-medida.seeder';
 
 
 @Injectable()
@@ -26,6 +27,7 @@ export class MasterSeeder {
         private readonly productoSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
         private readonly ventaSeeder: VentaSeeder,
+        private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
     ) {}
 
     async run() {
@@ -96,7 +98,7 @@ export class MasterSeeder {
 
             // 7. Productos por empresa y marca
             console.log('📦 7/8 - Creando productos por empresa y marca...');
-            await this.productoSimpleSeeder.run();
+            await this.productoSeeder.run();
             console.log('✅ Productos completados\n');
 
             // 8. Movimientos de stock iniciales

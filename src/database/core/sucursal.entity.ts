@@ -5,6 +5,8 @@ import { ventaEntity } from "./venta.entity";
 import { pagoEntity } from "./pago.entity";
 import { ProductoEntity } from "./producto.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
+import { UnidadMedidaEntity } from "./unidad-medida.entity";
+import { ListaPreciosEntity } from "./lista-precios.entity";
 
 @Entity("sucursales")
 export class sucursalEntity extends BaseEntity{
@@ -41,4 +43,11 @@ export class sucursalEntity extends BaseEntity{
 
     @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.sucursal)
     movimientos: MovimientoStockEntity[];
+
+    @OneToMany(() => UnidadMedidaEntity, unidadMedida => unidadMedida.sucursal)
+    unidadesMedida: UnidadMedidaEntity[];
+
+    @OneToMany(() => ListaPreciosEntity, listaPrecios => listaPrecios.sucursal)
+    listas_precios: ListaPreciosEntity[];
+
 }

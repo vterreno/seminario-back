@@ -67,7 +67,7 @@ export class ListaPreciosController extends BaseController<ListaPreciosEntity>{
             if (!existingListaPrecio) {
                 throw new BadRequestException('Lista precio no encontrada');
             }
-            if (existingListaPrecio.sucursal_id !== user.empresa.id) {
+            if (existingListaPrecio.empresa_id !== user.empresa.id) {
                 throw new BadRequestException('No tienes permisos para modificar esta lista precio');
             }
             // Ensure company_id doesn't change for regular users

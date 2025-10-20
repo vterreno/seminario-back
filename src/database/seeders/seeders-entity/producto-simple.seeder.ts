@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { empresaEntity } from 'src/database/core/empresa.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { categoriasEntity } from 'src/database/core/categorias.entity';
 import { UnidadMedidaEntity } from 'src/database/core/unidad-medida.entity';
@@ -14,6 +15,8 @@ export class ProductoSimpleSeeder {
         private readonly productoRepo: Repository<ProductoEntity>,
         @InjectRepository(empresaEntity)
         private readonly empresaRepo: Repository<empresaEntity>,
+        @InjectRepository(sucursalEntity)
+        private readonly sucursalRepo: Repository<sucursalEntity>,
         @InjectRepository(MarcaEntity)
         private readonly marcaRepo: Repository<MarcaEntity>,
         @InjectRepository(categoriasEntity)
@@ -41,7 +44,20 @@ export class ProductoSimpleSeeder {
             return;
         }
 
-        // === MARCAS ===
+        // Obtener sucursales de cada empresa
+        const sucursalesTech = await this.sucursalRepo.find({ where: { empresa_id: empresaTech.id, estado: true } });
+        const sucursalesFood = await this.sucursalRepo.find({ where: { empresa_id: empresaFood.id, estado: true } });
+
+        if (sucursalesTech.length === 0 || sucursalesFood.length === 0) {
+            console.log('❌ No se encontraron sucursales activas para las empresas');
+            return;
+        }
+
+        // Usar la primera sucursal activa de cada empresa
+        const sucursalTech = sucursalesTech[0];
+        const sucursalFood = sucursalesFood[0];
+
+        // Obtener marcas por empresa
         const marcasTech = await this.marcaRepo.find({ where: { empresa_id: empresaTech.id } });
         const marcasFood = await this.marcaRepo.find({ where: { empresa_id: empresaFood.id } });
 
@@ -50,35 +66,14 @@ export class ProductoSimpleSeeder {
             return;
         }
 
-        // === CATEGORÍAS ===
-        const categorias = await this.categoriaRepo.find();
-        const categoriaTecnologia = categorias.find(c => c.nombre === 'Celulares');
-        const categoriaAlimentos = categorias.find(c => c.nombre === 'Bebidas');
-
-        if (!categoriaTecnologia || !categoriaAlimentos) {
-            console.log('❌ No se encontraron las categorías necesarias (Celulares, Bebidas)');
-            return;
-        }
-
-        // === UNIDADES DE MEDIDA ===
-        const unidad = await this.unidadRepo.findOne({ where: { nombre: 'Unidad', empresa_id: empresaTech.id } });
-        const paquete = await this.unidadRepo.findOne({ where: { nombre: 'Paquete', empresa_id: empresaFood.id } });
-        const litro = await this.unidadRepo.findOne({ where: { nombre: 'Litro', empresa_id: empresaFood.id } });
-        const kilogramo = await this.unidadRepo.findOne({ where: { nombre: 'Kilogramo', empresa_id: empresaFood.id } });
-
-        if (!unidad || !paquete || !litro || !kilogramo) {
-            console.log('⚠️ No se encontraron todas las unidades de medida, ejecutá primero el seeder de unidades');
-            return;
-        }
-
-        console.log(`✅ Creando productos para: ${empresaTech.name} y ${empresaFood.name}`);
+        console.log(`✅ Creando productos para: ${empresaTech.name} - Sucursal: ${sucursalTech.nombre} (${marcasTech.length} marcas) y ${empresaFood.name} - Sucursal: ${sucursalFood.nombre} (${marcasFood.length} marcas)`);
 
         const productosData = [
-            // === PRODUCTOS TECNOLÓGICOS (TechCorp S.A.) ===
+            // === PRODUCTOS TECNOLÓGICOS (TechCorp S.A.) - Asignados a sucursal ===
             {
                 nombre: 'iPhone 15 Pro',
                 codigo: 'APL-IP15P-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -91,7 +86,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'MacBook Air M2',
                 codigo: 'APL-MBA-M2-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Apple')?.id || marcasTech[0].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -104,7 +99,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Samsung Galaxy S24',
                 codigo: 'SAM-GS24-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -117,7 +112,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Samsung Smart TV 55"',
                 codigo: 'SAM-TV55-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Samsung')?.id || marcasTech[1].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -130,7 +125,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Sony PlayStation 5',
                 codigo: 'SNY-PS5-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -143,7 +138,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Sony WH-1000XM5 Auriculares',
                 codigo: 'SNY-WH1000-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'Sony')?.id || marcasTech[2].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -156,7 +151,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'LG OLED 65" 4K',
                 codigo: 'LG-OLED65-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'LG')?.id || marcasTech[3].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -169,7 +164,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'HP Pavilion Laptop',
                 codigo: 'HP-PAV-001',
-                empresa_id: empresaTech.id,
+                sucursal_id: sucursalTech.id,
                 marca_id: marcasTech.find(m => m.nombre === 'HP')?.id || marcasTech[4].id,
                 categoria_id: categoriaTecnologia.id,
                 unidad_medida_id: unidad.id,
@@ -180,11 +175,11 @@ export class ProductoSimpleSeeder {
                 estado: true
             },
 
-            // === PRODUCTOS ALIMENTICIOS (FoodMarket Ltda.) ===
+            // === PRODUCTOS ALIMENTICIOS (FoodMarket Ltda.) - Asignados a sucursal ===
             {
                 nombre: 'Coca Cola 2.5L',
                 codigo: 'COC-25L-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: litro.id,
@@ -197,7 +192,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Coca Cola Zero 500ml',
                 codigo: 'COC-Z500-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Coca Cola')?.id || marcasFood[0].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: litro.id,
@@ -210,7 +205,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Nestlé Leche Condensada',
                 codigo: 'NES-LC-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: paquete.id,
@@ -223,7 +218,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Nestlé Nescafé Original',
                 codigo: 'NES-NCF-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Nestlé')?.id || marcasFood[1].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: paquete.id,
@@ -236,7 +231,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Unilever Dove Jabón',
                 codigo: 'UNI-DOV-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Unilever')?.id || marcasFood[2].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: unidad.id,
@@ -249,7 +244,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Danone Yogurt Natural',
                 codigo: 'DAN-YOG-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Danone')?.id || marcasFood[3].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: kilogramo.id,
@@ -262,7 +257,7 @@ export class ProductoSimpleSeeder {
             {
                 nombre: 'Kelloggs Corn Flakes',
                 codigo: 'KEL-CF-001',
-                empresa_id: empresaFood.id,
+                sucursal_id: sucursalFood.id,
                 marca_id: marcasFood.find(m => m.nombre === 'Kelloggs')?.id || marcasFood[4].id,
                 categoria_id: categoriaAlimentos.id,
                 unidad_medida_id: paquete.id,
@@ -311,7 +306,7 @@ export class ProductoSimpleSeeder {
                 await this.productoRepo.save(nuevoProducto);
                 productosCreados++;
 
-                console.log(`✅ Producto creado: ${productoData.nombre} (${productoData.codigo}) - Empresa: ${productoData.empresa_id} - Categoria: ${productoData.categoria_id} - Unidad: ${productoData.unidad_medida_id}`);
+                console.log(`✅ Producto creado: ${productoData.nombre} (${productoData.codigo}) - Sucursal ID: ${productoData.sucursal_id}`);
 
             } catch (error) {
                 console.error(`❌ Error creando producto ${productoData.nombre}:`, error.message);

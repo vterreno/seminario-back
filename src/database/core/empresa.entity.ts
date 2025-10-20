@@ -6,10 +6,7 @@ import { RoleEntity } from "./roles.entity";
 import { categoriasEntity } from "./categorias.entity";
 import { contactoEntity } from "./contacto.entity";
 import { MarcaEntity } from "./marcas.entity";
-import { MovimientoStockEntity } from "./movimientos-stock.entity";
-import { ProductoEntity } from "./producto.entity";
-import { ListaPreciosEntity } from "./lista-precios.entity";
-import { UnidadMedidaEntity } from "./unidad-medida.entity";
+import { pagoEntity } from "./pago.entity";
 
 @Entity("empresa")
 export class empresaEntity extends BaseEntity{
@@ -32,15 +29,4 @@ export class empresaEntity extends BaseEntity{
 
     @OneToMany(() => MarcaEntity, marca => marca.empresa)
     marcas: MarcaEntity[];
-
-    @OneToMany(() => ProductoEntity, producto => producto.empresa)
-    productos: ProductoEntity[];
-
-    @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.empresa)
-    movimientos: MovimientoStockEntity[];
-
-    @OneToMany(() => ListaPreciosEntity, listaPrecios => listaPrecios.empresa)
-    listas_precios: ListaPreciosEntity[];
-    @OneToMany(() => UnidadMedidaEntity, unidadMedida => unidadMedida.empresa)
-    unidadesMedida: UnidadMedidaEntity[];
 }

@@ -19,16 +19,10 @@ import { ConsumidorFinalSeeder } from './seeders-entity/consumidor-final.seeder'
 import SucursalesSeeder from './seeders-entity/sucursales.seeder';
 import { contactoEntity } from '../core/contacto.entity';
 import { sucursalEntity } from '../core/sucursal.entity';
-import { ListaPreciosEntity } from '../core/lista-precios.entity';
-import { ListaPreciosSeeder } from './seeders-entity/lista-precios.seeder';
-import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entity';
-import { MasterSeeder } from './seeders-entity/master.seeder';
-import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
-import { MarcaSeeder } from './seeders-entity/marca.seeder';
-import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
-import { UnidadMedidaEntity } from '../core/unidad-medida.entity';
-import { UnidadMedidaSeeder } from './seeders-entity/unidad-medida.seeder';
-import { categoriasEntity } from '../core/categorias.entity';
+import { VentaSeeder } from './seeders-entity/venta.seeder';
+import { ventaEntity } from '../core/venta.entity';
+import { detalleVentaEntity } from '../core/detalleVenta.entity';
+import { pagoEntity } from '../core/pago.entity';
 
 @Module({
     imports: [
@@ -41,11 +35,10 @@ import { categoriasEntity } from '../core/categorias.entity';
             ProductoEntity, 
             MovimientoStockEntity, 
             contactoEntity, 
-            sucursalEntity, 
-            categoriasEntity,
-            UnidadMedidaEntity,
-            ListaPreciosEntity,
-            ProductoListaPreciosEntity
+            sucursalEntity,
+            ventaEntity,
+            detalleVentaEntity,
+            pagoEntity,
         ]),
     ],
     providers: [
@@ -60,11 +53,7 @@ import { categoriasEntity } from '../core/categorias.entity';
         ProductoSimpleSeeder,
         EmpresaUsuarioRolSeeder,
         MovimientosStockInicialSeeder,
-        MarcaSeeder,
-        ListaPreciosSeeder,
-        // Seeders de entidades adicionales
-        CategoriaSimpleSeeder,
-        UnidadMedidaSeeder,
+        VentaSeeder,
         // Seeder maestro
         MasterSeeder,
         SeederService,

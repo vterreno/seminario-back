@@ -1,6 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
+import { ventaEntity } from "./venta.entity";
+import { pagoEntity } from "./pago.entity";
+import { ProductoEntity } from "./producto.entity";
+import { MovimientoStockEntity } from "./movimientos-stock.entity";
 
 @Entity("sucursales")
 export class sucursalEntity extends BaseEntity{
@@ -22,4 +26,19 @@ export class sucursalEntity extends BaseEntity{
     @ManyToOne(() => empresaEntity, empresa => empresa.sucursales)
     @JoinColumn({ name: 'empresa_id' })
     empresa: empresaEntity;
+
+    @Column({ type: 'int', default: 0 })
+    numero_venta: number;
+
+    @OneToMany(() => ventaEntity, venta => venta.sucursal)
+    ventas: ventaEntity[];
+
+    @OneToMany(() => pagoEntity, pago => pago.sucursal)
+    pagos: pagoEntity[];
+
+    @OneToMany(() => ProductoEntity, producto => producto.sucursal)
+    productos: ProductoEntity[];
+
+    @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.sucursal)
+    movimientos: MovimientoStockEntity[];
 }

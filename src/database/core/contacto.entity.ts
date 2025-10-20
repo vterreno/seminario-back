@@ -1,8 +1,9 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
 import { provinciaEntity } from "./provincia.entity";
 import { ciudadEntity } from "./ciudad.entity";
+import { ventaEntity } from "./venta.entity";
 
 export type ContactoRol = 'cliente' | 'proveedor' | 'ambos';
 export type TipoIdentificacion = 'CUIT' | 'DNI' | 'CUIL' | 'PASAPORTE' | 'OTRO';
@@ -73,6 +74,9 @@ export class contactoEntity extends BaseEntity{
     @ManyToOne(() => ciudadEntity, ciudad => ciudad.contactos, { nullable: true })
     @JoinColumn({ name: 'ciudad_id' })
     ciudadRef?: ciudadEntity | null;
+
+    @OneToMany(() => ventaEntity, venta => venta.contacto)
+    ventas: ventaEntity[];
 }
 
 

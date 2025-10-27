@@ -74,11 +74,11 @@ export class MasterSeeder {
             // 11. Productos por sucursal y marca
             await this.ejecutarPaso(11, 13, 'Productos', () => this.productoSeeder.run());
 
-            // 12. Movimientos de stock iniciales
-            await this.ejecutarPaso(13, 13, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());
-
-            // 13. Listas de precios por empresa
+            // 12. Listas de precios por empresa
             await this.ejecutarPaso(12, 13, 'Listas de precios', () => this.listaPreciosSeeder.run());
+
+            // 13. Movimientos de stock iniciales
+            await this.ejecutarPaso(13, 13, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());
 
             // 14. Ventas con detalles
             await this.ejecutarPaso(14, 14, 'Ventas', () => this.ventaSeeder.run());

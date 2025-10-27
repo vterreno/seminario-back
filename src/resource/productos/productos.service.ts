@@ -27,29 +27,36 @@ export class ProductosService extends BaseService<ProductoEntity>{
         super(productosRepository);
     }
 
-    // Get productos by sucursal
-    async getProductosBySucursal(sucursalId: number): Promise<ProductoEntity[]> {
+    // Get all productos (for superadmin)
+    async getAllProductos(): Promise<ProductoEntity[]> {
         return await this.productosRepository.find({
-            where: { sucursal_id: sucursalId },
-            relations: ['sucursal', 'sucursal.empresa', 'marca'],
+            relations: ['sucursal', 'sucursal.empresa', 'marca', 'categoria', 'unidadMedida'],
         });
     }
 
     // Get productos filtered by company (all productos from all sucursales of the company)
     async getProductosByEmpresa(empresaId: number): Promise<ProductoEntity[]> {
-        return await this.productosRepository
-            .createQueryBuilder('producto')
-            .leftJoinAndSelect('producto.sucursal', 'sucursal')
-            .leftJoinAndSelect('sucursal.empresa', 'empresa')
-            .leftJoinAndSelect('producto.marca', 'marca')
-            .where('sucursal.empresa_id = :empresaId', { empresaId })
-            .getMany();
+        //Encontrar todas las sucursales que pertenecen a la empresa
+        const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+            where: { empresa_id: empresaId } 
+        });
+
+        //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+        if (sucursalesDeLaEmpresa.length === 0) {
+            return [];
+        }
+
+        //Extraer solo los IDs de esas sucursales
+        const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+        return await this.getProductosBySucursal(sucursalIds);
     }
 
-    // Get all productos (for superadmin)
-    async getAllProductos(): Promise<ProductoEntity[]> {
+    // Get productos by sucursal
+    async getProductosBySucursal(sucursalId: number[]): Promise<ProductoEntity[]> {
         return await this.productosRepository.find({
-            relations: ['sucursal', 'sucursal.empresa', 'marca'],
+            where: { sucursal_id: In(sucursalId) },
+            relations: ['sucursal', 'sucursal.empresa', 'marca', 'categoria', 'unidadMedida'],
         });
     }
 

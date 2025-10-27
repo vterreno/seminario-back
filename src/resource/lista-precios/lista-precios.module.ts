@@ -9,10 +9,11 @@ import { ProductoListaPreciosEntity } from 'src/database/core/producto-lista-pre
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { PermisosModule } from '../permisos/permisos.module';
 import { RolesModule } from '../roles/roles.module';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ListaPreciosEntity, ProductoListaPreciosEntity, ProductoEntity]),
+    TypeOrmModule.forFeature([ListaPreciosEntity, ProductoListaPreciosEntity, ProductoEntity, sucursalEntity]),
     JwtModule,
     UsersModule,
     PermisosModule,

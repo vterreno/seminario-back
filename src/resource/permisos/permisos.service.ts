@@ -48,10 +48,11 @@ export class PermisosService extends BaseService<PermissionEntity> {
             .where("permission.codigo NOT LIKE 'lista_%'")
             .getMany();
 
-        // Obtener nombres de listas de precios de esta empresa
+        // Obtener nombres de listas de precios de las sucursales de esta empresa
         const listasPrecios = await this.permisoService.query(`
-            SELECT nombre FROM lista_precios 
-            WHERE empresa_id = $1 AND estado = true
+            SELECT DISTINCT lp.nombre 
+            FROM lista_precios lp
+            WHERE lp.empresa_id = $1 AND lp.estado = true
         `, [empresaId]);
 
         // Generar códigos de permisos esperados para las listas de esta empresa

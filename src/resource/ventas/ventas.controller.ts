@@ -24,7 +24,10 @@ export class VentasController extends BaseController<ventaEntity>{
         const user = req.user;
         // If user has a company, filter ventas by that company
         if (user.empresa?.id) {
-            return await this.ventasService.getVentasByEmpresa(user.empresa.id);
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+
+            return await this.ventasService.getVentasBySucursal(sucursalIds);
         }
         // If no company (superadmin), return all ventas
         return await this.ventasService.getAllVentas();
@@ -36,16 +39,16 @@ export class VentasController extends BaseController<ventaEntity>{
         return await this.ventasService.findById(id);
     }
 
-    @Get('sucursal/:id')
-    @Action('ver')
-    async getVentasBySucursal(@Param('id') id: number) {
-        return await this.ventasService.getVentasBySucursal(id);
-    }
-
     @Get('empresa/:id')
     @Action('ver')
     async getVentasByEmpresa(@Param('id') id: number) {
         return await this.ventasService.getVentasByEmpresa(id);
+    }
+
+    @Get('sucursal/:id')
+    @Action('ver')
+    async getVentasBySucursal(@Param('id') id: number) {
+        return await this.ventasService.getVentasBySucursal([id]);
     }
 
     @Post()

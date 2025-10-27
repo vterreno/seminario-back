@@ -1,5 +1,6 @@
 import { empresaEntity } from "src/database/core/empresa.entity";
 import { RoleEntity } from "src/database/core/roles.entity";
+import { sucursalEntity } from "src/database/core/sucursal.entity";
 
 /*
 Define que debe tener un usuario a nivel de propiedades
@@ -14,5 +15,6 @@ export interface UserI {
   nombre: string;
   apellido: string;
   status: boolean;
+  sucursales?: sucursalEntity[];
   permissionCodes: string[];
 }

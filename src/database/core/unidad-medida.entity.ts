@@ -8,14 +8,12 @@ import {
   OneToMany,
 } from 'typeorm';
 import { BaseEntity } from './base.entity';
-import { empresaEntity } from './empresa.entity';
 import { ProductoEntity } from './producto.entity';
-import e from 'express';
-import { sucursalEntity } from './sucursal.entity';
+import { empresaEntity } from './empresa.entity';
 
 @Entity('unidades_medida')
-@Index(['nombre', 'sucursal_id'], { unique: true })
-@Index(['abreviatura', 'sucursal_id'], { unique: true })
+@Index(['nombre', 'empresa_id'], { unique: true })
+@Index(['abreviatura', 'empresa_id'], { unique: true })
 export class UnidadMedidaEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,22 +27,19 @@ export class UnidadMedidaEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false, name: 'acepta_decimales' })
   aceptaDecimales: boolean;
   
-  @Column({ nullable: true })
-  sucursal_id: number;
+  @Column({ name: 'empresa_id', nullable: true })
+  empresa_id: number;
 
-  @ManyToOne(() => sucursalEntity, sucursal => sucursal.unidadesMedida, { nullable: false })
-  @JoinColumn({ name: 'sucursal_id' })
-  sucursal?: sucursalEntity;
+  @ManyToOne(() => empresaEntity, empresa => empresa.unidadesMedida, { nullable: true })
+  @JoinColumn({ name: 'empresa_id' })
+  empresa?: empresaEntity;
 
   // Relación inversa con productos (opcional)
   @OneToMany(() => ProductoEntity, producto => producto.unidadMedida)
-  @JoinColumn({ name: 'productos_id' })
   productos: ProductoEntity[];
-
-  @Column({ name: 'productos_id', nullable: true })
-  productos_id: string;
 
   @Column({ type: 'boolean', default: true })
   estado: boolean;
 
 }
+ 

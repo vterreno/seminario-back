@@ -35,16 +35,25 @@ export class MovimientosStockController extends BaseController<MovimientoStockEn
             throw new Error('Usuario no encontrado en la request');
         }
         
-        // If user has a company, get sucursales of that company and filter by them
-        // For now, we'll return all movimientos if superadmin
-        // You may need to implement logic to get all sucursales from empresa and filter by them
         if (user.empresa?.id) {
-            // TODO: Implement filtering by all sucursales of the empresa
-            // For now, returning all movimientos for users with empresa
-            return await this.movimientoStockService.getAllMovimientos();
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+
+            return await this.movimientoStockService.getMovimientosBySucursal(sucursalIds);
         }
         // If no company (superadmin), return all movimientos
         return await this.movimientoStockService.getAllMovimientos();
+    }
+    @Get('empresa/:id')
+    @Action('ver')
+    async getMovimientoStocksByEmpresa(@Param('id') id: number) {
+        return await this.movimientoStockService.getMovimientosByEmpresa(id);
+    }
+
+    @Get('sucursal/:id')
+    @Action('ver')
+    async getMovimientoStocksBySucursal(@Param('id') id: number) {
+        return await this.movimientoStockService.getMovimientosBySucursal([id]);
     }
 
     @Post('ajuste-stock/:productoId')

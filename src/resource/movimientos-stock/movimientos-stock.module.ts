@@ -7,10 +7,11 @@ import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { ProductosModule } from '../productos/productos.module';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MovimientoStockEntity, ProductoEntity]),
+    TypeOrmModule.forFeature([MovimientoStockEntity, ProductoEntity, sucursalEntity]),
     JwtModule,
     UsersModule,
     ProductosModule

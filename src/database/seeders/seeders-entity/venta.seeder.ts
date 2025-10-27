@@ -39,17 +39,17 @@ export class VentaSeeder {
             return;
         }
 
-        // Obtener sucursales
-        const sucursales = await this.sucursalRepo.find();
+        // Obtener sucursales activas
+        const sucursales = await this.sucursalRepo.find({ where: { estado: true } });
         if (sucursales.length === 0) {
-            console.log('❌ No se encontraron sucursales para asignar ventas');
+            console.log('❌ No se encontraron sucursales activas para asignar ventas');
             return;
         }
 
         // Obtener productos disponibles
         const productos = await this.productoRepo.find({ 
             where: { estado: true },
-            take: 50 // Limitar a los primeros 50 productos
+            relations: ['sucursal']
         });
         
         if (productos.length === 0) {
@@ -63,134 +63,207 @@ export class VentaSeeder {
             take: 10
         });
 
-        console.log(`✅ Creando 20 ventas con múltiples detalles...`);
+        console.log(`✅ Creando ventas con múltiples detalles...`);
         console.log(`   Sucursales disponibles: ${sucursales.length}`);
         console.log(`   Productos disponibles: ${productos.length}`);
         console.log(`   Contactos disponibles: ${contactos.length}`);
 
+        // Contador de ventas por sucursal (para numero_venta secuencial)
+        const contadoresVentaPorSucursal = new Map<number, number>();
+        sucursales.forEach(s => contadoresVentaPorSucursal.set(s.id, 0));
+
         // Fechas base para las ventas (últimos 3 meses)
         const fechaBase = new Date();
         
-        for (let i = 1; i <= 20; i++) {
-            try {
-                // Seleccionar sucursal aleatoria
-                const sucursal = sucursales[Math.floor(Math.random() * sucursales.length)];
-                
-                // Seleccionar contacto aleatorio (puede ser null para consumidor final)
-                const contacto = contactos.length > 0 && Math.random() > 0.3 
-                    ? contactos[Math.floor(Math.random() * contactos.length)]
-                    : null;
+        // Crear diferentes cantidades de ventas por sucursal (mínimo 10, máximo 20)
+        const ventasPorSucursal = this.generarDistribucionVentas(sucursales.length);
+        
+        for (let i = 0; i < sucursales.length; i++) {
+            const sucursal = sucursales[i];
+            const cantidadVentas = ventasPorSucursal[i];
+            
+            console.log(`\n   📍 Creando ${cantidadVentas} ventas para: ${sucursal.nombre}`);
+            
+            // Filtrar productos de la sucursal actual
+            const productosSucursal = productos.filter(p => p.sucursal_id === sucursal.id);
+            
+            if (productosSucursal.length === 0) {
+                console.log(`      ⚠️  No hay productos para esta sucursal, saltando ventas`);
+                continue;
+            }
 
-                // Generar fecha de venta (últimos 90 días)
-                const diasAtras = Math.floor(Math.random() * 90);
-                const fechaVenta = new Date(fechaBase);
-                fechaVenta.setDate(fechaVenta.getDate() - diasAtras);
-                fechaVenta.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60), 0);
+            let ventasCreadas = 0;
+            let intentos = 0;
+            const maxIntentos = cantidadVentas * 2; // Máximo de intentos para evitar loop infinito
 
-                // Seleccionar método de pago aleatorio
-                const metodoPago = Math.random() > 0.5 ? 'efectivo' : 'transferencia';
-
-                // Crear el pago primero
-                const pago = this.pagoRepo.create({
-                    fecha_pago: fechaVenta,
-                    monto_pago: 0, // Se calculará después
-                    metodo_pago: metodoPago,
-                    sucursal: sucursal,
-                });
-                const pagoGuardado = await this.pagoRepo.save(pago);
-
-                // Generar detalles de venta (entre 2 y 6 productos por venta)
-                const cantidadDetalles = Math.floor(Math.random() * 5) + 2;
-                const detalles: detalleVentaEntity[] = [];
-                let montoTotal = 0;
-
-                // Seleccionar productos aleatorios únicos para esta venta
-                const productosSeleccionados = this.shuffleArray([...productos])
-                    .slice(0, cantidadDetalles);
-
-                for (const producto of productosSeleccionados) {
-                    // Verificar que hay stock suficiente
-                    const cantidad = Math.min(
-                        Math.floor(Math.random() * 5) + 1, // Intentar vender 1 a 5 unidades
-                        producto.stock // Pero no más del stock disponible
-                    );
+            while (ventasCreadas < cantidadVentas && intentos < maxIntentos) {
+                try {
+                    intentos++;
                     
-                    if (cantidad === 0) {
-                        console.log(`   ⚠️ Saltando producto "${producto.nombre}" - sin stock`);
+                    // Incrementar contador de ventas para esta sucursal
+                    const numeroVentaActual = contadoresVentaPorSucursal.get(sucursal.id) + 1;
+                    contadoresVentaPorSucursal.set(sucursal.id, numeroVentaActual);
+
+                    // Seleccionar contacto aleatorio (puede ser null para consumidor final)
+                    const contacto = contactos.length > 0 && Math.random() > 0.3 
+                        ? contactos[Math.floor(Math.random() * contactos.length)]
+                        : null;
+
+                    // Generar fecha de venta (últimos 90 días)
+                    const diasAtras = Math.floor(Math.random() * 90);
+                    const fechaVenta = new Date(fechaBase);
+                    fechaVenta.setDate(fechaVenta.getDate() - diasAtras);
+                    fechaVenta.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60), 0);
+
+                    // Seleccionar método de pago aleatorio
+                    const metodosPago: Array<'efectivo' | 'transferencia'> = ['efectivo', 'transferencia'];
+                    const metodoPago: 'efectivo' | 'transferencia' = metodosPago[Math.floor(Math.random() * metodosPago.length)];
+
+                    // Crear el pago primero
+                    const pago = this.pagoRepo.create({
+                        fecha_pago: fechaVenta,
+                        monto_pago: 0, // Se calculará después
+                        metodo_pago: metodoPago,
+                        sucursal: sucursal,
+                    });
+                    const pagoGuardado = await this.pagoRepo.save(pago);
+
+                    // Generar detalles de venta (entre 1 y 8 productos por venta)
+                    const cantidadDetalles = Math.floor(Math.random() * 8) + 1;
+                    const detalles: detalleVentaEntity[] = [];
+                    let montoTotal = 0;
+
+                    // Seleccionar productos aleatorios únicos para esta venta
+                    const productosSeleccionados = this.shuffleArray([...productosSucursal])
+                        .slice(0, Math.min(cantidadDetalles, productosSucursal.length));
+
+                    for (const producto of productosSeleccionados) {
+                        // Verificar que hay stock suficiente
+                        const stockDisponible = Math.max(0, producto.stock);
+                        const cantidad = stockDisponible > 0 
+                            ? Math.min(
+                                Math.floor(Math.random() * 5) + 1, // Intentar vender 1 a 5 unidades
+                                stockDisponible // Pero no más del stock disponible
+                              )
+                            : 0;
+                        
+                        if (cantidad === 0) {
+                            continue;
+                        }
+
+                        const precioUnitario = Number(producto.precio_venta);
+                        const subtotal = cantidad * precioUnitario;
+                        montoTotal += subtotal;
+
+                        const detalle = this.detalleVentaRepo.create({
+                            producto: producto,
+                            cantidad: cantidad,
+                            precio_unitario: precioUnitario,
+                            subtotal: subtotal,
+                        });
+
+                        detalles.push(detalle);
+                        
+                        // Reducir el stock del producto
+                        producto.stock -= cantidad;
+                    }
+
+                    // Si no hay detalles (por falta de stock), saltar esta venta
+                    if (detalles.length === 0) {
+                        console.log(`      ⚠️  Venta #${numeroVentaActual} saltada - no hay productos con stock`);
+                        await this.pagoRepo.remove(pagoGuardado);
+                        contadoresVentaPorSucursal.set(sucursal.id, numeroVentaActual - 1);
                         continue;
                     }
 
-                    const precioUnitario = Number(producto.precio_venta);
-                    const subtotal = cantidad * precioUnitario;
-                    montoTotal += subtotal;
-
-                    const detalle = this.detalleVentaRepo.create({
-                        producto: producto,
-                        cantidad: cantidad,
-                        precio_unitario: precioUnitario,
-                        subtotal: subtotal,
+                    // Crear la venta con los detalles
+                    const venta = this.ventaRepo.create({
+                        numero_venta: numeroVentaActual,
+                        fecha_venta: fechaVenta,
+                        monto_total: montoTotal,
+                        sucursal: sucursal,
+                        contacto: contacto,
+                        pago: pagoGuardado,
+                        detalles: detalles,
                     });
 
-                    detalles.push(detalle);
-                    
-                    // Reducir el stock del producto
-                    producto.stock -= cantidad;
+                    const ventaGuardada = await this.ventaRepo.save(venta);
+
+                    // Actualizar el monto del pago
+                    pagoGuardado.monto_pago = montoTotal;
+                    await this.pagoRepo.save(pagoGuardado);
+
+                    // Guardar cambios de stock en productos y crear movimientos de stock
+                    for (const detalle of detalles) {
+                        // Guardar el producto con stock reducido
+                        await this.productoRepo.save(detalle.producto);
+                        
+                        // Crear movimiento de stock tipo VENTA (solo registro histórico)
+                        const movimiento = this.movimientoStockRepo.create({
+                            fecha: fechaVenta,
+                            tipo_movimiento: TipoMovimientoStock.VENTA,
+                            descripcion: `Venta #${venta.numero_venta} - Producto vendido (seeder)`,
+                            cantidad: -detalle.cantidad, // Negativo porque es salida
+                            stock_resultante: detalle.producto.stock, // Stock después de la venta
+                            producto_id: detalle.producto.id,
+                            sucursal_id: sucursal.id,
+                        });
+                        await this.movimientoStockRepo.save(movimiento);
+                    }
+
+                    // Actualizar el número de venta en la sucursal
+                    sucursal.numero_venta = numeroVentaActual;
+                    await this.sucursalRepo.save(sucursal);
+
+                    ventasCreadas++;
+                    console.log(`      ✅ Venta #${numeroVentaActual} creada: ${detalles.length} productos, Total: $${montoTotal.toFixed(2)}, Pago: ${metodoPago}`);
+
+                } catch (error) {
+                    console.log(`      ❌ Error creando venta: ${error.message}`);
                 }
+            }
 
-                // Si no hay detalles (por falta de stock), saltar esta venta
-                if (detalles.length === 0) {
-                    console.log(`   ⚠️ Venta #${1000 + i} saltada - no hay productos con stock`);
-                    await this.pagoRepo.remove(pagoGuardado);
-                    continue;
-                }
-
-                // Crear la venta con los detalles
-                const venta = this.ventaRepo.create({
-                    numero_venta: 1000 + i,
-                    fecha_venta: fechaVenta,
-                    monto_total: montoTotal,
-                    sucursal: sucursal,
-                    contacto: contacto,
-                    pago: pagoGuardado,
-                    detalles: detalles,
-                });
-
-                const ventaGuardada = await this.ventaRepo.save(venta);
-
-                // Actualizar el monto del pago
-                pagoGuardado.monto_pago = montoTotal;
-                await this.pagoRepo.save(pagoGuardado);
-
-                // Guardar cambios de stock en productos y crear movimientos de stock
-                for (const detalle of detalles) {
-                    // Guardar el producto con stock reducido
-                    await this.productoRepo.save(detalle.producto);
-                    
-                    // Crear movimiento de stock tipo VENTA (solo registro histórico)
-                    const movimiento = this.movimientoStockRepo.create({
-                        fecha: fechaVenta,
-                        tipo_movimiento: TipoMovimientoStock.VENTA,
-                        descripcion: `Venta #${venta.numero_venta} - Producto vendido (seeder)`,
-                        cantidad: -detalle.cantidad, // Negativo porque es salida
-                        stock_resultante: detalle.producto.stock, // Stock después de la venta
-                        producto_id: detalle.producto.id,
-                        sucursal_id: sucursal.id,
-                    });
-                    await this.movimientoStockRepo.save(movimiento);
-                }
-
-                // Actualizar el número de venta en la sucursal
-                sucursal.numero_venta = venta.numero_venta;
-                await this.sucursalRepo.save(sucursal);
-
-                console.log(`   ✅ Venta #${venta.numero_venta} creada: ${detalles.length} productos, Total: $${montoTotal.toFixed(2)}, Pago: ${metodoPago}`);
-
-            } catch (error) {
-                console.error(`   ❌ Error creando venta #${i}:`, error.message);
+            if (ventasCreadas < cantidadVentas) {
+                console.log(`      ⚠️  Solo se pudieron crear ${ventasCreadas} de ${cantidadVentas} ventas planeadas`);
             }
         }
 
-        console.log('✅ Seed de ventas completado');
+        console.log('\n🎉 Seed de ventas completado');
+        console.log('📊 Resumen por sucursal:');
+        let totalVentas = 0;
+        for (const sucursal of sucursales) {
+            const ventasSucursal = contadoresVentaPorSucursal.get(sucursal.id);
+            totalVentas += ventasSucursal;
+            console.log(`   ${sucursal.nombre}: ${ventasSucursal} ventas creadas`);
+        }
+        console.log(`   TOTAL: ${totalVentas} ventas creadas en el sistema`);
+    }
+
+    // Generar distribución diferente de ventas por sucursal (mínimo 10, máximo 20)
+    private generarDistribucionVentas(cantidadSucursales: number): number[] {
+        const distribucion: number[] = [];
+        
+        // Asignar diferentes cantidades para cada sucursal
+        for (let i = 0; i < cantidadSucursales; i++) {
+            // Primera sucursal: más ventas (15-20)
+            if (i === 0) {
+                distribucion.push(Math.floor(Math.random() * 6) + 15); // 15-20
+            }
+            // Segunda sucursal: cantidad media (12-17)
+            else if (i === 1) {
+                distribucion.push(Math.floor(Math.random() * 6) + 12); // 12-17
+            }
+            // Tercera sucursal: cantidad media-baja (10-15)
+            else if (i === 2) {
+                distribucion.push(Math.floor(Math.random() * 6) + 10); // 10-15
+            }
+            // Resto: mínimo 10
+            else {
+                distribucion.push(Math.floor(Math.random() * 6) + 10); // 10-15
+            }
+        }
+        
+        return distribucion;
     }
 
     // Función auxiliar para mezclar un array (shuffle)

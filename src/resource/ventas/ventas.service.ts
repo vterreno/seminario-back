@@ -27,21 +27,6 @@ export class VentasService extends BaseService<ventaEntity>{
     ){
         super(ventaRepository);
     }
-    // Get ventas filtered by empresa
-    async getVentasByEmpresa(empresaId: number): Promise<ventaEntity[]> {
-        return await this.ventaRepository.find({
-            where: { sucursal: { empresa: { id: empresaId } } },
-            relations: ['sucursal', 'sucursal.empresa', 'contacto', 'pago'],
-        });
-    }
-
-    // Get ventas filtered by sucursal
-    async getVentasBySucursal(sucursalId: number): Promise<ventaEntity[]> {
-        return await this.ventaRepository.find({
-            where: { sucursal: { id: sucursalId } },
-            relations: ['sucursal', 'contacto', 'pago'],
-        });
-    }
 
     // Get all ventas (for superadmin)
     async getAllVentas(): Promise<ventaEntity[]> {
@@ -49,6 +34,33 @@ export class VentasService extends BaseService<ventaEntity>{
             relations: ['sucursal', 'sucursal.empresa', 'contacto', 'pago'],
         });
     }
+
+    // Get ventas filtered by empresa
+    async getVentasByEmpresa(empresaId: number): Promise<ventaEntity[]> {
+        //Encontrar todas las sucursales que pertenecen a la empresa
+        const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+            where: { empresa_id: empresaId } 
+        });
+
+        //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+        if (sucursalesDeLaEmpresa.length === 0) {
+            return [];
+        }
+
+        //Extraer solo los IDs de esas sucursales
+        const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+        return await this.getVentasBySucursal(sucursalIds);
+    }
+
+    // Get ventas filtered by sucursal
+    async getVentasBySucursal(sucursalId: number[]): Promise<ventaEntity[]> {
+        return await this.ventaRepository.find({
+            where: { sucursal: { id: In(sucursalId) } },
+            relations: ['sucursal', 'contacto', 'pago'],
+        });
+    }
+
 
     // Create venta
     async createVenta(ventaData: CreateVentaDto): Promise<ventaEntity> {

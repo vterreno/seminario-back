@@ -19,7 +19,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
     ){
         super(unidadesMedidaRepository);
     }
-    // Get unidades filtered by company
+    // Get unidades filtered by sucursal
     async getUnidadesByEmpresa(empresaId: number): Promise<UnidadMedidaEntity[]> {
         return await this.unidadesMedidaRepository.find({
             where: { empresa_id: empresaId },
@@ -96,9 +96,9 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
         await this.unidadesMedidaRepository.delete(id);
     }
 
-    // Bulk delete productos
+    // Bulk delete unidades
     async bulkDeleteUnidades(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check unidades belong to the company
+        // If sucursal validation is needed, check unidades belong to the sucursal
         if (empresaId) {
             const unidades = await this.unidadesMedidaRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
@@ -114,7 +114,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
 
     // Bulk update unidad status (activate/deactivate)
     async bulkUpdateUnidadStatus(ids: number[], estado: boolean, empresaId?: number): Promise<UnidadMedidaEntity[]> {
-        // If empresa validation is needed, check unidades belong to the company
+        // If sucursal validation is needed, check unidades belong to the sucursal
         if (empresaId) {
             const unidades = await this.unidadesMedidaRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }

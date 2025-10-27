@@ -11,6 +11,7 @@ import { UserSeeder } from './seeders-entity/users.seeder';
 import { EmpresaSeeder } from './seeders-entity/empresa.seeder';
 import { empresaEntity } from '../core/empresa.entity';
 import { MarcaEntity } from '../core/marcas.entity';
+import { MarcaSeeder } from './seeders-entity/marca.seeder';
 import { ProductoEntity } from '../core/producto.entity';
 import { ProductoSimpleSeeder } from './seeders-entity/producto-simple.seeder';
 import { MovimientosStockInicialSeeder } from './seeders-entity/movimientos-stock-inicial.seeder';
@@ -25,6 +26,13 @@ import { detalleVentaEntity } from '../core/detalleVenta.entity';
 import { pagoEntity } from '../core/pago.entity';
 import { EmpresaUsuarioRolSeeder } from './seeders-entity/empresa-usuario-rol.seeder';
 import { MasterSeeder } from './seeders-entity/master.seeder';
+import { UnidadMedidaEntity } from '../core/unidad-medida.entity';
+import { UnidadMedidaSeeder } from './seeders-entity/unidad-medida.seeder';
+import { ListaPreciosEntity } from '../core/lista-precios.entity';
+import { ListaPreciosSeeder } from './seeders-entity/lista-precios.seeder';
+import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entity';
+import { categoriasEntity } from '../core/categorias.entity';
+import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
 
 @Module({
     imports: [
@@ -41,6 +49,10 @@ import { MasterSeeder } from './seeders-entity/master.seeder';
             ventaEntity,
             detalleVentaEntity,
             pagoEntity,
+            UnidadMedidaEntity,
+            ListaPreciosEntity,
+            ProductoListaPreciosEntity,
+            categoriasEntity,
         ]),
     ],
     providers: [
@@ -51,6 +63,10 @@ import { MasterSeeder } from './seeders-entity/master.seeder';
         UserSeeder,
         SucursalesSeeder,
         ConsumidorFinalSeeder,
+        MarcaSeeder,
+        CategoriaSimpleSeeder,
+        UnidadMedidaSeeder,
+        ListaPreciosSeeder,
         // Seeders simplificados
         ProductoSimpleSeeder,
         EmpresaUsuarioRolSeeder,

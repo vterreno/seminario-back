@@ -24,7 +24,7 @@ export default class SucursalesSeeder {
                 direccion: 'Av. Principal 123, Ciudad Central',
                 estado: true,
                 empresa_id: 1,
-                numero_venta: 1,
+                numero_venta: 0, // Inicia en 0, la primera venta será 1
             },
             {
                 nombre: 'Sucursal Norte',
@@ -32,7 +32,7 @@ export default class SucursalesSeeder {
                 direccion: 'Calle Norte 456, Zona Norte',
                 estado: true,
                 empresa_id: 1,
-                numero_venta: 1,
+                numero_venta: 0,
             },
             {
                 nombre: 'Sucursal Sur',
@@ -40,7 +40,7 @@ export default class SucursalesSeeder {
                 direccion: 'Av. Sur 789, Zona Sur',
                 estado: true,
                 empresa_id: 1,
-                numero_venta: 1,
+                numero_venta: 0,
             },
             {
                 nombre: 'Sucursal Este',
@@ -48,7 +48,7 @@ export default class SucursalesSeeder {
                 direccion: 'Boulevard Este 321, Zona Este',
                 estado: false,
                 empresa_id: 1,
-                numero_venta: 1,
+                numero_venta: 0,
             },
             {
                 nombre: 'Sucursal Oeste',
@@ -56,7 +56,7 @@ export default class SucursalesSeeder {
                 direccion: 'Calle Oeste 654, Zona Oeste',
                 estado: true,
                 empresa_id: 2,
-                numero_venta: 1,
+                numero_venta: 0,
             },
         ];
 

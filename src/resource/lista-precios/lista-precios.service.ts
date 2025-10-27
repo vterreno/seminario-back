@@ -11,6 +11,7 @@ import { RoleEntity } from 'src/database/core/roles.entity';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { PermisosService } from '../permisos/permisos.service';
 import { RolesService } from '../roles/roles.service';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 
 type Accion = 'ver' | 'agregar' | 'modificar' | 'eliminar'; 
 function generarCodigoPermiso(modulo: string, accion: Accion | string): string {
@@ -32,18 +33,13 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
         protected productoListaPreciosRepository: Repository<ProductoListaPreciosEntity>,
         @InjectRepository(ProductoEntity)
         protected productoRepository: Repository<ProductoEntity>,
+        @InjectRepository(sucursalEntity)
+        protected sucursalRepository: Repository<sucursalEntity>,
 
         private readonly permisoService: PermisosService,
         private readonly roleService: RolesService,
     ){
         super(listaPreciosRepository);
-    }
-    // Get lista precios filtered by company
-    async getListaPreciosByEmpresa(empresaId: number): Promise<ListaPreciosEntity[]> {
-        return await this.listaPreciosRepository.find({
-            where: { empresa_id: empresaId },
-            relations: ['empresa'],
-        });
     }
 
     // Get all lista precios (for superadmin)
@@ -52,6 +48,15 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
             relations: ['empresa'],
         });
     }
+    
+    // Get lista precios filtered by Empresa
+    async getListaPreciosByEmpresa(empresaId: number): Promise<ListaPreciosEntity[]> {
+        return await this.listaPreciosRepository.find({
+            where: { empresa: { id: empresaId } },
+            relations: ['empresa'],
+        });
+    }
+
 
     async findByNombre(nombre: string, empresaId?: number): Promise<ListaPreciosEntity | null> {
         const query = this.listaPreciosRepository.createQueryBuilder('lista_precio')
@@ -196,14 +201,14 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
 
     // Bulk delete lista precios
     async bulkDeleteListaPrecios(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check lista precios belong to the company
+        // If empresa validation is needed, check lista precios belong to the empresa
         if (empresaId) {
             const listaPrecios = await this.listaPreciosRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
             });
 
             if (listaPrecios.length !== ids.length) {
-                throw new BadRequestException('❌ Algunos lista precios que intentas eliminar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException('❌ Algunos lista precios que intentas eliminar no pertenecen a tu sucursal o no existen.');
             }
         }
 
@@ -212,14 +217,14 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
 
     // Bulk update lista precio status (activate/deactivate)
     async bulkUpdateListaPrecioStatus(ids: number[], estado: boolean, empresaId?: number): Promise<ListaPreciosEntity[]> {
-        // If empresa validation is needed, check lista precios belong to the company
+        // If sucursal validation is needed, check lista precios belong to the sucursal
         if (empresaId) {
             const listaPrecios = await this.listaPreciosRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
             });
 
             if (listaPrecios.length !== ids.length) {
-                throw new BadRequestException('❌ Algunos lista precios que intentas modificar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException('❌ Algunos lista precios que intentas modificar no pertenecen a tu sucursal o no existen.');
             }
         }
         // Update the lista precios

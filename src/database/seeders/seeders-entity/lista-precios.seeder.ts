@@ -56,29 +56,41 @@ export class ListaPreciosSeeder {
 
     console.log('✅ Listas de precios creadas');
 
-    // Obtener productos por empresa
-    const productosTech = await this.productoRepo.find({ where: { empresa_id: empresaTech.id } });
-    const productosFood = await this.productoRepo.find({ where: { empresa_id: empresaFood.id } });
+    // Obtener productos por empresa (ajustado para la nueva estructura)
+    const productosTech = await this.productoRepo.find({
+      where: { sucursal: { empresa: { id: empresaTech.id } } },
+      relations: ['sucursal', 'sucursal.empresa'],
+    });
 
-    // Insertar relaciones en producto_lista_precios
-    for (const p of productosTech) {
+    const productosFood = await this.productoRepo.find({
+      where: { sucursal: { empresa: { id: empresaFood.id } } },
+      relations: ['sucursal', 'sucursal.empresa'],
+    });
+
+    console.log(`📦 Encontrados ${productosTech.length} productos de TechCorp`);
+    console.log(`📦 Encontrados ${productosFood.length} productos de FoodMarket`);
+
+    // Insertar relaciones en producto_lista_precios para TechCorp
+    for (const producto of productosTech) {
       const relacion = this.prodListaPrecioRepo.create({
-        producto_id: p.id,
-        lista_precios_id: listaTech.id,
-        precio_venta_especifico: Number(p.precio_venta) * 1.05, // ejemplo: 5% más caro
+        producto: producto,
+        listaPrecios: listaTech, // <-- nombre correcto
+        precio_venta_especifico: Number(producto.precio_venta) * 1.05, // 5% más caro
       });
       await this.prodListaPrecioRepo.save(relacion);
     }
 
-    for (const p of productosFood) {
+    // Insertar relaciones en producto_lista_precios para FoodMarket
+    for (const producto of productosFood) {
       const relacion = this.prodListaPrecioRepo.create({
-        producto_id: p.id,
-        lista_precios_id: listaFood.id,
-        precio_venta_especifico: Number(p.precio_venta) * 0.95, // ejemplo: 5% más barato
+        producto: producto,
+        listaPrecios: listaFood,
+        precio_venta_especifico: Number(producto.precio_venta) * 0.95, // 5% más barato
       });
       await this.prodListaPrecioRepo.save(relacion);
     }
 
-    console.log('🎉 Seeder de listas de precios completado con productos asociados');
+    console.log(`✅ ${productosTech.length + productosFood.length} productos asociados a listas de precios`);
+    console.log('🎉 Seeder de listas de precios completado');
   }
 }

@@ -8,12 +8,16 @@ import { ProductoEntity } from "./producto.entity";
 export class MovimientoStockEntity extends BaseEntity{
     @Column()
     fecha: Date;
+
     @Column({type : 'enum', enum: TipoMovimientoStock, default: TipoMovimientoStock.STOCK_APERTURA})
     tipo_movimiento: TipoMovimientoStock;
+
     @Column()
     descripcion: string;
+
     @Column()
     cantidad: number;
+    
     @Column()
     stock_resultante: number;
 

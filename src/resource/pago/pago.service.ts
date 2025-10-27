@@ -20,18 +20,6 @@ export class PagoService extends BaseService<pagoEntity> {
   ) {
     super(pagoRepository);
   }
-
-  // Get pagos filtered by sucursal
-  async getPagosBySucursal(sucursalId: number): Promise<pagoEntity[]> {
-    return await this.pagoRepository.find({
-      where: {
-        sucursal: { id: sucursalId },
-        deleted_at: IsNull()
-      },
-      relations: ['sucursal', 'venta'],
-    });
-  }
-
   // Get all pagos (for superadmin)
   async getAllPagos(): Promise<pagoEntity[]> {
     return await this.pagoRepository.find({
@@ -39,6 +27,35 @@ export class PagoService extends BaseService<pagoEntity> {
       where: {
         deleted_at: IsNull()
       }
+    });
+  }
+
+  // Get pagos filtered by Empresa
+  async getPagosByEmpresa(empresaId: number): Promise<pagoEntity[]> {
+    //Encontrar todas las sucursales que pertenecen a la empresa
+    const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+        where: { empresa_id: empresaId } 
+    });
+
+    //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+    if (sucursalesDeLaEmpresa.length === 0) {
+        return [];
+    }
+
+    //Extraer solo los IDs de esas sucursales
+    const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+    return await this.getPagosBySucursal(sucursalIds);
+  }
+
+  // Get pagos filtered by sucursal
+  async getPagosBySucursal(sucursalId: number[]): Promise<pagoEntity[]> {
+    return await this.pagoRepository.find({
+      where: {
+        sucursal: { id: In(sucursalId) },
+        deleted_at: IsNull()
+      },
+      relations: ['sucursal', 'venta'],
     });
   }
 

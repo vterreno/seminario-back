@@ -25,7 +25,10 @@ export class ProductosController extends BaseController<ProductoEntity>{
 
         // If user has a company, filter productos by sucursales of that company
         if (user.empresa?.id) {
-            return await this.productoService.getProductosByEmpresa(user.empresa.id);
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+
+            return await this.productoService.getProductosBySucursal(sucursalIds);
         }
         // If no company (superadmin), return all productos
         return await this.productoService.getAllProductos();
@@ -40,7 +43,7 @@ export class ProductosController extends BaseController<ProductoEntity>{
     @Get('sucursal/:id')
     @Action('ver')
     async getProductosBySucursal(@Param('id') id: number) {
-        return await this.productoService.getProductosBySucursal(id);
+        return await this.productoService.getProductosBySucursal([id]);
     }
 
     @Get('empresa/:id')

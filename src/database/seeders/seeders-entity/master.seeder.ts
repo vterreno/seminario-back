@@ -11,7 +11,8 @@ import { MovimientosStockInicialSeeder } from './movimientos-stock-inicial.seede
 import { VentaSeeder } from './venta.seeder';
 import SucursalesSeeder from './sucursales.seeder';
 import { UnidadMedidaSeeder } from './unidad-medida.seeder';
-
+import { CategoriaSimpleSeeder } from './categoria.seeder';
+import { ListaPreciosSeeder } from './lista-precios.seeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -23,11 +24,13 @@ export class MasterSeeder {
         private readonly userSeeder: UserSeeder,
         private readonly empresaUsuarioRolSeeder: EmpresaUsuarioRolSeeder,
         private readonly marcaSeeder: MarcaSeeder,
+        private readonly categoriaSeeder: CategoriaSimpleSeeder,
         private readonly consumidorFinalSeeder: ConsumidorFinalSeeder,
         private readonly productoSeeder: ProductoSimpleSeeder,
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
         private readonly ventaSeeder: VentaSeeder,
         private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
+        private readonly listaPreciosSeeder: ListaPreciosSeeder,
     ) {}
 
     async run() {
@@ -39,95 +42,51 @@ export class MasterSeeder {
 
         try {
             // 1. Permisos (base del sistema)
-            console.log('📋 1/7 - Creando permisos...');
-            await this.permisosSeeder.run();
-            console.log('✅ Permisos completados\n');
+            await this.ejecutarPaso(1, 13, 'Permisos', () => this.permisosSeeder.run());
 
             // 2. Empresas
-            console.log('🏢 2/7 - Creando empresas...');
-            await this.empresaSeeder.run();
-            console.log('✅ Empresas completadas\n');
+            await this.ejecutarPaso(2, 13, 'Empresas', () => this.empresaSeeder.run());
 
-            // 2. Sucursales
-            console.log('🏢 2/7 - Creando sucursales...');
-            await this.sucursalesSeeder.run();
-            console.log('✅ Sucursales completadas\n');
+            // 3. Sucursales
+            await this.ejecutarPaso(3, 13, 'Sucursales', () => this.sucursalesSeeder.run());
 
-            // 3. Consumidor Final
-            console.log('🧾 3/7 - Creando consumidores finales por empresa...');
-            await this.consumidorFinalSeeder.run();
-            console.log('✅ Consumidores finales completados\n');
+            // 4. Consumidores finales (uno por empresa)
+            await this.ejecutarPaso(4, 13, 'Consumidores finales', () => this.consumidorFinalSeeder.run());
 
-            // 4. Rol Superadmin (necesario para el superusuario)
-            console.log('👑 4/7 - Creando rol superadmin...');
-            await this.roleSeeder.run();
-            console.log('✅ Rol superadmin completado\n');
+            // 5. Rol Superadmin (necesario para usuario superadmin)
+            await this.ejecutarPaso(5, 13, 'Rol Superadmin', () => this.roleSeeder.run());
 
-            // 5. Usuario Superadmin inicial
-            console.log('👤 5/7 - Creando usuario superadmin inicial...');
-            await this.userSeeder.run();
-            console.log('✅ Usuario superadmin completado\n');
+            // 6. Usuario Superadmin inicial
+            await this.ejecutarPaso(6, 13, 'Usuario Superadmin', () => this.userSeeder.run());
 
-            // 3️⃣  Consumidores finales (uno por empresa)
-            await this.ejecutarPaso(3, 8, 'Consumidores finales', () => this.consumidorFinalSeeder.run());
-
-            // 4️⃣  Rol Superadmin (necesario para usuario superadmin)
-            await this.ejecutarPaso(4, 8, 'Rol Superadmin', () => this.roleSeeder.run());
-
-            // 5️⃣  Usuario Superadmin inicial
-            await this.ejecutarPaso(5, 8, 'Usuario Superadmin', () => this.userSeeder.run());
-
-            // 6️⃣  Usuarios y roles por empresa
-            await this.ejecutarPaso(6, 8, 'Usuarios y roles por empresa', () => this.empresaUsuarioRolSeeder.run());
-            // 6. Usuarios y roles por empresa
-            console.log('👥 6/7 - Creando usuarios y roles por empresa...');
-            await this.empresaUsuarioRolSeeder.run();
-            console.log('✅ Usuarios y roles por empresa completados\n');
+            // 7. Usuarios y roles por empresa
+            await this.ejecutarPaso(7, 13, 'Usuarios y roles por empresa', () => this.empresaUsuarioRolSeeder.run());
             
-            // 8. Unidades de medida por empresa
-            console.log('⚖️ 8/8 - Creando unidades de medida por empresa...');
-            await this.unidadesMedidaSeeder.run();
-            console.log('✅ Unidades de medida completadas\n');
+            // 8. Marcas por empresa
+            await this.ejecutarPaso(8, 13, 'Marcas', () => this.marcaSeeder.run());
 
-            // 7️⃣  Marcas por empresa
-            await this.ejecutarPaso(7, 8, 'Marcas', () => this.marcaSeeder.run());
+            // 9. Categorías por empresa
+            await this.ejecutarPaso(9, 13, 'Categorías', () => this.categoriaSeeder.run());
 
-            // 8️⃣  Productos por empresa y marca
-            await this.ejecutarPaso(8, 8, 'Productos', () => this.productoSeeder.run());
-            console.log('✅ Categorías completadas\n');
+            // 10. Unidades de medida por sucursal
+            await this.ejecutarPaso(10, 13, 'Unidades de medida', () => this.unidadesMedidaSeeder.run());
 
-            // 7. Productos por empresa y marca
-            console.log('📦 7/8 - Creando productos por empresa y marca...');
-            await this.productoSeeder.run();
-            console.log('✅ Productos completados\n');
+            // 11. Productos por sucursal y marca
+            await this.ejecutarPaso(11, 13, 'Productos', () => this.productoSeeder.run());
 
-            // 8. Movimientos de stock iniciales
-            console.log('📊 8/9 - Creando movimientos de stock iniciales...');
-            await this.movimientosStockInicialSeeder.run();
-            console.log('✅ Movimientos de stock completados\n');
+            // 12. Movimientos de stock iniciales
+            await this.ejecutarPaso(13, 13, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());
 
-            // 9. Ventas con detalles
-            console.log('💰 9/9 - Creando ventas con múltiples detalles...');
-            await this.ventaSeeder.run();
-            console.log('✅ Ventas completadas\n');
+            // 13. Listas de precios por empresa
+            await this.ejecutarPaso(12, 13, 'Listas de precios', () => this.listaPreciosSeeder.run());
 
-            console.log('🎉 SEED COMPLETO FINALIZADO EXITOSAMENTE');
-            console.log('=========================================');
-            console.log('\n📚 USUARIOS DE PRUEBA DISPONIBLES:');
-            console.log('┌─────────────────────────────────────┬─────────────┬─────────────────────┐');
-            console.log('│ EMAIL                               │ PASSWORD    │ DESCRIPCIÓN         │');
-            console.log('├─────────────────────────────────────┼─────────────┼─────────────────────┤');
-            console.log('│ superadmin@sistema.com              │ super123    │ Superadmin (sin empresa)│');
-            console.log('│ admin@techcorp.com                  │ tech123     │ Admin TechCorp      │');
-            console.log('│ usuario@techcorp.com                │ user123     │ Usuario TechCorp    │');
-            console.log('│ admin@foodmarket.com                │ food123     │ Admin FoodMarket    │');
-            console.log('└─────────────────────────────────────┴─────────────┴─────────────────────┘');
-            
-            console.log('\n🏢 EMPRESAS, MARCAS Y PRODUCTOS:');
-            console.log('• TechCorp S.A.: Apple, Samsung, Sony, LG, HP');
-            console.log('  - Productos: iPhone 15 Pro, MacBook Air M2, Galaxy S24, PlayStation 5, etc.');
-            console.log('• FoodMarket Ltda.: Coca Cola, Nestlé, Unilever, Danone, Kelloggs');
-            console.log('  - Productos: Coca Cola 2.5L, Nestlé Nescafé, Dove Jabón, Yogurt Natural, etc.');
+            // 14. Ventas con detalles
+            await this.ejecutarPaso(14, 14, 'Ventas', () => this.ventaSeeder.run());
+
+            const endTime = Date.now();
+            const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+            this.mostrarResumenFinal(duration);
             
         } catch (error) {
             console.error('\n❌ ERROR DURANTE EL SEED:', error.message);
@@ -177,10 +136,12 @@ export class MasterSeeder {
         console.log('🏢 TechCorp S.A.:');
         console.log('   Marcas: Apple, Samsung, Sony, LG, HP');
         console.log('   Productos: iPhone 15 Pro, MacBook Air M2, Galaxy S24, etc.');
+        console.log('   Listas de precios: Lista TechCorp 2025');
         
         console.log('\n🏢 FoodMarket Ltda.:');
         console.log('   Marcas: Coca Cola, Nestlé, Unilever, Danone, Kelloggs');
         console.log('   Productos: Coca Cola 2.5L, Nescafé, Dove, Yogurt, etc.');
+        console.log('   Listas de precios: Lista FoodMarket 2025');
         
         console.log('\n' + '═'.repeat(57));
         console.log('Sistema listo para usar! 🚀');

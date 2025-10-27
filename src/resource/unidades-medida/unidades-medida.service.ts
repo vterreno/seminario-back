@@ -19,7 +19,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
     ){
         super(unidadesMedidaRepository);
     }
-    // Get unidades filtered by company
+    // Get unidades filtered by sucursal
     async getUnidadesByEmpresa(empresaId: number): Promise<UnidadMedidaEntity[]> {
         return await this.unidadesMedidaRepository.find({
             where: { empresa_id: empresaId },
@@ -63,7 +63,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             const nombresProductos = existenProductos.map(p => `"${p.nombre}"`).join(', ');
             throw new BadRequestException(`No se puede modificar la unidad "${unidad.nombre}" porque tiene productos asociados: ${nombresProductos}. Primero debe reasignar o eliminar esos productos.`);
         }
-        // Validar que no se pueda cambiar la empresa si hay productos asociados
+        // Validar que no se pueda cambiar la sucursal si hay productos asociados
         if (unidadData.empresaId && unidadData.empresaId !== unidad.empresa_id) {
             throw new BadRequestException(`❌ No se puede cambiar la empresa de la unidad "${unidad.nombre}" porque tiene productos asociados. Primero debe reasignar o eliminar esos productos.`);
         }
@@ -96,9 +96,9 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
         await this.unidadesMedidaRepository.delete(id);
     }
 
-    // Bulk delete productos
+    // Bulk delete unidades
     async bulkDeleteUnidades(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check unidades belong to the company
+        // If sucursal validation is needed, check unidades belong to the sucursal
         if (empresaId) {
             const unidades = await this.unidadesMedidaRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
@@ -114,7 +114,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
 
     // Bulk update unidad status (activate/deactivate)
     async bulkUpdateUnidadStatus(ids: number[], estado: boolean, empresaId?: number): Promise<UnidadMedidaEntity[]> {
-        // If empresa validation is needed, check unidades belong to the company
+        // If sucursal validation is needed, check unidades belong to the sucursal
         if (empresaId) {
             const unidades = await this.unidadesMedidaRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }

@@ -1,12 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, ManyToMany, OneToMany } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { empresaEntity } from "./empresa.entity";
 import { ventaEntity } from "./venta.entity";
 import { pagoEntity } from "./pago.entity";
 import { ProductoEntity } from "./producto.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
-import { UnidadMedidaEntity } from "./unidad-medida.entity";
 import { ListaPreciosEntity } from "./lista-precios.entity";
+import { UserEntity } from "./user.entity";
 
 @Entity("sucursales")
 export class sucursalEntity extends BaseEntity{
@@ -44,10 +44,7 @@ export class sucursalEntity extends BaseEntity{
     @OneToMany(() => MovimientoStockEntity, movimiento => movimiento.sucursal)
     movimientos: MovimientoStockEntity[];
 
-    @OneToMany(() => UnidadMedidaEntity, unidadMedida => unidadMedida.sucursal)
-    unidadesMedida: UnidadMedidaEntity[];
-
-    @OneToMany(() => ListaPreciosEntity, listaPrecios => listaPrecios.sucursal)
-    listas_precios: ListaPreciosEntity[];
+    @ManyToMany(() => UserEntity, user => user.sucursales)
+    usuarios?: UserEntity[];
 
 }

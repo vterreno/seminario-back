@@ -26,6 +26,7 @@ export class SucursalesService extends BaseService<sucursalEntity> {
       relations: ['empresa']
     });
   }
+
   
   async delete(id: number): Promise<{ message: string }> {
     const entity = await this.repository.findOneBy({id});

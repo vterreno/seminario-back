@@ -24,7 +24,10 @@ export class PagoController extends BaseController<pagoEntity> {
     const user = req.user;
     // If user has a company, filter pagos by that company/sucursal
     if (user.empresa?.id) {
-      return await this.pagoService.getPagosBySucursal(user.empresa.id);
+      //Extrae los IDs de todas sus sucursales
+      const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+
+      return await this.pagoService.getPagosBySucursal(sucursalIds);
     }
     // If no company (superadmin), return all pagos
     return await this.pagoService.getAllPagos();
@@ -35,11 +38,17 @@ export class PagoController extends BaseController<pagoEntity> {
   async getPagoById(@Param('id') id: number) {
     return await this.pagoService.findById(id);
   }
+  
+  @Get('empresa/:id')
+  @Action('ver')
+  async getPagosByEmpresa(@Param('id') id: number) {
+    return await this.pagoService.getPagosByEmpresa(id);
+  }
 
   @Get('sucursal/:id')
   @Action('ver')
   async getPagosBySucursal(@Param('id') id: number) {
-    return await this.pagoService.getPagosBySucursal(id);
+    return await this.pagoService.getPagosBySucursal([id]);
   }
 
   @Post()

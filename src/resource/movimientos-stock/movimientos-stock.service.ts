@@ -4,7 +4,8 @@ import { BaseService } from 'src/base-service/base-service.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
+import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
 
 @Injectable()
 export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
@@ -14,7 +15,9 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
         @InjectRepository(MovimientoStockEntity) 
         protected movimientoStockRepository: Repository<MovimientoStockEntity>,
         @InjectRepository(ProductoEntity)
-        protected productoRepository: Repository<ProductoEntity>
+        protected productoRepository: Repository<ProductoEntity>,
+        @InjectRepository(sucursalEntity)
+        protected sucursalRepository: Repository<sucursalEntity>,
     ){
         super(movimientoStockRepository);
     }
@@ -102,14 +105,6 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
             }
         });
     }
-    // Get movimientos filtered by sucursal
-    async getMovimientosBySucursal(sucursalId: number): Promise<MovimientoStockEntity[]> {
-        return await this.movimientoStockRepository.find({
-            where: { sucursal_id: sucursalId },
-            relations: ['producto'],
-            order: { fecha: 'DESC' }
-        });
-    }
 
     // Get all movimientos (for superadmin)
     async getAllMovimientos(): Promise<MovimientoStockEntity[]> {
@@ -119,8 +114,35 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
         });
     }
 
+    // Get movimientos filtered by Empresa
+    async getMovimientosByEmpresa(empresaId: number): Promise<MovimientoStockEntity[]> {
+        //Encontrar todas las sucursales que pertenecen a la empresa
+        const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+            where: { empresa_id: empresaId } 
+        });
+
+        //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+        if (sucursalesDeLaEmpresa.length === 0) {
+            return [];
+        }
+
+        //Extraer solo los IDs de esas sucursales
+        const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+        return await this.getMovimientosBySucursal(sucursalIds);
+    }
+
+    // Get movimientos filtered by sucursal
+    async getMovimientosBySucursal(sucursalId: number[]): Promise<MovimientoStockEntity[]> {
+        return await this.movimientoStockRepository.find({
+            where: { sucursal_id: In(sucursalId) },
+            relations: ['producto'],
+            order: { fecha: 'DESC' }
+        });
+    }
+
     // Get movimientos by producto ID
-    async getMovimientosByProducto(productoId: number, sucursalId?: number): Promise<MovimientoStockEntity[]> {
+    async getMovimientosByProducto(productoId: number, sucursalId?: number[]): Promise<MovimientoStockEntity[]> {
         const whereCondition: any = { producto_id: productoId };
         // If sucursal ID is provided, filter by it as well
         if (sucursalId) {

@@ -63,7 +63,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             const nombresProductos = existenProductos.map(p => `"${p.nombre}"`).join(', ');
             throw new BadRequestException(`No se puede modificar la unidad "${unidad.nombre}" porque tiene productos asociados: ${nombresProductos}. Primero debe reasignar o eliminar esos productos.`);
         }
-        // Validar que no se pueda cambiar la sucursal si hay productos asociados
+        // Validar que no se pueda cambiar la empresa si hay productos asociados
         if (unidadData.empresaId && unidadData.empresaId !== unidad.empresa_id) {
             throw new BadRequestException(`❌ No se puede cambiar la empresa de la unidad "${unidad.nombre}" porque tiene productos asociados. Primero debe reasignar o eliminar esos productos.`);
         }

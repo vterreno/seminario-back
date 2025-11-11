@@ -13,6 +13,7 @@ import SucursalesSeeder from './sucursales.seeder';
 import { UnidadMedidaSeeder } from './unidad-medida.seeder';
 import { CategoriaSimpleSeeder } from './categoria.seeder';
 import { ListaPreciosSeeder } from './lista-precios.seeder';
+import { UserSucursalesSeeder } from './UserSucursalesSeeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -31,6 +32,7 @@ export class MasterSeeder {
         private readonly ventaSeeder: VentaSeeder,
         private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
         private readonly listaPreciosSeeder: ListaPreciosSeeder,
+        private readonly userSucursalesSeeder: UserSucursalesSeeder,
     ) {}
 
     async run() {
@@ -61,6 +63,9 @@ export class MasterSeeder {
 
             // 7. Usuarios y roles por empresa
             await this.ejecutarPaso(7, 13, 'Usuarios y roles por empresa', () => this.empresaUsuarioRolSeeder.run());
+
+            // 8. Asignación de sucursales a usuarios
+            await this.ejecutarPaso(8, 14, 'Asignación de sucursales a usuarios', () => this.userSucursalesSeeder.run());
             
             // 8. Marcas por empresa
             await this.ejecutarPaso(8, 13, 'Marcas', () => this.marcaSeeder.run());

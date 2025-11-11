@@ -33,6 +33,7 @@ import { ListaPreciosSeeder } from './seeders-entity/lista-precios.seeder';
 import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entity';
 import { categoriasEntity } from '../core/categorias.entity';
 import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
+import { UserSucursalesSeeder } from './seeders-entity/UserSucursalesSeeder';
 
 @Module({
     imports: [
@@ -72,6 +73,7 @@ import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
         EmpresaUsuarioRolSeeder,
         MovimientosStockInicialSeeder,
         VentaSeeder,
+        UserSucursalesSeeder,
         // Seeder maestro
         MasterSeeder,
         SeederService,

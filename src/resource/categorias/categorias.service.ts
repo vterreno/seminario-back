@@ -146,7 +146,7 @@ export class CategoriasService extends BaseService<categoriasEntity> {
     if (productosAsociados.length > 0) {
       const categoriasBloqueadas = [...new Set(productosAsociados.map(p => p.categoria_id))];
       throw new BadRequestException(
-        `No se pueden eliminar las categorías ${categoriasBloqueadas.join(', ')} porque tienen productos asociados.`
+        `No se pueden eliminar las categorías con ID: ${categoriasBloqueadas.join(', ')} porque tienen productos asociados.`
       );
     }
 

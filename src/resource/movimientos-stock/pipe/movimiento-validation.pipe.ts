@@ -22,7 +22,7 @@ export class MovimientosStockValidationPipe implements PipeTransform {
 
     async transform(value: CreateMovimientoStockDto, metadata: ArgumentMetadata): Promise<CreateMovimientoStockDto> {
         // Si no tiene producto_id, no validar
-        if (!value || !value.producto_id || !value.empresa_id) {
+        if (!value || !value.producto_id || !value.sucursal_id) {
             return value;
         }
 
@@ -34,7 +34,7 @@ export class MovimientosStockValidationPipe implements PipeTransform {
             try {
                 const stockActual = await this.productosService.getStockProducto(
                     value.producto_id,
-                    value.empresa_id
+                    value.sucursal_id
                 );
 
                 const cantidadMovimiento = Math.abs(value.cantidad);

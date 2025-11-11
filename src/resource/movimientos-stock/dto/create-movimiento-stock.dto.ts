@@ -20,5 +20,5 @@ export class CreateMovimientoStockDto {
 
     @IsNumber()
     @IsNotEmpty()
-    empresa_id: number;
+    sucursal_id: number;
 }

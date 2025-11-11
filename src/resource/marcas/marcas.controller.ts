@@ -83,42 +83,37 @@ export class MarcasController extends BaseController<MarcaEntity>{
     @Delete(':id')
     @Action('eliminar')
     async deleteMarca(@Param('id') id: number, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
-
         const user = req.user;
-        
-        // Verify the marca belongs to the user's company (if user has a company)
+
+        // Validar pertenencia a la empresa
         if (user.empresa?.id) {
             const existingMarca = await this.marcasService.findById(id);
+            if (!existingMarca) {
+                throw new BadRequestException('Marca no encontrada.');
+            }
             if (existingMarca.empresa_id !== user.empresa.id) {
-                throw new BadRequestException('No tienes permisos para eliminar esta marca');
+                throw new BadRequestException('No tienes permisos para eliminar esta marca.');
             }
         }
 
         await this.marcasService.deleteMarca(id);
-        return { message: 'Marca eliminada exitosamente' };
+        return { message: '✅ Marca eliminada exitosamente.' };
     }
 
     @Delete('bulk/delete')
     @Action('eliminar')
     async bulkDeleteMarcas(@Body() body: { ids: number[] }, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
         const user = req.user;
         const { ids } = body;
 
         try {
-            await this.marcasService.bulkDeleteMarcas(
-                ids, 
-                user.empresa?.id
-            );
-            return { message: `${ids.length} marcas eliminadas exitosamente` };
+            await this.marcasService.bulkDeleteMarcas(ids, user.empresa?.id);
+            return { message: `✅ ${ids.length} marcas eliminadas exitosamente.` };
         } catch (error) {
-            console.error('Error en bulk delete de marcas:', error);
-            throw new BadRequestException(`Error al eliminar marcas: ${error.message}`);
+            throw new BadRequestException(error.message || 'Error al eliminar marcas.');
         }
     }
+
 
     @Put('bulk/status')
     @Action('modificar')
@@ -139,7 +134,6 @@ export class MarcasController extends BaseController<MarcaEntity>{
                 updatedMarcas: updatedMarcas
             };
         } catch (error) {
-            console.error('Error en bulk update de marcas:', error);
             throw new BadRequestException(`Error al actualizar marcas: ${error.message}`);
         }
     }

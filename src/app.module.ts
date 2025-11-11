@@ -11,6 +11,7 @@ import { SeedModule } from './database/seeders/seeder.module';
 import { MailServiceModule } from './resource/mail-service/mail-service.module';
 import { EmpresaModule } from './resource/empresa/empresa.module';
 import { SucursalesModule } from './resource/sucursales/sucursales.module';
+import { UnidadesMedidaModule } from './resource/unidades-medida/unidades-medida.module';
 import { ContactosModule } from './resource/contactos/contactos.module';
 import { UbicacionesModule } from './resource/ubicaciones/ubicaciones.module';
 import { PermissionsGuard } from './middlewares/permission.middleware';
@@ -18,6 +19,10 @@ import { CategoriasModule } from './resource/categorias/categorias.module';
 import { MarcasModule } from './resource/marcas/marcas.module';
 import { MovimientosStockModule } from './resource/movimientos-stock/movimientos-stock.module';
 import { ProductosModule } from './resource/productos/productos.module';
+import { VentasModule } from './resource/ventas/ventas.module';
+import { PagoModule } from './resource/pago/pago.module';
+import { DetalleVentaModule } from './resource/detalle-venta/detalle-venta.module';
+import { ListaPreciosModule } from './resource/lista-precios/lista-precios.module';
 
 @Module({
   imports: [
@@ -45,12 +50,17 @@ import { ProductosModule } from './resource/productos/productos.module';
     MailServiceModule,
     EmpresaModule,
     SucursalesModule,
+    UnidadesMedidaModule,
     CategoriasModule,
     ContactosModule,
     UbicacionesModule,
     MarcasModule,
     ProductosModule,
     MovimientosStockModule,
+    VentasModule,
+    PagoModule,
+    DetalleVentaModule,
+    ListaPreciosModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

@@ -23,11 +23,13 @@ export class ProductosController extends BaseController<ProductoEntity>{
     async getAllProductos(@Req() req: RequestWithUser) {
         const user = req.user;
 
-        // If user has a company, filter productos by that company
+        // If user has a company, filter productos by sucursales of that company
         if (user.empresa?.id) {
-            return await this.productoService.getProductosByEmpresa(user.empresa.id);
-        }
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
 
+            return await this.productoService.getProductosBySucursal(sucursalIds);
+        }
         // If no company (superadmin), return all productos
         return await this.productoService.getAllProductos();
     }
@@ -36,6 +38,12 @@ export class ProductosController extends BaseController<ProductoEntity>{
     @Action('ver')
     async getProductoById(@Param('id') id: number) {
         return await this.productoService.findById(id);
+    }
+
+    @Get('sucursal/:id')
+    @Action('ver')
+    async getProductosBySucursal(@Param('id') id: number) {
+        return await this.productoService.getProductosBySucursal([id]);
     }
 
     @Get('empresa/:id')
@@ -48,9 +56,12 @@ export class ProductosController extends BaseController<ProductoEntity>{
     @Action('agregar')
     async createProducto(@Body(ProductoValidationPipe) productoData: CreateProductoDto, @Req() req: RequestWithUser) {
         const user = req.user;
-        // If user has a company and empresa_id is not provided, assign that company to the producto
-        if (user.empresa?.id && !productoData.empresa_id) {
-            productoData.empresa_id = user.empresa.id;
+        // Si no se proporciona sucursal_id, se podría asignar una sucursal por defecto
+        // de la empresa del usuario, pero es mejor requerir que se especifique
+        
+        // Validar que la sucursal pertenezca a la empresa del usuario
+        if (user.empresa?.id && productoData.sucursal_id) {
+            await this.productoService.validateSucursalBelongsToEmpresa(productoData.sucursal_id, user.empresa.id);
         }
 
         return await this.productoService.createProducto(productoData);
@@ -61,18 +72,19 @@ export class ProductosController extends BaseController<ProductoEntity>{
     async updateProducto(@Param('id') id: number, @Body(ProductoValidationPipe) productoData: UpdateProductoDto, @Req() req: RequestWithUser) {
         const user = req.user;
 
-        // Verify the producto belongs to the user's company (if user has a company)
+        // Verify the producto belongs to a sucursal of the user's company (if user has a company)
         if (user.empresa?.id) {
             const existingProducto = await this.productoService.findById(id);
             if (!existingProducto) {
                 throw new BadRequestException('Producto no encontrado');
             }
-            if (existingProducto.empresa_id !== user.empresa.id) {
-                throw new BadRequestException('No tienes permisos para modificar este producto');
-            }
-            // Ensure company_id doesn't change for regular users
-            if (productoData.empresa_id && productoData.empresa_id !== user.empresa.id) {
-                throw new BadRequestException('No puedes cambiar la empresa del producto');
+            
+            // Validar que la sucursal del producto pertenezca a la empresa del usuario
+            await this.productoService.validateProductoBelongsToEmpresa(existingProducto, user.empresa.id);
+            
+            // Si se intenta cambiar la sucursal, validar que la nueva también pertenezca a la empresa
+            if (productoData.sucursal_id && productoData.sucursal_id !== existingProducto.sucursal_id) {
+                await this.productoService.validateSucursalBelongsToEmpresa(productoData.sucursal_id, user.empresa.id);
             }
         }
 
@@ -81,40 +93,32 @@ export class ProductosController extends BaseController<ProductoEntity>{
 
     @Delete(':id')
     @Action('eliminar')
-    async deleteMarca(@Param('id') id: number, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
-
+    async deleteProducto(@Param('id') id: number, @Req() req: RequestWithUser) {
         const user = req.user;
-        
-        // Verify the producto belongs to the user's company (if user has a company)
+
         if (user.empresa?.id) {
             const existingProducto = await this.productoService.findById(id);
-            if (existingProducto.empresa_id !== user.empresa.id) {
-                throw new BadRequestException('No tienes permisos para eliminar este producto');
+            if (!existingProducto) {
+                throw new BadRequestException('Producto no encontrado.');
             }
+            await this.productoService.validateProductoBelongsToEmpresa(existingProducto, user.empresa.id);
         }
 
         await this.productoService.deleteProducto(id);
-        return { message: 'Producto eliminado exitosamente' };
+        return { message: '✅ Producto eliminado exitosamente.' };
     }
 
     @Delete('bulk/delete')
     @Action('eliminar')
     async bulkDeleteProductos(@Body() body: { ids: number[] }, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
         const user = req.user;
         const { ids } = body;
 
         try {
-            await this.productoService.bulkDeleteProductos(
-                ids, 
-                user.empresa?.id
-            );
-            return { message: `${ids.length} productos eliminados exitosamente` };
+            await this.productoService.bulkDeleteProductos(ids, user.empresa?.id);
+            return { message: `✅ ${ids.length} productos eliminados exitosamente.` };
         } catch (error) {
-            throw new BadRequestException(error.message);
+            throw new BadRequestException(error.message || 'Error al eliminar productos.');
         }
     }
 

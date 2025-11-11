@@ -4,7 +4,8 @@ import { BaseService } from 'src/base-service/base-service.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
+import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
 
 @Injectable()
 export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
@@ -14,7 +15,9 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
         @InjectRepository(MovimientoStockEntity) 
         protected movimientoStockRepository: Repository<MovimientoStockEntity>,
         @InjectRepository(ProductoEntity)
-        protected productoRepository: Repository<ProductoEntity>
+        protected productoRepository: Repository<ProductoEntity>,
+        @InjectRepository(sucursalEntity)
+        protected sucursalRepository: Repository<sucursalEntity>,
     ){
         super(movimientoStockRepository);
     }
@@ -23,13 +26,19 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
         // Usar transacción para asegurar atomicidad
         return await this.movimientoStockRepository.manager.transaction(async manager => {
             try {
-                // Buscar el producto
+                // Buscar el producto con su sucursal para validar sucursal
                 const producto = await manager.findOne(ProductoEntity, {
-                    where: { id: data.producto_id, empresa_id: data.empresa_id }
+                    where: { id: data.producto_id },
+                    relations: ['sucursal']
                 });
                 
                 if (!producto) {
-                    throw new BadRequestException('Producto no encontrado o no pertenece a la empresa.');
+                    throw new BadRequestException('Producto no encontrado.');
+                }
+
+                // Validar que el producto pertenece a la sucursal si se proporciona sucursal_id
+                if (data.sucursal_id && producto.sucursal?.id !== data.sucursal_id) {
+                    throw new BadRequestException('Producto no pertenece a la sucursal especificada.');
                 }
 
                 // Calcular el cambio en el stock según el tipo de movimiento
@@ -74,7 +83,7 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
                     cantidad: cambioStock, // Guardar el cambio real aplicado
                     stock_resultante: nuevoStock,
                     producto_id: data.producto_id,
-                    empresa_id: data.empresa_id
+                    sucursal_id: data.sucursal_id
                 });
 
                 // Guardar el movimiento
@@ -92,34 +101,52 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
                     throw error;
                 }
                 // Para otros errores, mostrar mensaje genérico pero loggear el error real
-                console.error('Error al crear movimiento de stock:', error);
                 throw new BadRequestException('Error interno al crear el movimiento de stock.');
             }
-        });
-    }
-    // Get movimientos filtered by company
-    async getMovimientosByEmpresa(empresaId: number): Promise<MovimientoStockEntity[]> {
-        return await this.movimientoStockRepository.find({
-            where: { empresa_id: empresaId },
-            relations: ['producto'],
-            order: { fecha: 'DESC' }
         });
     }
 
     // Get all movimientos (for superadmin)
     async getAllMovimientos(): Promise<MovimientoStockEntity[]> {
         return await this.movimientoStockRepository.find({
-            relations: ['empresa', 'producto'],
+            relations: ['sucursal', 'producto'],
+            order: { fecha: 'DESC' }
+        });
+    }
+
+    // Get movimientos filtered by Empresa
+    async getMovimientosByEmpresa(empresaId: number): Promise<MovimientoStockEntity[]> {
+        //Encontrar todas las sucursales que pertenecen a la empresa
+        const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+            where: { empresa_id: empresaId } 
+        });
+
+        //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+        if (sucursalesDeLaEmpresa.length === 0) {
+            return [];
+        }
+
+        //Extraer solo los IDs de esas sucursales
+        const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+        return await this.getMovimientosBySucursal(sucursalIds);
+    }
+
+    // Get movimientos filtered by sucursal
+    async getMovimientosBySucursal(sucursalId: number[]): Promise<MovimientoStockEntity[]> {
+        return await this.movimientoStockRepository.find({
+            where: { sucursal_id: In(sucursalId) },
+            relations: ['producto'],
             order: { fecha: 'DESC' }
         });
     }
 
     // Get movimientos by producto ID
-    async getMovimientosByProducto(productoId: number, empresaId?: number): Promise<MovimientoStockEntity[]> {
+    async getMovimientosByProducto(productoId: number, sucursalId?: number[]): Promise<MovimientoStockEntity[]> {
         const whereCondition: any = { producto_id: productoId };
-        // If empresa ID is provided, filter by it as well
-        if (empresaId) {
-            whereCondition.empresa_id = empresaId;
+        // If sucursal ID is provided, filter by it as well
+        if (sucursalId) {
+            whereCondition.sucursal_id = sucursalId;
         }
         return await this.movimientoStockRepository.find({
             where: whereCondition,
@@ -128,23 +155,81 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
         });
     }
 
-    // Método específico para ajustes de stock que maneja usuarios con y sin empresa
+    // Método específico para ajustes de stock que maneja usuarios con y sin sucursal
     async realizarAjusteStock(data: Partial<MovimientoStockEntity>): Promise<MovimientoStockEntity> {
-        // Si no se proporciona empresa_id, obtenerla del producto (caso superadmin)
-        if (!data.empresa_id) {
+        // Si no se proporciona sucursal_id, obtenerla del producto (caso superadmin)
+        if (!data.sucursal_id) {
             const producto = await this.productoRepository.findOne({
                 where: { id: data.producto_id },
-                select: ['id', 'empresa_id']
+                relations: ['sucursal']
             });
             
             if (!producto) {
                 throw new BadRequestException('Producto no encontrado.');
             }
             
-            data.empresa_id = producto.empresa_id;
+            if (!producto.sucursal?.id) {
+                throw new BadRequestException('El producto no tiene una sucursal asociada.');
+            }
+            
+            data.sucursal_id = producto.sucursal.id;
         }
         
         // Usar el método create existente que ya tiene toda la lógica de transacciones
         return this.create(data);
+    }
+
+    // Método para crear movimiento de stock SOLO como registro histórico
+    // No modifica el stock del producto (útil cuando el stock ya fue modificado por otro proceso)
+    async createMovimientoRegistro(data: Partial<MovimientoStockEntity>, stockResultante: number): Promise<MovimientoStockEntity> {
+        return await this.movimientoStockRepository.manager.transaction(async manager => {
+            try {
+                // Buscar el producto con su sucursal para validar
+                const producto = await manager.findOne(ProductoEntity, {
+                    where: { id: data.producto_id },
+                    relations: ['sucursal']
+                });
+                
+                if (!producto) {
+                    throw new BadRequestException('Producto no encontrado.');
+                }
+
+                // Si no se proporciona sucursal_id, obtenerla del producto
+                if (!data.sucursal_id) {
+                    if (!producto.sucursal?.id) {
+                        throw new BadRequestException('El producto no tiene una sucursal asociada.');
+                    }
+                    data.sucursal_id = producto.sucursal.id;
+                }
+
+                // Validar que el producto pertenece a la sucursal si se proporciona sucursal_id
+                if (data.sucursal_id && producto.sucursal?.id !== data.sucursal_id) {
+                    throw new BadRequestException('Producto no pertenece a la sucursal especificada.');
+                }
+
+                // Crear el movimiento sin modificar el stock del producto
+                const movimiento = manager.create(MovimientoStockEntity, {
+                    fecha: new Date(),
+                    tipo_movimiento: data.tipo_movimiento,
+                    descripcion: data.descripcion,
+                    cantidad: data.cantidad, // Guardar la cantidad tal cual viene
+                    stock_resultante: stockResultante, // Stock resultante después del cambio
+                    producto_id: data.producto_id,
+                    sucursal_id: data.sucursal_id
+                });
+
+                // Guardar solo el movimiento, SIN tocar el stock del producto
+                const movimientoGuardado = await manager.save(MovimientoStockEntity, movimiento);
+
+                return movimientoGuardado;
+
+            } catch (error) {
+                if (error instanceof BadRequestException) {
+                    throw error;
+                }
+                console.error('Error al crear movimiento de stock (registro):', error);
+                throw new BadRequestException('Error interno al crear el registro de movimiento de stock.');
+            }
+        });
     }
 }

@@ -3,6 +3,7 @@ import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { BaseService } from 'src/base-service/base-service.service';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { In } from 'typeorm/find-options/operator/In';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,41 +20,95 @@ export class ProductosService extends BaseService<ProductoEntity>{
         @InjectRepository(ProductoEntity) 
         protected productosRepository: Repository<ProductoEntity>,
         @InjectRepository(MovimientoStockEntity)
-        protected movimientoStockRepository: Repository<MovimientoStockEntity>
+        protected movimientoStockRepository: Repository<MovimientoStockEntity>,
+        @InjectRepository(sucursalEntity)
+        protected sucursalRepository: Repository<sucursalEntity>
     ){
         super(productosRepository);
-    }
-    // Get productos filtered by company
-    async getProductosByEmpresa(empresaId: number): Promise<ProductoEntity[]> {
-        return await this.productosRepository.find({
-            where: { empresa_id: empresaId },
-            relations: ['empresa', 'marca'],
-        });
     }
 
     // Get all productos (for superadmin)
     async getAllProductos(): Promise<ProductoEntity[]> {
         return await this.productosRepository.find({
-            relations: ['empresa', 'marca'],
+            relations: ['sucursal', 'sucursal.empresa', 'marca', 'categoria', 'unidadMedida'],
+        });
+    }
+
+    // Get productos filtered by company (all productos from all sucursales of the company)
+    async getProductosByEmpresa(empresaId: number): Promise<ProductoEntity[]> {
+        //Encontrar todas las sucursales que pertenecen a la empresa
+        const sucursalesDeLaEmpresa = await this.sucursalRepository.find({
+            where: { empresa_id: empresaId } 
+        });
+
+        //Si esa empresa no tiene sucursales, devolvemos un array vacío.
+        if (sucursalesDeLaEmpresa.length === 0) {
+            return [];
+        }
+
+        //Extraer solo los IDs de esas sucursales
+        const sucursalIds = sucursalesDeLaEmpresa.map(sucursal => sucursal.id);
+
+        return await this.getProductosBySucursal(sucursalIds);
+    }
+
+    // Get productos by sucursal
+    async getProductosBySucursal(sucursalId: number[]): Promise<ProductoEntity[]> {
+        return await this.productosRepository.find({
+            where: { sucursal_id: In(sucursalId) },
+            relations: ['sucursal', 'sucursal.empresa', 'marca', 'categoria', 'unidadMedida'],
         });
     }
 
     // Check if producto codigo exists (case insensitive)
-    async findByCodigo(codigo: string, empresaId?: number): Promise<ProductoEntity | null> {
+    async findByCodigo(codigo: string, sucursalId?: number): Promise<ProductoEntity | null> {
         const query = this.productosRepository.createQueryBuilder('producto')
             .where('LOWER(producto.codigo) = LOWER(:codigo)', { codigo });
 
-        // If empresa is provided, check uniqueness within that empresa
-        if (empresaId) {
-            query.andWhere('producto.empresa_id = :empresaId', { empresaId });
+        // If sucursal is provided, check uniqueness within that sucursal
+        if (sucursalId) {
+            query.andWhere('producto.sucursal_id = :sucursalId', { sucursalId });
         }
         
         return await query.getOne();
     }
 
+    // Validate that sucursal belongs to empresa
+    async validateSucursalBelongsToEmpresa(sucursalId: number, empresaId: number): Promise<void> {
+        const sucursal = await this.sucursalRepository.findOne({
+            where: { id: sucursalId, empresa_id: empresaId }
+        });
+
+        if (!sucursal) {
+            throw new BadRequestException('La sucursal seleccionada no pertenece a tu empresa o no existe.');
+        }
+    }
+
+    // Validate that producto belongs to empresa (through sucursal)
+    async validateProductoBelongsToEmpresa(producto: ProductoEntity, empresaId: number): Promise<void> {
+        const productoWithSucursal = await this.productosRepository.findOne({
+            where: { id: producto.id },
+            relations: ['sucursal']
+        });
+
+        if (!productoWithSucursal?.sucursal || productoWithSucursal.sucursal.empresa_id !== empresaId) {
+            throw new BadRequestException('No tienes permisos para acceder a este producto.');
+        }
+    }
+
     // Create producto
     async createProducto(productoData: CreateProductoDto): Promise<ProductoEntity> {
         try {
+            // Obtener la sucursal para poder acceder a empresa_id para el movimiento
+            const sucursal = await this.sucursalRepository.findOne({
+                where: { id: productoData.sucursal_id },
+                relations: ['empresa']
+            });
+
+            if (!sucursal) {
+                throw new BadRequestException('La sucursal especificada no existe.');
+            }
+
             const producto = this.productosRepository.create({
                 ...productoData,
                 estado: productoData.estado ?? true, // Default to true if not provided
@@ -69,13 +124,12 @@ export class ProductosService extends BaseService<ProductoEntity>{
                 cantidad: productoData.stock_apertura ?? 0,
                 stock_resultante: productoData.stock_apertura ?? 0,
                 producto_id: producto.id,
-                empresa_id: productoData.empresa_id
+                sucursal_id: sucursal.id
             });
             await this.movimientoStockRepository.save(movimiento);
             return await this.findById(savedProducto.id);
         } catch (error) {
             // Log internal error but don't expose it to client
-            console.error('Internal error creating producto:', error);
             throw new BadRequestException('Error al crear el producto. Por favor, verifica los datos e intenta nuevamente.');
         }
     }
@@ -101,38 +155,74 @@ export class ProductosService extends BaseService<ProductoEntity>{
     async findById(id: number): Promise<ProductoEntity> {
         return await this.productosRepository.findOne({
             where: { id },
-            relations: ['empresa', 'marca'],
+            relations: ['sucursal', 'sucursal.empresa', 'marca'],
         });
     }
 
     // Delete single producto
     async deleteProducto(id: number): Promise<void> {
+        const producto = await this.productosRepository.findOne({ where: { id } });
+        if (!producto) {
+            throw new BadRequestException(`❌ El producto con ID ${id} no existe.`);
+        }
+        const movimientos = await this.movimientoStockRepository.find({
+            where: { producto_id: id },
+            select: ['id'], // optimiza la consulta
+        });
+
+        if (movimientos.length > 0) {
+            throw new BadRequestException(
+                `No se puede eliminar el producto con ID ${id} porque tiene movimientos de stock asociados.`
+            );
+        }
         await this.productosRepository.delete(id);
     }
 
     // Bulk delete productos
     async bulkDeleteProductos(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check productos belong to the company
+        // 1️⃣ Validar existencia y pertenencia a la empresa
         if (empresaId) {
-            const productos = await this.productosRepository.find({
-                where: { id: In(ids), empresa_id: empresaId }
-            });
+            const productos = await this.productosRepository
+                .createQueryBuilder('producto')
+                .leftJoin('producto.sucursal', 'sucursal')
+                .where('producto.id IN (:...ids)', { ids })
+                .andWhere('sucursal.empresa_id = :empresaId', { empresaId })
+                .getMany();
 
             if (productos.length !== ids.length) {
-                throw new BadRequestException('❌ Algunos productos que intentas eliminar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException(
+                    'Algunos productos que intentas eliminar no pertenecen a tu empresa o no existen.'
+                );
             }
         }
 
+        // 2️⃣ Verificar si alguno de los productos tiene movimientos de stock
+        const movimientosAsociados = await this.movimientoStockRepository.find({
+            where: { producto_id: In(ids) },
+            select: ['producto_id'],
+        });
+
+        if (movimientosAsociados.length > 0) {
+            const idsBloqueados = [...new Set(movimientosAsociados.map(m => m.producto_id))];
+            throw new BadRequestException(
+                `No se pueden eliminar los productos con ID: ${idsBloqueados.join(', ')} porque tienen movimientos de stock asociados.`
+            );
+        }
+
+        // 3️⃣ Eliminar si pasa las validaciones
         await this.productosRepository.delete(ids);
     }
 
     // Bulk update producto status (activate/deactivate)
     async bulkUpdateProductoStatus(ids: number[], estado: boolean, empresaId?: number): Promise<ProductoEntity[]> {
-        // If empresa validation is needed, check productos belong to the company
+        // If empresa validation is needed, check productos belong to sucursales of the company
         if (empresaId) {
-            const productos = await this.productosRepository.find({
-                where: { id: In(ids), empresa_id: empresaId }
-            });
+            const productos = await this.productosRepository
+                .createQueryBuilder('producto')
+                .leftJoin('producto.sucursal', 'sucursal')
+                .where('producto.id IN (:...ids)', { ids })
+                .andWhere('sucursal.empresa_id = :empresaId', { empresaId })
+                .getMany();
 
             if (productos.length !== ids.length) {
                 throw new BadRequestException('❌ Algunos productos que intentas modificar no pertenecen a tu empresa o no existen.');
@@ -160,7 +250,7 @@ export class ProductosService extends BaseService<ProductoEntity>{
         // Return updated productos with relations
         return await this.productosRepository.find({
             where: { id: In(ids) },
-            relations: ['empresa']
+            relations: ['sucursal', 'sucursal.empresa']
         });
     }
 
@@ -175,10 +265,16 @@ export class ProductosService extends BaseService<ProductoEntity>{
         await this.productosRepository.update(ids, { estado: false });
     }
 
-    async getStockProducto(id: number, empresaId?: number): Promise<number> {
+    async getStockProducto(id: number, sucursalId?: number): Promise<number> {
+        const whereCondition: any = { id };
+        if (sucursalId) {
+            whereCondition.sucursal_id = sucursalId;
+        }
+
         const productos = await this.productosRepository.findOne({
-            where: { id: id, empresa_id: empresaId }
+            where: whereCondition
         });
+        
         if (!productos) {
             throw new BadRequestException(`No se encontró el producto. Verifica que el ID sea correcto.`);
         }

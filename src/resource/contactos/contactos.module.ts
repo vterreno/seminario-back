@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { contactoEntity } from 'src/database/core/contacto.entity';
 import { ContactosService } from './contactos.service';
@@ -12,7 +12,7 @@ import { empresaEntity } from 'src/database/core/empresa.entity';
   imports: [
     TypeOrmModule.forFeature([contactoEntity, empresaEntity]),
     JwtModule,
-    UsersModule,
+    forwardRef(() => UsersModule),
   ],
   controllers: [ClientesController, ProveedoresController],
   providers: [ContactosService],

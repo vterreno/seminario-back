@@ -107,7 +107,6 @@ export class RolesController extends BaseController<RoleEntity>{
             );
             return { message: `${ids.length} roles eliminados exitosamente` };
         } catch (error) {
-            console.error('Error en bulk delete de roles:', error);
             throw new Error(`Error al eliminar roles: ${error.message}`);
         }
     }
@@ -132,7 +131,6 @@ export class RolesController extends BaseController<RoleEntity>{
                 updatedRoles: updatedRoles
             };
         } catch (error) {
-            console.error('Error en bulk update de roles:', error);
             throw new Error(`Error al actualizar roles: ${error.message}`);
         }
     }

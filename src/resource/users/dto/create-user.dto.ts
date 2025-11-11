@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength, IsArray } from 'class-validator';
 
 export class CreateUserDTO {
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
@@ -24,6 +24,11 @@ export class CreateUserDTO {
   @IsOptional()
   @IsNumber({}, { message: 'El ID de empresa debe ser un número' })
   empresa_id?: number;
+
+  @IsOptional()
+  @IsArray({ message: 'Los IDs de sucursales deben ser un array' })
+  @IsNumber({}, { each: true, message: 'Cada ID de sucursal debe ser un número' })
+  sucursal_ids?: number[];
 
   @IsOptional()
   @IsBoolean()

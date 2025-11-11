@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { categoriasEntity } from 'src/database/core/categorias.entity';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 import { FindManyOptions, FindOneOptions, Repository, In, IsNull } from 'typeorm';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class CategoriasService extends BaseService<categoriasEntity> {
   constructor(
     @InjectRepository(categoriasEntity)
     protected categoriasRepository: Repository<categoriasEntity>,
+    @InjectRepository(ProductoEntity)
+    private readonly productosRepository: Repository<ProductoEntity>,
   ) {
     super(categoriasRepository);
   }
@@ -101,6 +104,16 @@ export class CategoriasService extends BaseService<categoriasEntity> {
 
   // Hard delete single category
   async deleteCategoria(id: number): Promise<void> {
+    // Verificar si existen productos asociados a esta categoría
+    const productosAsociados = await this.productosRepository.count({
+      where: { categoria_id: id, deleted_at: IsNull() },
+    });
+
+    if (productosAsociados > 0) {
+      throw new BadRequestException('No se puede eliminar la categoría porque tiene productos asociados.');
+    }
+
+    // Eliminar la categoría
     const result = await this.categoriasRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Categoría con id ${id} no encontrada`);
@@ -109,7 +122,7 @@ export class CategoriasService extends BaseService<categoriasEntity> {
 
   // Bulk hard delete categories
   async bulkDeleteCategorias(ids: number[], empresaId?: number): Promise<void> {
-    // If empresa validation is needed, check categories belong to the company
+    // Validar empresa si corresponde
     if (empresaId) {
       const categorias = await this.categoriasRepository.find({
         where: { 
@@ -118,12 +131,26 @@ export class CategoriasService extends BaseService<categoriasEntity> {
           deleted_at: IsNull()
         }
       });
-      
+
       if (categorias.length !== ids.length) {
         throw new BadRequestException('Algunas categorías no pertenecen a tu empresa o no existen');
       }
     }
 
+    // Verificar si alguna categoría tiene productos asociados
+    const productosAsociados = await this.productosRepository.find({
+      where: { categoria_id: In(ids), deleted_at: IsNull() },
+      select: ['categoria_id']
+    });
+
+    if (productosAsociados.length > 0) {
+      const categoriasBloqueadas = [...new Set(productosAsociados.map(p => p.categoria_id))];
+      throw new BadRequestException(
+        `No se pueden eliminar las categorías con ID: ${categoriasBloqueadas.join(', ')} porque tienen productos asociados.`
+      );
+    }
+
+    // Si todo está bien, eliminar
     await this.categoriasRepository.delete(ids);
   }
 

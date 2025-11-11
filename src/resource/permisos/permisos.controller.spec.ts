@@ -35,7 +35,7 @@ describe('PermisosController', () => {
     service = module.get<PermisosService>(PermisosService);
   });
 
-  describe('getAll', () => {
+  describe('getAllPermissions', () => {
     it('devuelve todos los permisos disponibles', async () => {
       // Creamos un rol reutilizable para los permisos
       const rolAdmin = {
@@ -84,6 +84,7 @@ describe('PermisosController', () => {
 
       // Verificamos que la respuesta sea la misma que nuestro mock
       expect(response).toBe(result);
+      expect(service.find).toHaveBeenCalledTimes(1);
     });
   });
 });

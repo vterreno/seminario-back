@@ -31,7 +31,6 @@ export class ClientesController extends BaseController<contactoEntity> {
       const result = await this.contactosService.findByRoles(['cliente', 'ambos'], empresaId, isSuperAdmin);
       return result;
     } catch (error) {
-      console.error('Error al obtener clientes:', error);
       throw error;
     }
   }

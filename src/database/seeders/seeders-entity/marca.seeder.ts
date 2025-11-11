@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { empresaEntity } from 'src/database/core/empresa.entity';
+import { marcasPorEmpresa } from './data/marca.data';
 
 @Injectable()
 export class MarcaSeeder {
@@ -14,74 +15,75 @@ export class MarcaSeeder {
     ) {}
 
     async run() {
-        // Obtener todas las empresas disponibles (activas)
-        const empresas = await this.empresaRepo.find({ where: { estado: true } });
-        if (empresas.length === 0) {
-            console.log('❌ No hay empresas disponibles para crear marcas');
-            return;
-        }
+        console.log('🏷️  Iniciando seed de marcas...');
+        
+        let totalCreadas = 0;
+        let totalActualizadas = 0;
+        let totalProcesadas = 0;
 
-        // 🔹 Buscar empresas por nombre para asignar marcas correctamente
-        const empresaPrueba = empresas.find(e => e.name === 'Empresa Prueba');
-        const empresaComercial = empresas.find(e => e.name === 'Empresa MatePymes');
-        const empresaPrincipal = empresas.find(e => e.name === 'Empresa Principal');
-
-        const marcasConEmpresa = [
-        // Empresa Prueba → bebidas
-        ...(empresaPrueba ? [
-            { empresaId: 2, nombre: 'Coca Cola', descripcion: 'Bebida gaseosa refrescante' },
-            { empresaId: 2, nombre: 'Pepsi', descripcion: 'Bebida gaseosa cola' },
-            { empresaId: 2, nombre: 'Sprite', descripcion: 'Bebida gaseosa de limón' },
-            { empresaId: 2, nombre: 'Fanta', descripcion: 'Bebida gaseosa de naranja' },
-        ] : []),
-
-        // Empresa Comercial → tecnología
-        ...(empresaComercial ? [
-            { empresaId: 3, nombre: 'Samsung', descripcion: 'Electrónica y smartphones' },
-            { empresaId: 3, nombre: 'Apple', descripcion: 'Dispositivos tecnológicos premium' },
-            { empresaId: 3, nombre: 'Sony', descripcion: 'Electrónica de consumo' },
-            { empresaId: 3, nombre: 'LG', descripcion: 'Electrodomésticos y electrónica' },
-        ] : []),
-
-        // Empresa Principal → ropa
-        ...(empresaPrincipal ? [
-            { empresaId: 1, nombre: 'Nike', descripcion: 'Ropa y calzado deportivo' },
-            { empresaId: 1, nombre: 'Adidas', descripcion: 'Indumentaria deportiva' },
-            { empresaId: 1, nombre: 'Puma', descripcion: 'Calzado y ropa deportiva' },
-            { empresaId: 1, nombre: 'Levi\'s', descripcion: 'Jeans y ropa casual' },
-        ] : []),
-        ];
-
-        let marcasCreadas = 0;
-
-        for (const marcaData of marcasConEmpresa) {
-        const empresa = empresas.find(e => e.id === marcaData.empresaId);
-
-        if (!empresa) {
-            console.log(`⚠️ No se encontró empresa con ID ${marcaData.empresaId} para marca ${marcaData.nombre}`);
-            continue;
-        }
-
-        // Verificar si ya existe
-        const marcaExistente = await this.marcaRepo.findOne({
-            where: { nombre: marcaData.nombre, empresa_id: empresa.id },
-        });
-
-        if (!marcaExistente) {
-            const nuevaMarca = this.marcaRepo.create({
-            nombre: marcaData.nombre,
-            descripcion: marcaData.descripcion,
-            empresa_id: empresa.id,
-            estado: true,
+        // Procesar cada empresa
+        for (const [nombreEmpresa, marcas] of Object.entries(marcasPorEmpresa)) {
+            const empresa = await this.empresaRepo.findOne({ 
+                where: { name: nombreEmpresa } 
             });
 
-            await this.marcaRepo.save(nuevaMarca);
-            marcasCreadas++;
-        } else {
-            console.log(`- Marca '${marcaData.nombre}' ya existe para empresa '${empresa.name}'`);
-        }
+            if (!empresa) {
+                console.log(`   ⚠️  Empresa '${nombreEmpresa}' no encontrada, saltando...`);
+                continue;
+            }
+
+            console.log(`\n   📋 Procesando marcas para: ${nombreEmpresa}`);
+
+            for (const marcaData of marcas) {
+                totalProcesadas++;
+                
+                // Verificar si ya existe
+                const marcaExistente = await this.marcaRepo.findOne({
+                    where: { 
+                        nombre: marcaData.nombre, 
+                        empresa_id: empresa.id 
+                    },
+                });
+
+                if (!marcaExistente) {
+                    const nuevaMarca = this.marcaRepo.create({
+                        nombre: marcaData.nombre,
+                        descripcion: marcaData.descripcion,
+                        empresa_id: empresa.id,
+                        estado: true,
+                    });
+
+                    await this.marcaRepo.save(nuevaMarca);
+                    totalCreadas++;
+                    console.log(`      ✅ ${marcaData.nombre} creada`);
+                } else {
+                    // Actualizar si existe pero está inactiva o tiene datos diferentes
+                    let necesitaActualizacion = false;
+                    
+                    if (!marcaExistente.estado) {
+                        marcaExistente.estado = true;
+                        necesitaActualizacion = true;
+                    }
+                    
+                    if (marcaExistente.descripcion !== marcaData.descripcion) {
+                        marcaExistente.descripcion = marcaData.descripcion;
+                        necesitaActualizacion = true;
+                    }
+
+                    if (necesitaActualizacion) {
+                        await this.marcaRepo.save(marcaExistente);
+                        totalActualizadas++;
+                        console.log(`      🔄 ${marcaData.nombre} actualizada`);
+                    } else {
+                        console.log(`      ℹ️  ${marcaData.nombre} ya existe`);
+                    }
+                }
+            }
         }
 
-        console.log(`\n🎉 Seed de marcas completado: ${marcasCreadas} marcas nuevas creadas`);
+        console.log(`\n   🎉 Seed de marcas completado:`);
+        console.log(`      📝 Nuevas: ${totalCreadas}`);
+        console.log(`      🔄 Actualizadas: ${totalActualizadas}`);
+        console.log(`      📊 Total: ${totalProcesadas}`);
     }
 }

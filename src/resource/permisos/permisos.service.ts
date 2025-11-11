@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { PermissionEntity } from 'src/database/core/permission.entity';
-import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, Repository, DeepPartial } from 'typeorm';
 
 @Injectable()
 export class PermisosService extends BaseService<PermissionEntity> {
@@ -15,5 +15,60 @@ export class PermisosService extends BaseService<PermissionEntity> {
         protected permisoService: Repository<PermissionEntity>,
     ){
         super(permisoService);
+    }
+
+    async crearPermiso(codigo: string, nombre: string, descripcion?: string) {
+        let permiso = await this.permisoService.findOne({ where: { codigo } });
+        if (!permiso) {
+            permiso = this.permisoService.create({ codigo, nombre, descripcion } as DeepPartial<PermissionEntity>);
+            await this.permisoService.save(permiso);
+        }
+        return permiso;
+    }
+
+    async obtenerPermisoPorCodigo(codigo: string) {
+        try {
+            return await this.permisoService.findOne({ where: { codigo } });
+        }catch (error) {
+            throw new BadRequestException('Error al obtener el permiso por código');
+        }
+    }
+
+    async eliminarPermiso(codigo: string) {
+        const permiso = await this.permisoService.findOne({ where: { codigo } });
+        if (permiso) {
+            await this.permisoService.softDelete(permiso);
+        }
+        return permiso;
+    }
+    async getPermisosByEmpresa(empresaId: number): Promise<PermissionEntity[]> {
+        // Obtener todos los permisos generales (que NO empiezan con 'lista_') incluyendo los permisos del módulo de gestión
+        const permisosGenerales = await this.permisoService
+            .createQueryBuilder('permission')
+            .where("permission.codigo NOT LIKE 'lista_%'")
+            .getMany();
+
+        // Obtener nombres de listas de precios de las sucursales de esta empresa
+        const listasPrecios = await this.permisoService.query(`
+            SELECT DISTINCT lp.nombre 
+            FROM lista_precios lp
+            WHERE lp.empresa_id = $1 AND lp.estado = true
+        `, [empresaId]);
+
+        // Generar códigos de permisos esperados para las listas de esta empresa
+        const codigosListasEmpresa = listasPrecios.map((lista: any) => {
+            const nombreNormalizado = lista.nombre.trim().toLowerCase().replace(/\s+/g, '_');
+            return `lista_${nombreNormalizado}_ver`;
+        });
+
+        // Obtener permisos de listas de precios para esta empresa
+        const permisosListas = codigosListasEmpresa.length > 0
+            ? await this.permisoService
+                .createQueryBuilder('permission')
+                .where('permission.codigo IN (:...codigos)', { codigos: codigosListasEmpresa })
+                .getMany()
+            : [];
+        // Combinar ambos conjuntos de permisos
+        return [...permisosGenerales, ...permisosListas];
     }
 }

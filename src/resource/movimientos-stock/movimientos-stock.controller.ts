@@ -35,12 +35,25 @@ export class MovimientosStockController extends BaseController<MovimientoStockEn
             throw new Error('Usuario no encontrado en la request');
         }
         
-        // If user has a company, filter movimientos by that company
         if (user.empresa?.id) {
-            return await this.movimientoStockService.getMovimientosByEmpresa(user.empresa.id);
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+
+            return await this.movimientoStockService.getMovimientosBySucursal(sucursalIds);
         }
         // If no company (superadmin), return all movimientos
         return await this.movimientoStockService.getAllMovimientos();
+    }
+    @Get('empresa/:id')
+    @Action('ver')
+    async getMovimientoStocksByEmpresa(@Param('id') id: number) {
+        return await this.movimientoStockService.getMovimientosByEmpresa(id);
+    }
+
+    @Get('sucursal/:id')
+    @Action('ver')
+    async getMovimientoStocksBySucursal(@Param('id') id: number) {
+        return await this.movimientoStockService.getMovimientosBySucursal([id]);
     }
 
     @Post('ajuste-stock/:productoId')
@@ -66,9 +79,8 @@ export class MovimientosStockController extends BaseController<MovimientoStockEn
             descripcion: ajusteData.motivo,
             cantidad: cantidad,
             producto_id: productoId,
-            // Si el usuario tiene empresa, usar esa empresa
-            // Si no tiene empresa (superadmin), el servicio obtendrá la empresa del producto
-            empresa_id: user.empresa?.id
+            // El servicio obtendrá la sucursal del producto automáticamente
+            // sucursal_id se asignará en el servicio según el producto
         };
 
         return this.movimientoStockService.realizarAjusteStock(movimientoData);
@@ -86,12 +98,8 @@ export class MovimientosStockController extends BaseController<MovimientoStockEn
             throw new Error('Usuario no encontrado en la request');
         }
         
-        // If user has a company, filter by both producto and company
-        if (user.empresa?.id) {
-            return await this.movimientoStockService.getMovimientosByProducto(productoId, user.empresa.id);
-        }
-        
-        // If no company (superadmin), get all movimientos for the product
+        // Get all movimientos for the product
+        // If you need to filter by sucursal, you can pass sucursalId as a query parameter
         return await this.movimientoStockService.getMovimientosByProducto(productoId);
     }
 }

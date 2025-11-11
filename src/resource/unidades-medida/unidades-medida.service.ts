@@ -113,7 +113,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
         // 2️⃣ Verificar si alguna de las unidades tiene productos asociados
         const productosAsociados = await this.productosRepository.find({
             where: { unidad_medida_id: In(ids) },
-            select: ['unidad_medida_id'] // optimizamos la consulta
+            select: ['unidad_medida_id'] // optimiza la consulta
         });
 
         if (productosAsociados.length > 0) {

@@ -99,7 +99,7 @@ export class ProductosController extends BaseController<ProductoEntity>{
         if (user.empresa?.id) {
             const existingProducto = await this.productoService.findById(id);
             if (!existingProducto) {
-                throw new BadRequestException('❌ Producto no encontrado.');
+                throw new BadRequestException('Producto no encontrado.');
             }
             await this.productoService.validateProductoBelongsToEmpresa(existingProducto, user.empresa.id);
         }

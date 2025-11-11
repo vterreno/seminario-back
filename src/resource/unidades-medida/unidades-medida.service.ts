@@ -120,7 +120,7 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             // Obtenemos las IDs de las unidades que no se pueden borrar
             const unidadesBloqueadas = [...new Set(productosAsociados.map(p => p.unidad_medida_id))];
             throw new BadRequestException(
-                `No se pueden eliminar las unidades porque alguna unidad tiene asociadas a productos.`
+                `No se pueden eliminar las unidades porque algunas unidades están asociadas a productos.`
             );
         }
 

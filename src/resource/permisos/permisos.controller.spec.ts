@@ -3,6 +3,8 @@ import { PermisosService } from './permisos.service';
 import { PermisosController } from './permisos.controller';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { RoleEntity } from 'src/database/core/roles.entity';
+import { AuthGuard } from 'src/middlewares/auth.middleware';
+import { Reflector } from '@nestjs/core';
 
 describe('PermisosController', () => {
   //Hacemos referencia a las instancias que obtendremos del modulo de testing
@@ -17,15 +19,17 @@ describe('PermisosController', () => {
       controllers: [PermisosController],
       providers: [
         {
-          // Segundo en vez del UsersService real, inyectamos un objeto mock
-          // con los métodos que el controlador podría llamar.
           provide: PermisosService,
           useValue: {
             find: jest.fn(),
           },
         },
+        Reflector,
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .compile();
     // Aqui obtenemos instancias ya construidas y con dependencias inyectadas
     controller = module.get<PermisosController>(PermisosController);
     service = module.get<PermisosService>(PermisosService);
@@ -34,44 +38,49 @@ describe('PermisosController', () => {
   describe('getAll', () => {
     it('devuelve todos los permisos disponibles', async () => {
       // Creamos un rol reutilizable para los permisos
-      const rolAdmin: RoleEntity = {
+      const rolAdmin = {
         id: 1,
-        name: 'ADMIN',
+        nombre: 'ADMIN',
+        empresa_id: 1,
+        estado: true,
+        empresa: null,
         permissions: [],
         users: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+      } as unknown as RoleEntity;
 
       // Mock de permisos, asignando el rolAdmin
       const result: PermissionEntity[] = [
         {
           id: 1,
-          name: 'CREATE_USER',
+          nombre: 'CREATE_USER',
           codigo: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          roles: [rolAdmin] as RoleEntity[], 
-        },
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: null,
+          roles: rolAdmin,
+        } as unknown as PermissionEntity,
         {
           id: 2,
-          name: 'DELETE_USER',
+          nombre: 'DELETE_USER',
           codigo: '2',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          roles: [rolAdmin] as RoleEntity[],
-        },
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: null,
+          roles: rolAdmin,
+        } as unknown as PermissionEntity,
       ];
 
       // Asociamos los permisos al rol para simular la relación bidireccional
-      rolAdmin.permissions = result;
+      rolAdmin.permissions = result as unknown as PermissionEntity[];
 
       // Mockeamos el servicio
       jest.spyOn(service, 'find').mockResolvedValue(result);
 
       // Ejecutamos el controlador
-      const response = await controller.getAll();
-      console.log('Resultado del getAll():', response);
+      const response = await controller.getAllPermissions();
 
       // Verificamos que la respuesta sea la misma que nuestro mock
       expect(response).toBe(result);

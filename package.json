@@ -16,6 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:cov:summary": "jest --coverage --coverageReporters=\"text-summary\" --coverageReporters=\"lcov\"",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "migration:generate": "npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d ./src/config/data-source.ts",
@@ -85,7 +86,18 @@
       "^src/(.*)$": "<rootDir>/$1"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.service.ts",
+      "**/*.controller.ts",
+      "**/*.middleware.ts",
+      "**/*.filter.ts",
+      "**/*.guard.ts",
+      "!**/*.spec.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/database/migrations",
+      "<rootDir>/database/seeders",
+      "<rootDir>/database/seeders/seeders-entity",
+      "<rootDir>/config/data-source.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

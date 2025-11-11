@@ -173,8 +173,11 @@ export class UsersService extends BaseService<UserEntity> {
       return userWithRelations;
     } catch (error) {
       console.error('Error al crear usuario:', error);
-      if (error.code === '23505') { // PostgreSQL unique violation error code
+      if (error?.code === '23505') { // PostgreSQL unique violation error code
         throw new BadRequestException('El email ya está registrado');
+      }
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
       }
       throw new HttpException(`Error al crear usuario: ${error.message}`, 500);
     }

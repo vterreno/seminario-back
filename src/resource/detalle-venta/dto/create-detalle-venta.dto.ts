@@ -1,5 +1,5 @@
 // create-detalle-venta.dto.ts
-import { IsNotEmpty, IsNumber } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional } from "class-validator";
 
 export class CreateDetalleVentaDto {
     @IsNotEmpty({ message: 'El id del producto es requerido' })
@@ -18,7 +18,7 @@ export class CreateDetalleVentaDto {
     @IsNumber({}, { message: 'El subtotal debe ser un número' })
     subtotal: number;
 
-    @IsNotEmpty({ message: 'El id de la venta es requerido' })
+    @IsOptional()
     @IsNumber({}, { message: 'El id de la venta debe ser un número' })
-    venta_id: number;
+    venta_id?: number;
 }

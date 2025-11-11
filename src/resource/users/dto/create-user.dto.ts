@@ -14,7 +14,7 @@ export class CreateUserDTO {
   email: string;
 
   @IsNotEmpty({ message: 'La contraseña es obligatoria' })
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+  @MinLength(7, { message: 'La contraseña debe tener al menos 7 caracteres' })
   password: string;
 
   @IsOptional()

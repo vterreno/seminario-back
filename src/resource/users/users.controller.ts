@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { LoginDTO } from './dto/login.dto';
 import { RegisterDTO } from './dto/register.dto';
 import { CreateUserDTO } from './dto/create-user.dto';
+import { UpdateUserDTO } from './dto/update-user.dto';
 import { Request } from 'express';
 import { AuthGuard } from '../../middlewares/auth.middleware';
 import { RequestWithUser } from 'src/resource/users/interface/request-user';
@@ -64,6 +65,26 @@ export class UsersController extends BaseController<UserEntity> {
     );
   }
 
+  // Rutas específicas ANTES de las rutas con parámetros dinámicos
+  @Patch('cambiar-contrasena')
+  cambiarContrasena(
+    @Body('contrasena') contrasena: string,
+    @Body('email') email: string,
+  ) {
+    return this.service.cambiarContrasena(contrasena, email);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('bulk/status')
+  @Action('modificar')
+  updateUsersStatus(
+    @Body('userIds') userIds: number[],
+    @Body('status') status: boolean,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.service.updateUsersStatus(userIds, status, request.user);
+  }
+
   @UseGuards(AuthGuard)
   @Patch(':id/asignar-rol')
   @Action('asignar_rol')
@@ -75,12 +96,12 @@ export class UsersController extends BaseController<UserEntity> {
     return this.service.asignarRol(userId, rol, request.user);
   }
 
-  @Patch('cambiar-contrasena')
-  cambiarContrasena(
-    @Body('contrasena') contrasena: string,
-    @Body('email') email: string,
-  ) {
-    return this.service.cambiarContrasena(contrasena, email);
+  // Override del método base para actualizar usuarios con validación
+  @UseGuards(AuthGuard)
+  @Patch(':id')
+  @Action('modificar')
+  updatePartial(@Param('id') id: number, @Body() data: UpdateUserDTO) {
+    return this.service.updatePartial(id, data);
   }
 
   // Endpoint para validar el access token
@@ -94,17 +115,6 @@ export class UsersController extends BaseController<UserEntity> {
         id: req.user.id,
       }
     };
-  }
-
-  @UseGuards(AuthGuard)
-  @Patch('bulk/status')
-  @Action('modificar')
-  updateUsersStatus(
-    @Body('userIds') userIds: number[],
-    @Body('status') status: boolean,
-    @Req() request: RequestWithUser,
-  ) {
-    return this.service.updateUsersStatus(userIds, status, request.user);
   }
 
   @UseGuards(AuthGuard)

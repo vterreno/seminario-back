@@ -1,0 +1,24 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ComprasService } from './compras.service';
+import { ComprasController } from './compras.controller';
+import { CompraEntity } from 'src/database/core/compra.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
+import { DetalleCompraModule } from '../detalle-compra/detalle-compra.module';
+import { MovimientosStockModule } from '../movimientos-stock/movimientos-stock.module';
+import { JwtModule } from 'src/jwt/jwt.module';
+import { UsersModule } from '../users/users.module';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([CompraEntity, sucursalEntity]),
+    DetalleCompraModule,
+    MovimientosStockModule,
+    JwtModule,
+    UsersModule
+  ],
+  controllers: [ComprasController],
+  providers: [ComprasService],
+  exports: [ComprasService],
+})
+export class ComprasModule {}

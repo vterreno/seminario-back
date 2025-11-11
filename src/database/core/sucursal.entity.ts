@@ -47,4 +47,7 @@ export class sucursalEntity extends BaseEntity{
     @ManyToMany(() => UserEntity, user => user.sucursales)
     usuarios?: UserEntity[];
 
+    @Column({ type: 'int', default: 0 })
+    numero_compra: number;
+
 }

@@ -93,20 +93,19 @@ export class ProductosController extends BaseController<ProductoEntity>{
 
     @Delete(':id')
     @Action('eliminar')
-    async deleteMarca(@Param('id') id: number, @Req() req: RequestWithUser) {
+    async deleteProducto(@Param('id') id: number, @Req() req: RequestWithUser) {
         const user = req.user;
-        
-        // Verify the producto belongs to a sucursal of the user's company (if user has a company)
+
         if (user.empresa?.id) {
             const existingProducto = await this.productoService.findById(id);
             if (!existingProducto) {
-                throw new BadRequestException('Producto no encontrado');
+                throw new BadRequestException('Producto no encontrado.');
             }
             await this.productoService.validateProductoBelongsToEmpresa(existingProducto, user.empresa.id);
         }
 
         await this.productoService.deleteProducto(id);
-        return { message: 'Producto eliminado exitosamente' };
+        return { message: '✅ Producto eliminado exitosamente.' };
     }
 
     @Delete('bulk/delete')
@@ -116,13 +115,10 @@ export class ProductosController extends BaseController<ProductoEntity>{
         const { ids } = body;
 
         try {
-            await this.productoService.bulkDeleteProductos(
-                ids, 
-                user.empresa?.id
-            );
-            return { message: `${ids.length} productos eliminados exitosamente` };
+            await this.productoService.bulkDeleteProductos(ids, user.empresa?.id);
+            return { message: `✅ ${ids.length} productos eliminados exitosamente.` };
         } catch (error) {
-            throw new BadRequestException(error.message);
+            throw new BadRequestException(error.message || 'Error al eliminar productos.');
         }
     }
 

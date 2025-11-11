@@ -75,7 +75,6 @@ export class CategoriasController extends BaseController<categoriasEntity>{
         async deleteCategoria(@Param('id') id: number, @Req() req: RequestWithUser) {
             const user = req.user;
 
-            // Verify the category belongs to the user's company (if user has a company)
             if (user.empresa?.id) {
                 const existingCategoria = await this.categoriasService.findById(id);
                 if (existingCategoria.empresa_id !== user.empresa.id) {
@@ -86,24 +85,22 @@ export class CategoriasController extends BaseController<categoriasEntity>{
             await this.categoriasService.deleteCategoria(id);
             return { message: 'Categoría eliminada exitosamente' };
         }
-    
+
         @Delete('bulk/delete')
         @Action('eliminar')
         async bulkDeleteCategorias(@Body() body: { ids: number[] }, @Req() req: RequestWithUser) {
             const user = req.user;
             const { ids } = body;
-    
+
             try {
-                await this.categoriasService.bulkDeleteCategorias(
-                    ids, 
-                    user.empresa?.id
-                );
+                await this.categoriasService.bulkDeleteCategorias(ids, user.empresa?.id);
                 return { message: `${ids.length} categorías eliminadas exitosamente` };
             } catch (error) {
                 console.error('Error en bulk delete de categorías:', error);
                 throw new BadRequestException(`Error al eliminar categorías: ${error.message}`);
             }
         }
+
     
         @Put('bulk/status')
         @Action('modificar')

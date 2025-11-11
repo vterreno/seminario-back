@@ -161,12 +161,26 @@ export class ProductosService extends BaseService<ProductoEntity>{
 
     // Delete single producto
     async deleteProducto(id: number): Promise<void> {
+        const producto = await this.productosRepository.findOne({ where: { id } });
+        if (!producto) {
+            throw new BadRequestException(`❌ El producto con ID ${id} no existe.`);
+        }
+        const movimientos = await this.movimientoStockRepository.find({
+            where: { producto_id: id },
+            select: ['id'], // optimiza la consulta
+        });
+
+        if (movimientos.length > 0) {
+            throw new BadRequestException(
+                `No se puede eliminar el producto con ID ${id} porque tiene movimientos de stock asociados.`
+            );
+        }
         await this.productosRepository.delete(id);
     }
 
     // Bulk delete productos
     async bulkDeleteProductos(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check productos belong to sucursales of the company
+        // 1️⃣ Validar existencia y pertenencia a la empresa
         if (empresaId) {
             const productos = await this.productosRepository
                 .createQueryBuilder('producto')
@@ -176,10 +190,26 @@ export class ProductosService extends BaseService<ProductoEntity>{
                 .getMany();
 
             if (productos.length !== ids.length) {
-                throw new BadRequestException('❌ Algunos productos que intentas eliminar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException(
+                    'Algunos productos que intentas eliminar no pertenecen a tu empresa o no existen.'
+                );
             }
         }
 
+        // 2️⃣ Verificar si alguno de los productos tiene movimientos de stock
+        const movimientosAsociados = await this.movimientoStockRepository.find({
+            where: { producto_id: In(ids) },
+            select: ['producto_id'],
+        });
+
+        if (movimientosAsociados.length > 0) {
+            const idsBloqueados = [...new Set(movimientosAsociados.map(m => m.producto_id))];
+            throw new BadRequestException(
+                `No se pueden eliminar los productos con ID: ${idsBloqueados.join(', ')} porque tienen movimientos de stock asociados.`
+            );
+        }
+
+        // 3️⃣ Eliminar si pasa las validaciones
         await this.productosRepository.delete(ids);
     }
 

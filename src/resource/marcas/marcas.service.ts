@@ -5,6 +5,7 @@ import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { BaseService } from 'src/base-service/base-service.service';
 import { FindManyOptions, FindOneOptions, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Injectable()
 export class MarcasService extends BaseService<MarcaEntity>{
@@ -13,7 +14,9 @@ export class MarcasService extends BaseService<MarcaEntity>{
     
     constructor(
         @InjectRepository(MarcaEntity) 
-        protected marcasRepository: Repository<MarcaEntity>
+        protected marcasRepository: Repository<MarcaEntity>,
+        @InjectRepository(ProductoEntity)
+        protected productosRepository: Repository<ProductoEntity>
     ){
         super(marcasRepository);
     }
@@ -97,24 +100,61 @@ export class MarcasService extends BaseService<MarcaEntity>{
 
     // Delete single marca
     async deleteMarca(id: number): Promise<void> {
+        // 1️⃣ Verificar si la marca existe
+        const marca = await this.marcasRepository.findOne({ where: { id } });
+        if (!marca) {
+            throw new BadRequestException(`La marca con ID ${id} no existe.`);
+        }
+
+        // 2️⃣ Verificar si tiene productos asociados
+        const productosAsociados = await this.productosRepository.find({
+            where: { marca_id: id },
+            select: ['id'], // optimiza la consulta
+        });
+
+        if (productosAsociados.length > 0) {
+            throw new BadRequestException(
+                'No se puede eliminar la marca porque tiene productos asociados.'
+            );
+        }
+
+        // 3️⃣ Eliminar si pasa todas las validaciones
         await this.marcasRepository.delete(id);
     }
 
     // Bulk delete marcas
     async bulkDeleteMarcas(ids: number[], empresaId?: number): Promise<void> {
-        // If empresa validation is needed, check marcas belong to the company
+        // 1️⃣ Validar que las marcas pertenezcan a la empresa
         if (empresaId) {
             const marcas = await this.marcasRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
             });
 
             if (marcas.length !== ids.length) {
-                throw new BadRequestException('❌ Algunas marcas que intentas eliminar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException(
+                    'Algunas marcas que intentas eliminar no pertenecen a tu empresa o no existen.'
+                );
             }
         }
 
+        // 2️⃣ Verificar si alguna marca tiene productos asociados
+        const productosAsociados = await this.productosRepository.find({
+            where: { marca_id: In(ids) },
+            select: ['marca_id'],
+        });
+
+        if (productosAsociados.length > 0) {
+            // Obtener las marcas bloqueadas
+            const marcasBloqueadas = [...new Set(productosAsociados.map(p => p.marca_id))];
+            throw new BadRequestException(
+                `No se pueden eliminar las marcas con ID: ${marcasBloqueadas.join(', ')} porque tienen productos asociados.`
+            );
+        }
+
+        // 3️⃣ Si todo está OK, eliminar las marcas
         await this.marcasRepository.delete(ids);
     }
+
 
     // Bulk update marca status (activate/deactivate)
     async bulkUpdateMarcaStatus(ids: number[], estado: boolean, empresaId?: number): Promise<MarcaEntity[]> {

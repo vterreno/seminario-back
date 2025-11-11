@@ -6,10 +6,11 @@ import { MarcaEntity } from 'src/database/core/marcas.entity';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from 'src/jwt/jwt.module';
 import { MarcaValidationPipe } from './pipes/marca-validation.pipe';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MarcaEntity]),
+    TypeOrmModule.forFeature([MarcaEntity, ProductoEntity]),
     JwtModule,
     UsersModule,
   ],

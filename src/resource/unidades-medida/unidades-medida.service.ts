@@ -89,27 +89,43 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             where: { unidad_medida_id: id }
         });
         if (existenProductos.length > 0) {
-            const nombresProductos = existenProductos.map(p => `"${p.nombre}"`).join(', ');
-            throw new BadRequestException(`No se puede eliminar la unidad porque está asociada a los siguientes productos: ${nombresProductos}. Primero debe reasignar o eliminar esos productos.`);
+            throw new BadRequestException(`No se puede eliminar la unidad porque está asociada a productos. Primero debe reasignar o eliminar esos productos para poder eliminar la unidad.`);
         }
 
-        await this.unidadesMedidaRepository.delete(id);
+        await this.unidadesMedidaRepository.softDelete(id);
     }
 
     // Bulk delete unidades
     async bulkDeleteUnidades(ids: number[], empresaId?: number): Promise<void> {
-        // If sucursal validation is needed, check unidades belong to the sucursal
+        // 1️⃣ Validar que todas las unidades pertenezcan a la empresa (si corresponde)
         if (empresaId) {
             const unidades = await this.unidadesMedidaRepository.find({
                 where: { id: In(ids), empresa_id: empresaId }
             });
 
             if (unidades.length !== ids.length) {
-                throw new BadRequestException('❌ Algunas unidades que intentas eliminar no pertenecen a tu empresa o no existen.');
+                throw new BadRequestException(
+                    '❌ Algunas unidades que intentas eliminar no pertenecen a tu empresa o no existen.'
+                );
             }
         }
 
-        await this.unidadesMedidaRepository.delete(ids);
+        // 2️⃣ Verificar si alguna de las unidades tiene productos asociados
+        const productosAsociados = await this.productosRepository.find({
+            where: { unidad_medida_id: In(ids) },
+            select: ['unidad_medida_id'] // optimizamos la consulta
+        });
+
+        if (productosAsociados.length > 0) {
+            // Obtenemos las IDs de las unidades que no se pueden borrar
+            const unidadesBloqueadas = [...new Set(productosAsociados.map(p => p.unidad_medida_id))];
+            throw new BadRequestException(
+                `No se pueden eliminar las unidades porque alguna unidad tiene asociadas a productos.`
+            );
+        }
+
+        // 3️⃣ Si todo está bien, eliminamos las unidades
+        await this.unidadesMedidaRepository.softDelete(ids);
     }
 
     // Bulk update unidad status (activate/deactivate)

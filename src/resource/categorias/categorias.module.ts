@@ -6,9 +6,10 @@ import { categoriasEntity } from 'src/database/core/categorias.entity';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from 'src/jwt/jwt.module';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([categoriasEntity, PermissionEntity]), JwtModule, UsersModule],
+  imports: [TypeOrmModule.forFeature([categoriasEntity, PermissionEntity, ProductoEntity]), JwtModule, UsersModule],
   controllers: [CategoriasController],
   providers: [CategoriasService],
   exports: [CategoriasService],

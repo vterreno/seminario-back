@@ -114,7 +114,7 @@ export class MarcasService extends BaseService<MarcaEntity>{
 
         if (productosAsociados.length > 0) {
             throw new BadRequestException(
-                `No se puede eliminar la marca porque tiene ${productosAsociados.length} producto(s) asociados.`
+                'No se puede eliminar la marca porque tiene productos asociados.'
             );
         }
 

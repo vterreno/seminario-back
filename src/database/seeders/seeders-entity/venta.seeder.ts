@@ -68,11 +68,7 @@ export class VentaSeeder {
         console.log(`   Productos disponibles: ${productos.length}`);
         console.log(`   Contactos disponibles: ${contactos.length}`);
 
-        // Contador de ventas por sucursal (para numero_venta secuencial)
-        const contadoresVentaPorSucursal = new Map<number, number>();
-        sucursales.forEach(s => contadoresVentaPorSucursal.set(s.id, 0));
-
-        // Fechas base para las ventas (últimos 3 meses)
+        // Fecha base para las ventas (hoy)
         const fechaBase = new Date();
         
         // Crear diferentes cantidades de ventas por sucursal (mínimo 10, máximo 20)
@@ -92,28 +88,25 @@ export class VentaSeeder {
                 continue;
             }
 
+            // 🔄 CAMBIO CLAVE: Generar TODAS las fechas primero en orden cronológico
+            const fechasVentas = this.generarFechasCronologicas(cantidadVentas, fechaBase);
+            
             let ventasCreadas = 0;
             let intentos = 0;
-            const maxIntentos = cantidadVentas * 2; // Máximo de intentos para evitar loop infinito
+            const maxIntentos = cantidadVentas * 2;
 
-            while (ventasCreadas < cantidadVentas && intentos < maxIntentos) {
+            // 🔄 CAMBIO CLAVE: Iterar por número de venta (1, 2, 3...) con fechas pre-asignadas
+            for (let numeroVentaActual = 1; numeroVentaActual <= cantidadVentas && intentos < maxIntentos; numeroVentaActual++) {
                 try {
                     intentos++;
                     
-                    // Incrementar contador de ventas para esta sucursal
-                    const numeroVentaActual = contadoresVentaPorSucursal.get(sucursal.id) + 1;
-                    contadoresVentaPorSucursal.set(sucursal.id, numeroVentaActual);
+                    // Usar la fecha pre-generada para esta venta (en orden cronológico)
+                    const fechaVenta = fechasVentas[numeroVentaActual - 1];
 
                     // Seleccionar contacto aleatorio (puede ser null para consumidor final)
                     const contacto = contactos.length > 0 && Math.random() > 0.3 
                         ? contactos[Math.floor(Math.random() * contactos.length)]
                         : null;
-
-                    // Generar fecha de venta (últimos 90 días)
-                    const diasAtras = Math.floor(Math.random() * 90);
-                    const fechaVenta = new Date(fechaBase);
-                    fechaVenta.setDate(fechaVenta.getDate() - diasAtras);
-                    fechaVenta.setHours(Math.floor(Math.random() * 12) + 8, Math.floor(Math.random() * 60), 0);
 
                     // Seleccionar método de pago aleatorio
                     const metodosPago: Array<'efectivo' | 'transferencia'> = ['efectivo', 'transferencia'];
@@ -138,8 +131,15 @@ export class VentaSeeder {
                         .slice(0, Math.min(cantidadDetalles, productosSucursal.length));
 
                     for (const producto of productosSeleccionados) {
-                        // Verificar que hay stock suficiente
-                        const stockDisponible = Math.max(0, producto.stock);
+                        // OBTENER STOCK ACTUAL desde la base de datos para cálculo preciso
+                        const productoActual = await this.productoRepo.findOne({
+                            where: { id: producto.id }
+                        });
+
+                        if (!productoActual) continue;
+
+                        // Verificar que hay stock suficiente usando datos actuales
+                        const stockDisponible = Math.max(0, productoActual.stock);
                         const cantidad = stockDisponible > 0 
                             ? Math.min(
                                 Math.floor(Math.random() * 5) + 1, // Intentar vender 1 a 5 unidades
@@ -151,28 +151,24 @@ export class VentaSeeder {
                             continue;
                         }
 
-                        const precioUnitario = Number(producto.precio_venta);
+                        const precioUnitario = Number(productoActual.precio_venta);
                         const subtotal = cantidad * precioUnitario;
                         montoTotal += subtotal;
 
                         const detalle = this.detalleVentaRepo.create({
-                            producto: producto,
+                            producto: productoActual,
                             cantidad: cantidad,
                             precio_unitario: precioUnitario,
                             subtotal: subtotal,
                         });
 
                         detalles.push(detalle);
-                        
-                        // Reducir el stock del producto
-                        producto.stock -= cantidad;
                     }
 
                     // Si no hay detalles (por falta de stock), saltar esta venta
                     if (detalles.length === 0) {
                         console.log(`      ⚠️  Venta #${numeroVentaActual} saltada - no hay productos con stock`);
                         await this.pagoRepo.remove(pagoGuardado);
-                        contadoresVentaPorSucursal.set(sucursal.id, numeroVentaActual - 1);
                         continue;
                     }
 
@@ -193,22 +189,45 @@ export class VentaSeeder {
                     pagoGuardado.monto_pago = montoTotal;
                     await this.pagoRepo.save(pagoGuardado);
 
-                    // Guardar cambios de stock en productos y crear movimientos de stock
+                    // GESTIÓN DE STOCK Y MOVIMIENTOS
+                    console.log(`      📦 Procesando movimientos de stock...`);
+                    
                     for (const detalle of detalles) {
-                        // Guardar el producto con stock reducido
-                        await this.productoRepo.save(detalle.producto);
-                        
-                        // Crear movimiento de stock tipo VENTA (solo registro histórico)
-                        const movimiento = this.movimientoStockRepo.create({
-                            fecha: fechaVenta,
-                            tipo_movimiento: TipoMovimientoStock.VENTA,
-                            descripcion: `Venta #${venta.numero_venta} - Producto vendido (seeder)`,
-                            cantidad: -detalle.cantidad, // Negativo porque es salida
-                            stock_resultante: detalle.producto.stock, // Stock después de la venta
-                            producto_id: detalle.producto.id,
-                            sucursal_id: sucursal.id,
-                        });
-                        await this.movimientoStockRepo.save(movimiento);
+                        try {
+                            // 1. Obtener el producto ACTUAL de la base de datos
+                            const productoParaMovimiento = await this.productoRepo.findOne({
+                                where: { id: detalle.producto.id }
+                            });
+
+                            if (!productoParaMovimiento) {
+                                console.log(`         ⚠️  Producto ${detalle.producto.id} no encontrado para movimiento`);
+                                continue;
+                            }
+
+                            // 2. Calcular stock resultante CORRECTO
+                            const stockResultante = productoParaMovimiento.stock - detalle.cantidad;
+
+                            // 3. Crear movimiento de stock con información precisa
+                            const movimiento = this.movimientoStockRepo.create({
+                                fecha: fechaVenta,
+                                tipo_movimiento: TipoMovimientoStock.VENTA,
+                                descripcion: `Venta #${venta.numero_venta} - ${productoParaMovimiento.nombre}`,
+                                cantidad: -detalle.cantidad, // Negativo porque es salida
+                                stock_resultante: stockResultante,
+                                producto_id: productoParaMovimiento.id,
+                                sucursal_id: sucursal.id,
+                            });
+                            await this.movimientoStockRepo.save(movimiento);
+
+                            // 4. Actualizar el stock del producto en la base de datos
+                            productoParaMovimiento.stock = stockResultante;
+                            await this.productoRepo.save(productoParaMovimiento);
+
+                            console.log(`         ✅ ${productoParaMovimiento.nombre}: -${detalle.cantidad} unidades → Stock: ${stockResultante}`);
+
+                        } catch (error) {
+                            console.log(`         ❌ Error procesando producto ${detalle.producto.id}: ${error.message}`);
+                        }
                     }
 
                     // Actualizar el número de venta en la sucursal
@@ -216,10 +235,11 @@ export class VentaSeeder {
                     await this.sucursalRepo.save(sucursal);
 
                     ventasCreadas++;
-                    console.log(`      ✅ Venta #${numeroVentaActual} creada: ${detalles.length} productos, Total: $${montoTotal.toFixed(2)}, Pago: ${metodoPago}`);
+                    console.log(`      ✅ Venta #${numeroVentaActual} creada: ${detalles.length} productos, Total: $${montoTotal.toFixed(2)}, Fecha: ${fechaVenta.toLocaleDateString()}, Pago: ${metodoPago}`);
 
                 } catch (error) {
-                    console.log(`      ❌ Error creando venta: ${error.message}`);
+                    console.log(`      ❌ Error creando venta #${numeroVentaActual}: ${error.message}`);
+                    // Si hay error, continuar con la siguiente venta pero mantener el orden
                 }
             }
 
@@ -229,14 +249,36 @@ export class VentaSeeder {
         }
 
         console.log('\n🎉 Seed de ventas completado');
-        console.log('📊 Resumen por sucursal:');
-        let totalVentas = 0;
-        for (const sucursal of sucursales) {
-            const ventasSucursal = contadoresVentaPorSucursal.get(sucursal.id);
-            totalVentas += ventasSucursal;
-            console.log(`   ${sucursal.nombre}: ${ventasSucursal} ventas creadas`);
+    }
+
+    // 🔄 NUEVO MÉTODO: Generar fechas en orden cronológico
+    private generarFechasCronologicas(cantidadVentas: number, fechaBase: Date): Date[] {
+        const fechas: Date[] = [];
+        
+        // Generar fechas distribuidas en los últimos 90 días
+        for (let i = 0; i < cantidadVentas; i++) {
+            // Distribuir las fechas de manera más realista
+            // Las ventas más recientes (números más altos) tendrán fechas más recientes
+            const progresion = i / cantidadVentas; // 0 a 1
+            const diasAtras = Math.floor((1 - progresion) * 90); // Más recientes para números más altos
+            
+            const fechaVenta = new Date(fechaBase);
+            fechaVenta.setDate(fechaVenta.getDate() - diasAtras);
+            
+            // Agregar variación de horas dentro del mismo día
+            const hora = Math.floor(Math.random() * 12) + 8; // Entre 8 AM y 7 PM
+            const minuto = Math.floor(Math.random() * 60);
+            fechaVenta.setHours(hora, minuto, 0, 0);
+            
+            fechas.push(fechaVenta);
         }
-        console.log(`   TOTAL: ${totalVentas} ventas creadas en el sistema`);
+        
+        // Ordenar las fechas de más antigua a más reciente
+        fechas.sort((a, b) => a.getTime() - b.getTime());
+        
+        console.log(`      📅 Fechas generadas: ${fechas[0]?.toLocaleDateString()} a ${fechas[fechas.length-1]?.toLocaleDateString()}`);
+        
+        return fechas;
     }
 
     // Generar distribución diferente de ventas por sucursal (mínimo 10, máximo 20)

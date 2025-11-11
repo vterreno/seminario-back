@@ -38,27 +38,52 @@ export class MovimientosStockInicialSeeder {
 
         const movimientos: Partial<MovimientoStockEntity>[] = [];
 
+        // Fecha base: 1 de julio del año actual
+        const fechaJulio = new Date();
+        fechaJulio.setMonth(6); // Julio (0 = Enero, 6 = Julio)
+        fechaJulio.setDate(1);  // Primer día del mes
+        fechaJulio.setHours(8, 0, 0, 0); // 8:00 AM
+
+        console.log(`   📅 Fecha de stock de apertura: ${fechaJulio.toLocaleDateString()}`);
+
         for (const producto of productos) {
-            // Solo crear movimiento si el producto tiene stock inicial y sucursal
-            if (producto.stock_apertura && producto.stock_apertura > 0 && producto.sucursal?.id) {
+            // 🔄 CAMBIO: Siempre establecer stock mínimo de 100
+            const stockApertura = Math.max(100, producto.stock_apertura || 0);
+            
+            // Actualizar el stock actual del producto al stock de apertura
+            producto.stock = stockApertura;
+            
+            // Solo crear movimiento si el producto tiene sucursal
+            if (producto.sucursal?.id) {
                 const movimiento = {
-                    fecha: new Date(),
+                    fecha: fechaJulio,
                     tipo_movimiento: TipoMovimientoStock.STOCK_APERTURA,
-                    descripcion: 'Stock de apertura al crear producto',
-                    cantidad: producto.stock_apertura,
-                    stock_resultante: producto.stock_apertura,
+                    descripcion: 'Stock de apertura',
+                    cantidad: stockApertura,
+                    stock_resultante: stockApertura,
                     producto_id: producto.id,
                     sucursal_id: producto.sucursal.id
                 };
                 movimientos.push(movimiento);
+                
+                console.log(`      ✅ ${producto.nombre}: Stock apertura = ${stockApertura} unidades`);
+            } else {
+                console.log(`      ⚠️  ${producto.nombre}: Sin sucursal asignada, saltando movimiento`);
             }
         }
 
         if (movimientos.length > 0) {
+            // Primero actualizar los stocks de los productos
+            await this.productoRepo.save(productos);
+            console.log(`   🔄 Stocks actualizados en productos`);
+            
+            // Luego crear los movimientos de stock
             await this.movimientoStockRepo.save(movimientos);
             console.log(`✅ Creados ${movimientos.length} movimientos de stock iniciales`);
+            console.log(`📊 Stock mínimo garantizado: 100 unidades por producto`);
+            console.log(`📅 Fecha de apertura: Julio ${fechaJulio.getFullYear()}`);
         } else {
-            console.log('ℹ️ No se crearon movimientos porque no hay productos con stock inicial');
+            console.log('ℹ️ No se crearon movimientos porque no hay productos con sucursal asignada');
         }
     }
 }

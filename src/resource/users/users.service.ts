@@ -291,6 +291,7 @@ export class UsersService extends BaseService<UserEntity> {
       refreshToken: this.jwtService.generateToken({ email: user.email },'refresh'),
     };
   }
+
   async findByEmail(email: string): Promise<UserEntity> {
     return await this.userRepository.findOne({
       where: { email },

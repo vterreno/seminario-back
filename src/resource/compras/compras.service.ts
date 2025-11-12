@@ -169,7 +169,7 @@ export class ComprasService extends BaseService<CompraEntity>{
                     await this.movimientosStockService.create({
                         tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
                         descripcion: `Devolución por eliminación de compra #${compra.numero_compra}`,
-                        cantidad: detalle.cantidad, // Cantidad positiva para devolver stock
+                        cantidad: -detalle.cantidad, // Cantidad negativa para devolver stock
                         producto_id: detalle.producto.id,
                         sucursal_id: compra.sucursal.id,
                     });

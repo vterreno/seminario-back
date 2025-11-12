@@ -218,8 +218,8 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
     });
   }
 
-  // Get total cantidad vendida de un producto
-  async getCantidadVendidaByProducto(productoId: number): Promise<number> {
+  // Get total cantidad comprada de un producto
+  async getCantidadCompradaByProducto(productoId: number): Promise<number> {
     const result = await this.detalleCompraRepository
       .createQueryBuilder('detalle')
       .select('SUM(detalle.cantidad)', 'total')

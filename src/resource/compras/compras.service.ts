@@ -5,7 +5,6 @@ import { CompraEntity } from 'src/database/core/compra.entity';
 import { FindManyOptions, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
-import { PagoService } from '../pago/pago.service';
 import { DetalleCompraService } from '../detalle-compra/detalle-compra.service';
 import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';

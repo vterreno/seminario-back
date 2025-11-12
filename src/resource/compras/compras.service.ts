@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCompraDto } from './dto/create-compra.dto';
-import { UpdateCompraDto } from './dto/update-compra.dto';
 import { BaseService } from 'src/base-service/base-service.service';
 import { CompraEntity } from 'src/database/core/compra.entity';
 import { FindManyOptions, In, Repository } from 'typeorm';

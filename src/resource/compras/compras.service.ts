@@ -191,7 +191,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             }
             
 
-            // PASO 3: Finalmente eliminamos la venta usando DELETE directo
+            // PASO 3: Finalmente eliminamos la compra usando DELETE directo
             // Usamos QueryBuilder en lugar de remove() para evitar problemas de cache
             await this.compraRepository
                 .createQueryBuilder()

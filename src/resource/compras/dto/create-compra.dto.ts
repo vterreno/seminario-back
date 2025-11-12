@@ -1,12 +1,12 @@
 import { Type } from "class-transformer";
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { CreateDetalleCompraDto } from "src/resource/detalle-compra/dto/create-detalle-compra.dto";
 import { EstadoCompra } from "src/database/core/enums/EstadoCompra.enum";
 
 export class CreateCompraDto {
     @IsNotEmpty({ message: 'La fecha de compra es requerida' })
-    @IsString({ message: 'La fecha de compra debe ser un texto' })
-    fecha_compra: string; // O Date si usas transformación
+    @IsDate({ message: 'La fecha de compra debe ser una fecha válida' })
+    fecha_compra: Date; // O Date si usas transformación
 
     @IsNotEmpty({ message: 'Los detalles de la compra son requeridos' })
     @IsArray({ message: 'Los detalles deben ser un array' })

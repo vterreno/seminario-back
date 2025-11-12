@@ -19,7 +19,7 @@ export class CompraEntity extends BaseEntity{
     @Column({type: 'decimal', precision: 10, scale: 2})
     monto_total: number;
 
-    @ManyToOne(()=> contactoEntity, contacto => contacto.id)
+    @ManyToOne(()=> contactoEntity, contacto => contacto.compras)
     @JoinColumn({ name: 'contacto_id' })
     contacto: contactoEntity;
 

@@ -42,7 +42,6 @@ export class ComprasController {
   @Post()
   @Action('agregar')
   async createCompra(@Body() compraData: CreateCompraDto, @Req() req: RequestWithUser) {
-      const user = req.user;
       // If user has a company and sucursal_id is not provided, assign that company to the compra
       if (!compraData.sucursal_id) {
           throw new BadRequestException('Debes proporcionar un sucursal_id válido para la compra');

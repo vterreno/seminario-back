@@ -111,9 +111,7 @@ export class ComprasService extends BaseService<CompraEntity>{
                 });
 
                 // Obtener el producto actualizado para saber el stock resultante
-                const productoActualizado = await this.movimientosStockService['productoRepository'].findOne({
-                    where: { id: detalle.producto_id }
-                });
+                const productoActualizado = await this.movimientosStockService.getProductoById(detalle.producto_id);
 
                 // Crear movimiento de stock tipo COMPRA (solo registro, no modifica stock)
                 await this.movimientosStockService.createMovimientoRegistro({

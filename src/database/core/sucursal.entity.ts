@@ -7,6 +7,7 @@ import { ProductoEntity } from "./producto.entity";
 import { MovimientoStockEntity } from "./movimientos-stock.entity";
 import { ListaPreciosEntity } from "./lista-precios.entity";
 import { UserEntity } from "./user.entity";
+import { CompraEntity } from "./compra.entity";
 
 @Entity("sucursales")
 export class sucursalEntity extends BaseEntity{
@@ -34,6 +35,9 @@ export class sucursalEntity extends BaseEntity{
 
     @OneToMany(() => ventaEntity, venta => venta.sucursal)
     ventas: ventaEntity[];
+
+    @OneToMany(() => CompraEntity, compra => compra.sucursal)
+    compras: CompraEntity[];
 
     @OneToMany(() => pagoEntity, pago => pago.sucursal)
     pagos: pagoEntity[];

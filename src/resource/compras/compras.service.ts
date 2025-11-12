@@ -8,6 +8,8 @@ import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { DetalleCompraService } from '../detalle-compra/detalle-compra.service';
 import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
+import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Injectable()
 export class ComprasService extends BaseService<CompraEntity>{
@@ -19,6 +21,10 @@ export class ComprasService extends BaseService<CompraEntity>{
         protected compraRepository: Repository<CompraEntity>,
         @InjectRepository(sucursalEntity)
         protected sucursalRepository: Repository<sucursalEntity>,
+        @InjectRepository(ProductoProveedorEntity)
+        protected productoProveedorRepository: Repository<ProductoProveedorEntity>,
+        @InjectRepository(ProductoEntity)
+        protected productoRepository: Repository<ProductoEntity>,
         private readonly detalleCompraService: DetalleCompraService,
         private readonly movimientosStockService: MovimientosStockService,
     ){
@@ -111,14 +117,30 @@ export class ComprasService extends BaseService<CompraEntity>{
                 });
 
                 // Obtener el producto actualizado para saber el stock resultante
-                const productoActualizado = await this.movimientosStockService.getProductoById(detalle.producto_id);
+                // Necesitamos obtener el producto_id desde la relación producto-proveedor
+                const productoProveedor = await this.productoProveedorRepository.findOne({
+                    where: { id: detalle.producto_proveedor_id },
+                    relations: ['producto']
+                });
+
+                if (!productoProveedor) {
+                    throw new NotFoundException(`Relación producto-proveedor con id ${detalle.producto_proveedor_id} no encontrada`);
+                }
+
+                const productoActualizado = await this.productoRepository.findOne({
+                    where: { id: productoProveedor.producto_id }
+                });
+
+                if (!productoActualizado) {
+                    throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
+                }
 
                 // Crear movimiento de stock tipo COMPRA (solo registro, no modifica stock)
                 await this.movimientosStockService.createMovimientoRegistro({
                     tipo_movimiento: TipoMovimientoStock.COMPRA,
                     descripcion: `Compra #${nuevoNumeroCompra} - Producto adquirido`,
                     cantidad: detalle.cantidad, // Positivo porque es una entrada
-                    producto_id: detalle.producto_id,
+                    producto_id: productoProveedor.producto_id,
                     sucursal_id: compraData.sucursal_id,
                 }, productoActualizado.stock);
             }

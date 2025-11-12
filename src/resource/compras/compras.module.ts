@@ -8,10 +8,12 @@ import { DetalleCompraModule } from '../detalle-compra/detalle-compra.module';
 import { MovimientosStockModule } from '../movimientos-stock/movimientos-stock.module';
 import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
+import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CompraEntity, sucursalEntity]),
+    TypeOrmModule.forFeature([CompraEntity, sucursalEntity, ProductoProveedorEntity, ProductoEntity]),
     DetalleCompraModule,
     MovimientosStockModule,
     JwtModule,

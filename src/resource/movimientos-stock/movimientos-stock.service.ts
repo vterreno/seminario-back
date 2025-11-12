@@ -202,8 +202,17 @@ export class MovimientosStockService extends BaseService<MovimientoStockEntity>{
                     data.sucursal_id = producto.sucursal.id;
                 }
 
-                // Validar que el producto pertenece a la sucursal si se proporciona sucursal_id
-                if (data.sucursal_id && producto.sucursal?.id !== data.sucursal_id) {
+                // Validar que el producto pertenece a la sucursal SOLO para movimientos que NO sean COMPRA o STOCK_APERTURA
+                // En compras, el producto puede no tener sucursal asignada o puede ser comprado para diferentes sucursales
+                const tiposQueNoRequierenValidacion = [
+                    TipoMovimientoStock.COMPRA,
+                    TipoMovimientoStock.STOCK_APERTURA
+                ];
+                
+                if (data.sucursal_id && 
+                    producto.sucursal?.id && 
+                    producto.sucursal.id !== data.sucursal_id &&
+                    !tiposQueNoRequierenValidacion.includes(data.tipo_movimiento)) {
                     throw new BadRequestException('Producto no pertenece a la sucursal especificada.');
                 }
 

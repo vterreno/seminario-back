@@ -1,9 +1,9 @@
 import { IsNotEmpty, IsNumber } from "class-validator";
 
 export class CreateDetalleCompraDto {
-    @IsNotEmpty({ message: 'El id del producto es requerido' })
-    @IsNumber({}, { message: 'El id del producto debe ser un número' })
-    producto_id: number;
+    @IsNotEmpty({ message: 'El id del producto-proveedor es requerido' })
+    @IsNumber({}, { message: 'El id del producto-proveedor debe ser un número' })
+    producto_proveedor_id: number;
 
     @IsNotEmpty({ message: 'La cantidad es requerida' })
     @IsNumber({}, { message: 'La cantidad debe ser un número' })

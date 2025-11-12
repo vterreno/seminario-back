@@ -6,6 +6,7 @@ import { BaseService } from 'src/base-service/base-service.service';
 import { FindManyOptions, FindOneOptions, In, IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 
 @Injectable()
 export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
@@ -19,6 +20,8 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
     protected detalleCompraRepository: Repository<DetalleCompraEntity>,
     @InjectRepository(ProductoEntity)
     protected productoRepository: Repository<ProductoEntity>,
+    @InjectRepository(ProductoProveedorEntity)
+    protected productoProveedorRepository: Repository<ProductoProveedorEntity>,
   ) {
     super(detalleCompraRepository);
   }
@@ -44,11 +47,11 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
     });
   }
 
-  // Get detalles by producto_id
-  async getDetallesByProducto(productoId: number): Promise<DetalleCompraEntity[]> {
+  // Get detalles by producto_proveedor_id
+  async getDetallesByProducto(productoProveedorId: number): Promise<DetalleCompraEntity[]> {
     return await this.detalleCompraRepository.find({
       where: {
-        producto: { id: productoId },
+        producto: { id: productoProveedorId },
         deleted_at: IsNull()
       },
       relations: ['producto', 'compra'],
@@ -57,19 +60,29 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
 
   // Create detalle
   async createDetalle(detalleData: CreateDetalleCompraDto): Promise<DetalleCompraEntity> {
-    // Verificar que el producto existe y obtener su stock actual
+    // Verificar que la relación producto-proveedor existe
+    const productoProveedor = await this.productoProveedorRepository.findOne({
+      where: { id: detalleData.producto_proveedor_id },
+      relations: ['producto']
+    });
+
+    if (!productoProveedor) {
+      throw new NotFoundException(`Relación producto-proveedor con id ${detalleData.producto_proveedor_id} no encontrada`);
+    }
+
+    // Obtener el producto para actualizar su stock
     const producto = await this.productoRepository.findOne({
-      where: { id: detalleData.producto_id }
+      where: { id: productoProveedor.producto_id }
     });
 
     if (!producto) {
-      throw new NotFoundException(`Producto con id ${detalleData.producto_id} no encontrado`);
+      throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
     }
 
     // Crear el detalle de compra con todos los datos requeridos
     const detalleToCreate: any = {
       compra: { id: detalleData.compra_id },
-      producto: { id: detalleData.producto_id },
+      producto: { id: detalleData.producto_proveedor_id },
       cantidad: detalleData.cantidad,
       precio_unitario: detalleData.precio_unitario,
       subtotal: detalleData.subtotal,
@@ -102,18 +115,91 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
   // Update detalle
   async updateDetalle(id: number, detalleData: UpdateDetalleCompraDto): Promise<DetalleCompraEntity> {
     // Check if detalle exists
-    const detalle = await this.findById(id);
-    if (!detalle) {
+    const detalleActual = await this.detalleCompraRepository.findOne({
+      where: { id, deleted_at: IsNull() },
+      relations: ['producto', 'compra']
+    });
+    
+    if (!detalleActual) {
       throw new NotFoundException(`Detalle de compra con id ${id} no encontrado`);
     }
 
-    // Filtrar propiedades no pertenecientes a la entidad
-    const { isEdit, producto_id, ...detalleDataFiltered } = detalleData as any;
+    // Obtener el producto actual para ajustar el stock
+    const productoProveedorActual = await this.productoProveedorRepository.findOne({
+      where: { id: detalleActual.producto.id },
+      relations: ['producto']
+    });
 
-    // Si se cambió el producto, actualizar la relación
+    if (!productoProveedorActual) {
+      throw new NotFoundException(`Relación producto-proveedor no encontrada`);
+    }
+
+    const productoActual = await this.productoRepository.findOne({
+      where: { id: productoProveedorActual.producto_id }
+    });
+
+    if (!productoActual) {
+      throw new NotFoundException(`Producto no encontrado`);
+    }
+
+    // Filtrar propiedades no pertenecientes a la entidad
+    const { isEdit, producto_proveedor_id, cantidad, ...detalleDataFiltered } = detalleData as any;
+
+    // Calcular la diferencia de stock si se modifica la cantidad
+    if (cantidad !== undefined && cantidad !== detalleActual.cantidad) {
+      const diferenciaCantidad = cantidad - detalleActual.cantidad;
+      
+      // Ajustar el stock del producto según la diferencia
+      // Si la nueva cantidad es mayor, sumamos al stock
+      // Si la nueva cantidad es menor, restamos del stock
+      productoActual.stock += diferenciaCantidad;
+      
+      // Validar que el stock no quede negativo
+      if (productoActual.stock < 0) {
+        throw new BadRequestException(
+          `No se puede reducir la cantidad. Stock insuficiente. Stock actual: ${productoActual.stock + Math.abs(diferenciaCantidad)}, diferencia solicitada: ${diferenciaCantidad}`
+        );
+      }
+      
+      await this.productoRepository.save(productoActual);
+    }
+
+    // Si se cambió el producto-proveedor, actualizar la relación y ajustar stocks
     const updateData: any = { ...detalleDataFiltered };
-    if (producto_id) {
-      updateData.producto = { id: producto_id };
+    
+    if (producto_proveedor_id && producto_proveedor_id !== detalleActual.producto.id) {
+      // Validar que el nuevo producto-proveedor existe
+      const nuevoProductoProveedor = await this.productoProveedorRepository.findOne({
+        where: { id: producto_proveedor_id },
+        relations: ['producto']
+      });
+
+      if (!nuevoProductoProveedor) {
+        throw new NotFoundException(`Relación producto-proveedor con id ${producto_proveedor_id} no encontrada`);
+      }
+
+      const nuevoProducto = await this.productoRepository.findOne({
+        where: { id: nuevoProductoProveedor.producto_id }
+      });
+
+      if (!nuevoProducto) {
+        throw new NotFoundException(`Producto con id ${nuevoProductoProveedor.producto_id} no encontrado`);
+      }
+
+      // Devolver la cantidad al stock del producto anterior
+      productoActual.stock -= detalleActual.cantidad;
+      await this.productoRepository.save(productoActual);
+
+      // Sumar la cantidad al stock del nuevo producto
+      const cantidadFinal = cantidad !== undefined ? cantidad : detalleActual.cantidad;
+      nuevoProducto.stock += cantidadFinal;
+      await this.productoRepository.save(nuevoProducto);
+
+      updateData.producto = { id: producto_proveedor_id };
+    }
+
+    if (cantidad !== undefined) {
+      updateData.cantidad = cantidad;
     }
 
     // Update detalle data
@@ -218,24 +304,24 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
     });
   }
 
-  // Get total cantidad comprada de un producto
-  async getCantidadCompradaByProducto(productoId: number): Promise<number> {
+  // Get total cantidad comprada de un producto-proveedor
+  async getCantidadCompradaByProducto(productoProveedorId: number): Promise<number> {
     const result = await this.detalleCompraRepository
       .createQueryBuilder('detalle')
       .select('SUM(detalle.cantidad)', 'total')
-      .where('detalle.producto.id = :productoId', { productoId })
+      .where('detalle.producto.id = :productoProveedorId', { productoProveedorId })
       .andWhere('detalle.deleted_at IS NULL')
       .getRawOne();
 
     return parseInt(result?.total || '0');
   }
 
-  // Get total ventas (monto) de un producto
-  async getTotalVentasByProducto(productoId: number): Promise<number> {
+  // Get total ventas (monto) de un producto-proveedor
+  async getTotalVentasByProducto(productoProveedorId: number): Promise<number> {
     const result = await this.detalleCompraRepository
       .createQueryBuilder('detalle')
       .select('SUM(detalle.subtotal)', 'total')
-      .where('detalle.producto.id = :productoId', { productoId })
+      .where('detalle.producto.id = :productoProveedorId', { productoProveedorId })
       .andWhere('detalle.deleted_at IS NULL')
       .getRawOne();
 

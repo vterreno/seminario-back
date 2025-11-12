@@ -1,12 +1,27 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { CreateDetalleCompraDto } from "src/resource/detalle-compra/dto/create-detalle-compra.dto";
 import { EstadoCompra } from "src/database/core/enums/EstadoCompra.enum";
 
 export class CreateCompraDto {
     @IsNotEmpty({ message: 'La fecha de compra es requerida' })
+    @Transform(({ value }) => {
+        // Si ya es una fecha válida, devolverla
+        if (value instanceof Date && !isNaN(value.getTime())) {
+            return value;
+        }
+        // Si es una cadena, intentar convertirla
+        if (typeof value === 'string') {
+            const date = new Date(value);
+            if (isNaN(date.getTime())) {
+                throw new Error('La fecha de compra no es válida');
+            }
+            return date;
+        }
+        throw new Error('La fecha de compra debe ser una fecha válida');
+    })
     @IsDate({ message: 'La fecha de compra debe ser una fecha válida' })
-    fecha_compra: Date; // O Date si usas transformación
+    fecha_compra: Date;
 
     @IsNotEmpty({ message: 'Los detalles de la compra son requeridos' })
     @IsArray({ message: 'Los detalles deben ser un array' })

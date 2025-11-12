@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, BadRequestException, Req } from '@nestjs/common';
 import { ComprasService } from './compras.service';
 import { CreateCompraDto } from './dto/create-compra.dto';
-import { UpdateCompraDto } from './dto/update-compra.dto';
 import { Entity as EntityDecorator } from 'src/middlewares/decorators/entity.decorator';
 
 import { AuthGuard } from 'src/middlewares/auth.middleware';

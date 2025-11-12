@@ -23,7 +23,7 @@ export class CompraEntity extends BaseEntity{
     @JoinColumn({ name: 'contacto_id' })
     contacto: contactoEntity;
 
-    @ManyToOne(() => sucursalEntity, sucursal => sucursal.id)
+    @ManyToOne(() => sucursalEntity, sucursal => sucursal.compras)
     @JoinColumn({ name: 'sucursal_id' })
     sucursal: sucursalEntity;
 

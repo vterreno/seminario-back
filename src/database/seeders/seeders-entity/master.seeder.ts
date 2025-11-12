@@ -14,6 +14,7 @@ import { UnidadMedidaSeeder } from './unidad-medida.seeder';
 import { CategoriaSimpleSeeder } from './categoria.seeder';
 import { ListaPreciosSeeder } from './lista-precios.seeder';
 import { UserSucursalesSeeder } from './UserSucursalesSeeder';
+import { ProductoProveedorSeeder } from './producto-proveedor.seeder';
 
 @Injectable()
 export class MasterSeeder {
@@ -33,6 +34,7 @@ export class MasterSeeder {
         private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
         private readonly listaPreciosSeeder: ListaPreciosSeeder,
         private readonly userSucursalesSeeder: UserSucursalesSeeder,
+        private readonly productoProveedorSeeder: ProductoProveedorSeeder,
     ) {}
 
     async run() {
@@ -77,16 +79,19 @@ export class MasterSeeder {
             await this.ejecutarPaso(10, 13, 'Unidades de medida', () => this.unidadesMedidaSeeder.run());
 
             // 11. Productos por sucursal y marca
-            await this.ejecutarPaso(11, 13, 'Productos', () => this.productoSeeder.run());
+            await this.ejecutarPaso(11, 15, 'Productos', () => this.productoSeeder.run());
 
-            // 12. Listas de precios por empresa
-            await this.ejecutarPaso(12, 13, 'Listas de precios', () => this.listaPreciosSeeder.run());
+            // 12. Productos por proveedor
+            await this.ejecutarPaso(12, 15, 'Productos por proveedor', () => this.productoProveedorSeeder.run());
 
-            // 13. Movimientos de stock iniciales
-            await this.ejecutarPaso(13, 13, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());
+            // 13. Listas de precios por empresa
+            await this.ejecutarPaso(13, 15, 'Listas de precios', () => this.listaPreciosSeeder.run());
 
-            // 14. Ventas con detalles
-            await this.ejecutarPaso(14, 14, 'Ventas', () => this.ventaSeeder.run());
+            // 14. Movimientos de stock iniciales
+            await this.ejecutarPaso(14, 15, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());
+
+            // 15. Ventas con detalles
+            await this.ejecutarPaso(15, 15, 'Ventas', () => this.ventaSeeder.run());
 
             const endTime = Date.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);

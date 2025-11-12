@@ -4,6 +4,8 @@ import { empresaEntity } from "./empresa.entity";
 import { provinciaEntity } from "./provincia.entity";
 import { ciudadEntity } from "./ciudad.entity";
 import { ventaEntity } from "./venta.entity";
+import { CompraEntity } from "./compra.entity";
+import { ProductoProveedorEntity } from "./producto-proveedor.entity";
 
 export type ContactoRol = 'cliente' | 'proveedor' | 'ambos';
 export type TipoIdentificacion = 'CUIT' | 'DNI' | 'CUIL' | 'PASAPORTE' | 'OTRO';
@@ -77,6 +79,12 @@ export class contactoEntity extends BaseEntity{
 
     @OneToMany(() => ventaEntity, venta => venta.contacto)
     ventas: ventaEntity[];
+
+    @OneToMany(() => CompraEntity, compra => compra.contacto)
+    compras: CompraEntity[];
+
+    @OneToMany(() => ProductoProveedorEntity, productoProveedor => productoProveedor.proveedor)
+    productosProveedor: ProductoProveedorEntity[];
 }
 
 

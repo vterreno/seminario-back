@@ -34,6 +34,8 @@ import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entit
 import { categoriasEntity } from '../core/categorias.entity';
 import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
 import { UserSucursalesSeeder } from './seeders-entity/UserSucursalesSeeder';
+import { ProductoProveedorEntity } from '../core/producto-proveedor.entity';
+import { ProductoProveedorSeeder } from './seeders-entity/producto-proveedor.seeder';
 
 @Module({
     imports: [
@@ -54,6 +56,7 @@ import { UserSucursalesSeeder } from './seeders-entity/UserSucursalesSeeder';
             ListaPreciosEntity,
             ProductoListaPreciosEntity,
             categoriasEntity,
+            ProductoProveedorEntity,
         ]),
     ],
     providers: [
@@ -70,6 +73,7 @@ import { UserSucursalesSeeder } from './seeders-entity/UserSucursalesSeeder';
         ListaPreciosSeeder,
         // Seeders simplificados
         ProductoSimpleSeeder,
+        ProductoProveedorSeeder,
         EmpresaUsuarioRolSeeder,
         MovimientosStockInicialSeeder,
         VentaSeeder,

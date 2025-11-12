@@ -18,7 +18,7 @@ export class DetalleCompraEntity extends BaseEntity {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     subtotal: number;
 
-    @ManyToOne(() => CompraEntity, compra => compra.id)
+    @ManyToOne(() => CompraEntity, compra => compra.detalles)
     @JoinColumn({ name: 'compra_id' })
     compra: CompraEntity;
 }

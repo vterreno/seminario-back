@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from "typeorm";
 
 export class CreateUsuariosSucursalesTable1761091000000 implements MigrationInterface {
     name = 'CreateUsuariosSucursalesTable1761091000000'

@@ -13,3 +13,15 @@ export class BaseEntity {
     @DeleteDateColumn()
     deleted_at?: Date | null;
 }
+
+// Base entity para tablas con clave primaria compuesta
+export class BaseEntityWithoutId {
+    @CreateDateColumn()
+    created_at: Date;
+
+    @UpdateDateColumn()
+    updated_at: Date;
+
+    @DeleteDateColumn()
+    deleted_at?: Date | null;
+}

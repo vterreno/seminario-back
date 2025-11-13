@@ -1,26 +1,60 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from "typeorm";
 
 export class ChangeMovimientoStockEmpresaToSucursal1760100000000 implements MigrationInterface {
+    name = 'ChangeMovimientoStockEmpresaToSucursal1760100000000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Eliminar la FK existente de empresa
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" DROP CONSTRAINT IF EXISTS "FK_6ad1654ba8c7192ffb33fb23538"`);
+        const table = await queryRunner.getTable("movimiento-stock");
         
-        // Renombrar la columna empresa_id a sucursal_id
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" RENAME COLUMN "empresa_id" TO "sucursal_id"`);
-        
-        // Agregar la nueva FK hacia sucursales
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ADD CONSTRAINT "FK_movimiento_stock_sucursal" FOREIGN KEY ("sucursal_id") REFERENCES "sucursales"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        // Eliminar FK con empresa
+        const foreignKey = table?.foreignKeys.find(
+            fk => fk.columnNames.indexOf("empresa_id") !== -1
+        );
+        if (foreignKey) {
+            await queryRunner.dropForeignKey("movimiento-stock", foreignKey);
+        }
+
+        // Renombrar columna
+        await queryRunner.renameColumn("movimiento-stock", "empresa_id", "sucursal_id");
+
+        // Crear nueva FK con sucursales
+        await queryRunner.createForeignKey(
+            "movimiento-stock",
+            new TableForeignKey({
+                name: "FK_movimiento_stock_sucursal",
+                columnNames: ["sucursal_id"],
+                referencedTableName: "sucursales",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Eliminar la FK de sucursal
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" DROP CONSTRAINT IF EXISTS "FK_movimiento_stock_sucursal"`);
+        const table = await queryRunner.getTable("movimiento-stock");
         
-        // Renombrar la columna sucursal_id a empresa_id
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" RENAME COLUMN "sucursal_id" TO "empresa_id"`);
-        
-        // Restaurar la FK hacia empresa
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ADD CONSTRAINT "FK_6ad1654ba8c7192ffb33fb23538" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        // Eliminar FK con sucursales
+        const foreignKey = table?.foreignKeys.find(
+            fk => fk.columnNames.indexOf("sucursal_id") !== -1
+        );
+        if (foreignKey) {
+            await queryRunner.dropForeignKey("movimiento-stock", foreignKey);
+        }
+
+        // Renombrar columna
+        await queryRunner.renameColumn("movimiento-stock", "sucursal_id", "empresa_id");
+
+        // Crear FK con empresa
+        await queryRunner.createForeignKey(
+            "movimiento-stock",
+            new TableForeignKey({
+                columnNames: ["empresa_id"],
+                referencedTableName: "empresa",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
     }
 }

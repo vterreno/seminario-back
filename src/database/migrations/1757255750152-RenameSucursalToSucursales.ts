@@ -1,15 +1,16 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
 export class RenameSucursalToSucursales1757255750152 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Rename table from sucursal to sucursales
-        await queryRunner.query(`ALTER TABLE "sucursal" RENAME TO "sucursales"`);
+        // Renombrar tabla de sucursal a sucursales
+        await queryRunner.renameTable("sucursal", "sucursales");
         
-        // Rename column from name to nombre
-        await queryRunner.query(`ALTER TABLE "sucursales" RENAME COLUMN "name" TO "nombre"`);
+        // Renombrar columna de name a nombre
+        await queryRunner.renameColumn("sucursales", "name", "nombre");
         
-        // Rename codigo_sucursal to codigo if it exists, or add codigo column
+        // Para codigo_sucursal → codigo, mantenemos el SQL puro porque 
+        // tiene lógica condicional compleja (DO $$ block)
         await queryRunner.query(`
             DO $$
             BEGIN
@@ -23,14 +24,13 @@ export class RenameSucursalToSucursales1757255750152 implements MigrationInterfa
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Rename codigo back to codigo_sucursal
-        await queryRunner.query(`ALTER TABLE "sucursales" RENAME COLUMN "codigo" TO "codigo_sucursal"`);
+        // Renombrar codigo a codigo_sucursal
+        await queryRunner.renameColumn("sucursales", "codigo", "codigo_sucursal");
         
-        // Rename column from nombre back to name
-        await queryRunner.query(`ALTER TABLE "sucursales" RENAME COLUMN "nombre" TO "name"`);
+        // Renombrar columna de nombre a name
+        await queryRunner.renameColumn("sucursales", "nombre", "name");
         
-        // Rename table back from sucursales to sucursal
-        await queryRunner.query(`ALTER TABLE "sucursales" RENAME TO "sucursal"`);
+        // Renombrar tabla de sucursales a sucursal
+        await queryRunner.renameTable("sucursales", "sucursal");
     }
-
 }

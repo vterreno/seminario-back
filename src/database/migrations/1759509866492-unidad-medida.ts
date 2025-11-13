@@ -1,99 +1,147 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from "typeorm";
 
+// 1. Migración UnidadMedida - Simplificada
 export class UnidadMedida1759509866492 implements MigrationInterface {
     name = 'UnidadMedida1759509866492'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."UQ_contactos_identificacion"`);
-        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "unidades_medida" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "nombre" character varying(50) NOT NULL, "abreviatura" character varying(10) NOT NULL, "acepta_decimales" boolean NOT NULL DEFAULT false, "empresa_id" integer, "productos_id" character varying, "estado" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_b299f0e6758c0c02ae3e729232a" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_842a2d613bb95917252ef186a2" ON "unidades_medida" ("abreviatura", "empresa_id") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_a9b659026f7f0a140111a57bb5" ON "unidades_medida" ("nombre", "empresa_id") `);
-        
-        // Verificar si la columna ya existe antes de agregarla
-        const checkColumn = await queryRunner.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name='productos' AND column_name='unidad_medida_id'
-        `);
-        if (checkColumn.length === 0) {
-            await queryRunner.query(`ALTER TABLE "productos" ADD "unidad_medida_id" integer`);
-        }
-        
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ALTER COLUMN "tipo_movimiento" SET DEFAULT 'STOCK_APERTURA'`);
-        
-        // Agregar constraints solo si no existen
-        const ciudadesFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='ciudades' AND constraint_name='FK_f8fde174d0faa2d4d60f79715fa'
-        `);
-        if (ciudadesFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "ciudades" ADD CONSTRAINT "FK_f8fde174d0faa2d4d60f79715fa" FOREIGN KEY ("provincia_id") REFERENCES "provincias"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
-        
-        const contactosEmpresaFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='contactos' AND constraint_name='FK_3ca923c9a0f1cf8f743b34d1b8c'
-        `);
-        if (contactosEmpresaFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_3ca923c9a0f1cf8f743b34d1b8c" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
-        
-        const contactosProvinciaFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='contactos' AND constraint_name='FK_59b906170b894a5c2f08ac044c9'
-        `);
-        if (contactosProvinciaFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_59b906170b894a5c2f08ac044c9" FOREIGN KEY ("provincia_id") REFERENCES "provincias"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
-        
-        const contactosCiudadFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='contactos' AND constraint_name='FK_cdbe481bcf87c4fe1a71f491f76'
-        `);
-        if (contactosCiudadFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_cdbe481bcf87c4fe1a71f491f76" FOREIGN KEY ("ciudad_id") REFERENCES "ciudades"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
-        
-        const unidadesMedidaFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='unidades_medida' AND constraint_name='FK_3e76b73ba043e1cb531b8a4cec8'
-        `);
-        if (unidadesMedidaFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "unidades_medida" ADD CONSTRAINT "FK_3e76b73ba043e1cb531b8a4cec8" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
-        
-        const productosUnidadFK = await queryRunner.query(`
-            SELECT constraint_name 
-            FROM information_schema.table_constraints 
-            WHERE table_name='productos' AND constraint_name='FK_d9d573eddc1e6de0f2ded4fd888'
-        `);
-        if (productosUnidadFK.length === 0) {
-            await queryRunner.query(`ALTER TABLE "productos" ADD CONSTRAINT "FK_d9d573eddc1e6de0f2ded4fd888" FOREIGN KEY ("unidad_medida_id") REFERENCES "unidades_medida"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        }
+        // Crear tabla unidades_medida
+        await queryRunner.createTable(
+            new Table({
+                name: "unidades_medida",
+                columns: [
+                    {
+                        name: "id",
+                        type: "int",
+                        isPrimary: true,
+                        isGenerated: true,
+                        generationStrategy: "increment"
+                    },
+                    {
+                        name: "created_at",
+                        type: "timestamp",
+                        default: "now()"
+                    },
+                    {
+                        name: "updated_at",
+                        type: "timestamp",
+                        default: "now()"
+                    },
+                    {
+                        name: "deleted_at",
+                        type: "timestamp",
+                        isNullable: true
+                    },
+                    {
+                        name: "nombre",
+                        type: "varchar",
+                        length: "50",
+                        isNullable: false
+                    },
+                    {
+                        name: "abreviatura",
+                        type: "varchar",
+                        length: "10",
+                        isNullable: false
+                    },
+                    {
+                        name: "acepta_decimales",
+                        type: "boolean",
+                        default: false
+                    },
+                    {
+                        name: "empresa_id",
+                        type: "int",
+                        isNullable: true
+                    },
+                    {
+                        name: "estado",
+                        type: "boolean",
+                        default: true
+                    }
+                ]
+            }),
+            true
+        );
+
+        // Crear índices únicos compuestos
+        await queryRunner.createIndex(
+            "unidades_medida",
+            new TableIndex({
+                name: "IDX_842a2d613bb95917252ef186a2",
+                columnNames: ["abreviatura", "empresa_id"],
+                isUnique: true
+            })
+        );
+
+        await queryRunner.createIndex(
+            "unidades_medida",
+            new TableIndex({
+                name: "IDX_a9b659026f7f0a140111a57bb5",
+                columnNames: ["nombre", "empresa_id"],
+                isUnique: true
+            })
+        );
+
+        // Agregar columna unidad_medida_id a productos
+        await queryRunner.addColumn(
+            "productos",
+            new TableColumn({
+                name: "unidad_medida_id",
+                type: "int",
+                isNullable: true
+            })
+        );
+
+        // Foreign Keys
+        await queryRunner.createForeignKey(
+            "unidades_medida",
+            new TableForeignKey({
+                name: "FK_3e76b73ba043e1cb531b8a4cec8",
+                columnNames: ["empresa_id"],
+                referencedTableName: "empresa",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
+
+        await queryRunner.createForeignKey(
+            "productos",
+            new TableForeignKey({
+                name: "FK_d9d573eddc1e6de0f2ded4fd888",
+                columnNames: ["unidad_medida_id"],
+                referencedTableName: "unidades_medida",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "productos" DROP CONSTRAINT "FK_d9d573eddc1e6de0f2ded4fd888"`);
-        await queryRunner.query(`ALTER TABLE "unidades_medida" DROP CONSTRAINT "FK_3e76b73ba043e1cb531b8a4cec8"`);
-        await queryRunner.query(`ALTER TABLE "contactos" DROP CONSTRAINT "FK_cdbe481bcf87c4fe1a71f491f76"`);
-        await queryRunner.query(`ALTER TABLE "contactos" DROP CONSTRAINT "FK_59b906170b894a5c2f08ac044c9"`);
-        await queryRunner.query(`ALTER TABLE "contactos" DROP CONSTRAINT "FK_3ca923c9a0f1cf8f743b34d1b8c"`);
-        await queryRunner.query(`ALTER TABLE "ciudades" DROP CONSTRAINT "FK_f8fde174d0faa2d4d60f79715fa"`);
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ALTER COLUMN "tipo_movimiento" DROP DEFAULT`);
-        await queryRunner.query(`ALTER TABLE "productos" DROP COLUMN "unidad_medida_id"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_a9b659026f7f0a140111a57bb5"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_842a2d613bb95917252ef186a2"`);
-        await queryRunner.query(`DROP TABLE "unidades_medida"`);
-        await queryRunner.query(`CREATE UNIQUE INDEX "UQ_contactos_identificacion" ON "contactos" ("empresa_id", "numero_identificacion", "tipo_identificacion") WHERE ((tipo_identificacion IS NOT NULL) AND (numero_identificacion IS NOT NULL))`);
-        await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_contactos_ciudad" FOREIGN KEY ("ciudad_id") REFERENCES "ciudades"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_contactos_provincia" FOREIGN KEY ("provincia_id") REFERENCES "provincias"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "contactos" ADD CONSTRAINT "FK_contactos_empresa" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "ciudades" ADD CONSTRAINT "FK_ciudades_provincia" FOREIGN KEY ("provincia_id") REFERENCES "provincias"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-    }
+        const productosTable = await queryRunner.getTable("productos");
+        const unidadesMedidaTable = await queryRunner.getTable("unidades_medida");
 
+        // Eliminar FK de productos
+        const productoFK = productosTable?.foreignKeys.find(
+            fk => fk.columnNames.indexOf("unidad_medida_id") !== -1
+        );
+        if (productoFK) {
+            await queryRunner.dropForeignKey("productos", productoFK);
+        }
+
+        // Eliminar FK de unidades_medida
+        const unidadFK = unidadesMedidaTable?.foreignKeys.find(
+            fk => fk.columnNames.indexOf("empresa_id") !== -1
+        );
+        if (unidadFK) {
+            await queryRunner.dropForeignKey("unidades_medida", unidadFK);
+        }
+
+        await queryRunner.dropColumn("productos", "unidad_medida_id");
+        await queryRunner.dropIndex("unidades_medida", "IDX_a9b659026f7f0a140111a57bb5");
+        await queryRunner.dropIndex("unidades_medida", "IDX_842a2d613bb95917252ef186a2");
+        await queryRunner.dropTable("unidades_medida");
+    }
 }

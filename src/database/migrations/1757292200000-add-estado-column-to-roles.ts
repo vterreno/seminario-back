@@ -1,15 +1,23 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
 export class AddEstadoColumnToRoles1757292200000 implements MigrationInterface {
     name = 'AddEstadoColumnToRoles1757292200000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Add estado column to roles table
-        await queryRunner.query(`ALTER TABLE "roles" ADD "estado" boolean NOT NULL DEFAULT true`);
+        // Agregar columna estado a la tabla roles
+        await queryRunner.addColumn(
+            "roles",
+            new TableColumn({
+                name: "estado",
+                type: "boolean",
+                isNullable: false,
+                default: true
+            })
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Remove estado column from roles table
-        await queryRunner.query(`ALTER TABLE "roles" DROP COLUMN "estado"`);
+        // Eliminar columna estado de la tabla roles
+        await queryRunner.dropColumn("roles", "estado");
     }
 }

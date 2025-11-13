@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class RenameSucursalToSucursales1757255750152 implements MigrationInterface {
 

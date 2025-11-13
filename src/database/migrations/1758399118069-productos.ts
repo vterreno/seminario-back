@@ -96,15 +96,18 @@ export class Productos1758399118069 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "sucursales" ALTER COLUMN "id" SET DEFAULT nextval('"sucursales_id_seq"')`);
 
         // Cambiar columna descripcion en marcas a nullable
-        await queryRunner.changeColumn(
-            "marcas",
-            "descripcion",
-            new TableColumn({
-                name: "descripcion",
-                type: "varchar",
-                isNullable: true
-            })
-        );
+        const marcasTable = await queryRunner.getTable("marcas");
+        const descripcionColumn = marcasTable?.findColumnByName("descripcion");
+        if (descripcionColumn) {
+            await queryRunner.changeColumn(
+                "marcas",
+                "descripcion",
+                new TableColumn({
+                    ...descripcionColumn,
+                    isNullable: true
+                })
+            );
+        }
 
         // Crear foreign keys
         await queryRunner.createForeignKey(

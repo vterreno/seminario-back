@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from "typeorm";
+import { MigrationInterface, QueryRunner, TableForeignKey } from "typeorm";
 
 export class ChangeMovimientoStockEmpresaToSucursal1760100000000 implements MigrationInterface {
     name = 'ChangeMovimientoStockEmpresaToSucursal1760100000000'

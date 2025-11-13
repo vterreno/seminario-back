@@ -1,9 +1,13 @@
-import { IsNotEmpty, IsNumber } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateDetalleCompraDto {
-    @IsNotEmpty({ message: 'El id del producto-proveedor es requerido' })
+    @IsOptional()
     @IsNumber({}, { message: 'El id del producto-proveedor debe ser un número' })
-    producto_proveedor_id: number;
+    producto_proveedor_id?: number;
+
+    @IsOptional()
+    @IsNumber({}, { message: 'El id del producto debe ser un número' })
+    producto_id?: number;
 
     @IsNotEmpty({ message: 'La cantidad es requerida' })
     @IsNumber({}, { message: 'La cantidad debe ser un número' })
@@ -17,8 +21,11 @@ export class CreateDetalleCompraDto {
     @IsNumber({}, { message: 'El subtotal debe ser un número' })
     subtotal: number;
 
-    @IsNotEmpty({ message: 'El id de la compra es requerido' })
+    @IsOptional()
     @IsNumber({}, { message: 'El id de la compra debe ser un número' })
-    compra_id: number;
+    compra_id?: number;
     
+    @IsOptional()
+    @IsString({ message: 'El código temporal del producto debe ser un texto' })
+    codigo_producto_temp?: string;
 }

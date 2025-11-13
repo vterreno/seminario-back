@@ -2,6 +2,7 @@ import { Transform, Type } from "class-transformer";
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { CreateDetalleCompraDto } from "src/resource/detalle-compra/dto/create-detalle-compra.dto";
 import { EstadoCompra } from "src/database/core/enums/EstadoCompra.enum";
+import { CreateNuevoProductoDto } from "./create-nuevo-producto.dto";
 
 export class CreateCompraDto {
     @IsNotEmpty({ message: 'La fecha de compra es requerida' })
@@ -52,4 +53,10 @@ export class CreateCompraDto {
     @IsOptional()
     @IsEnum(EstadoCompra, { message: 'El estado debe ser un valor válido' })
     estado?: EstadoCompra;
+
+    @IsOptional()
+    @IsArray({ message: 'Los nuevos productos deben ser un array' })
+    @ValidateNested({ each: true })
+    @Type(() => CreateNuevoProductoDto)
+    nuevos_productos?: CreateNuevoProductoDto[];
 }

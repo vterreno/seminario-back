@@ -60,29 +60,44 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
 
   // Create detalle
   async createDetalle(detalleData: CreateDetalleCompraDto): Promise<DetalleCompraEntity> {
-    // Verificar que la relación producto-proveedor existe
-    const productoProveedor = await this.productoProveedorRepository.findOne({
-      where: { id: detalleData.producto_proveedor_id },
-      relations: ['producto']
-    });
+    let productoProveedor: ProductoProveedorEntity | null = null;
+    let productoId: number;
 
-    if (!productoProveedor) {
-      throw new NotFoundException(`Relación producto-proveedor con id ${detalleData.producto_proveedor_id} no encontrada`);
+    // Si se proporciona producto_proveedor_id, usarlo directamente
+    if (detalleData.producto_proveedor_id) {
+      productoProveedor = await this.productoProveedorRepository.findOne({
+        where: { id: detalleData.producto_proveedor_id },
+        relations: ['producto']
+      });
+
+      if (!productoProveedor) {
+        throw new NotFoundException(`Relación producto-proveedor con id ${detalleData.producto_proveedor_id} no encontrada`);
+      }
+
+      productoId = productoProveedor.producto_id;
+    } 
+    // Si se proporciona producto_id, usarlo directamente
+    else if (detalleData.producto_id) {
+      productoId = detalleData.producto_id;
+    } 
+    else {
+      throw new BadRequestException('Debe proporcionar producto_proveedor_id o producto_id');
     }
 
     // Obtener el producto para actualizar su stock
     const producto = await this.productoRepository.findOne({
-      where: { id: productoProveedor.producto_id }
+      where: { id: productoId }
     });
 
     if (!producto) {
-      throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
+      throw new NotFoundException(`Producto con id ${productoId} no encontrado`);
     }
 
     // Crear el detalle de compra con todos los datos requeridos
+    // Si tenemos producto_proveedor_id, lo usamos; sino, usamos producto_id
     const detalleToCreate: any = {
       compra: { id: detalleData.compra_id },
-      producto: { id: detalleData.producto_proveedor_id },
+      producto: { id: detalleData.producto_proveedor_id || detalleData.producto_id },
       cantidad: detalleData.cantidad,
       precio_unitario: detalleData.precio_unitario,
       subtotal: detalleData.subtotal,

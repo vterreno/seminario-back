@@ -35,6 +35,12 @@ export class ProveedoresController extends BaseController<contactoEntity> {
     }
   }
 
+  @Get('all/:id')
+  @Action('ver')
+  async getProveedorById(@Param('id') id: number) {
+    return await this.contactosService.findOne({ where: { id } });
+  }
+
   @Post()
   @Action('agregar')
   async createProveedor(@Body() dto: CreateContactoDto, @Req() req: RequestWithUser) {

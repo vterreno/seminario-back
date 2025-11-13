@@ -24,6 +24,7 @@ import { PagoModule } from './resource/pago/pago.module';
 import { DetalleVentaModule } from './resource/detalle-venta/detalle-venta.module';
 import { ListaPreciosModule } from './resource/lista-precios/lista-precios.module';
 import { ComprasModule } from './resource/compras/compras.module';
+import { ProductoProveedorModule } from './resource/producto-proveedor/producto-proveedor.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ComprasModule } from './resource/compras/compras.module';
     DetalleVentaModule,
     ListaPreciosModule,
     ComprasModule,
+    ProductoProveedorModule,
     ],
   controllers: [AppController],
   providers: [AuthGuard, PermissionsGuard],

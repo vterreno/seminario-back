@@ -10,6 +10,8 @@ import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { ProductoProveedorService } from '../producto-proveedor/producto-proveedor.service';
+import { ProductosService } from '../productos/productos.service';
 
 @Injectable()
 export class ComprasService extends BaseService<CompraEntity>{
@@ -27,6 +29,8 @@ export class ComprasService extends BaseService<CompraEntity>{
         protected productoRepository: Repository<ProductoEntity>,
         private readonly detalleCompraService: DetalleCompraService,
         private readonly movimientosStockService: MovimientosStockService,
+        private readonly productoProveedorService: ProductoProveedorService,
+        private readonly productosService: ProductosService,
     ){
         super(compraRepository);
     }
@@ -106,33 +110,104 @@ export class ComprasService extends BaseService<CompraEntity>{
             const savedCompra = await this.compraRepository.save(compra);
             const compraId = (savedCompra as any).id;
 
+            // Paso 6.5: Crear nuevos productos si se proporcionaron
+            if (compraData.nuevos_productos && compraData.nuevos_productos.length > 0) {
+                for (const nuevoProducto of compraData.nuevos_productos) {
+                    // Verificar si el producto ya existe en esta sucursal
+                    const productoExistente = await this.productoRepository.findOne({
+                        where: { 
+                            codigo: nuevoProducto.codigo,
+                            sucursal_id: compraData.sucursal_id 
+                        }
+                    });
+
+                    if (!productoExistente) {
+                        // Buscar en los detalles la cantidad comprada de este nuevo producto
+                        const detalleAsociado = compraData.detalles.find(
+                            d => d.codigo_producto_temp === nuevoProducto.codigo
+                        );
+                        const cantidadComprada = detalleAsociado ? detalleAsociado.cantidad : 0;
+
+                        // Crear el producto con stock_apertura = cantidad_comprada
+                        const productoCreado = await this.productosService.create({
+                            codigo: nuevoProducto.codigo,
+                            nombre: nuevoProducto.nombre,
+                            marca_id: nuevoProducto.marca_id,
+                            categoria_id: nuevoProducto.categoria_id,
+                            unidad_medida_id: nuevoProducto.unidad_medida_id,
+                            precio_costo: nuevoProducto.precio_proveedor,
+                            precio_venta: nuevoProducto.precio_proveedor * 1.3, // Margen del 30% por defecto
+                            stock_apertura: cantidadComprada,
+                            stock: cantidadComprada, // El stock inicial es igual a la cantidad comprada
+                            sucursal_id: compraData.sucursal_id,
+                            estado: true,
+                        } as any);
+
+                        // Crear la relación producto-proveedor
+                        await this.productoProveedorService.create({
+                            producto_id: (productoCreado as any).id,
+                            proveedor_id: nuevoProducto.proveedor_id,
+                            precio_proveedor: nuevoProducto.precio_proveedor,
+                            codigo_proveedor: nuevoProducto.codigo_proveedor,
+                        });
+                    }
+                }
+            }
+
             // Paso 7: Crear los detalles usando el servicio de detalle-compra
             // Esto manejará la actualización del stock automáticamente
             // Y crear movimientos de stock tipo COMPRA por cada detalle (solo registro)
             for (const detalle of compraData.detalles) {
+                let productoId: number;
+
+                // Si el detalle tiene un código temporal, buscar el producto recién creado
+                if (detalle.codigo_producto_temp) {
+                    const productoCreado = await this.productoRepository.findOne({
+                        where: { 
+                            codigo: detalle.codigo_producto_temp,
+                            sucursal_id: compraData.sucursal_id 
+                        }
+                    });
+
+                    if (!productoCreado) {
+                        throw new NotFoundException(`Producto con código ${detalle.codigo_producto_temp} no encontrado después de crearlo`);
+                    }
+
+                    productoId = productoCreado.id;
+                    // Actualizar el detalle con el producto_id del producto creado
+                    detalle.producto_id = productoId;
+                } else if (detalle.producto_proveedor_id) {
+                    // Obtener el producto_id desde la relación producto-proveedor
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalle.producto_proveedor_id },
+                        relations: ['producto']
+                    });
+
+                    if (!productoProveedor) {
+                        throw new NotFoundException(`Relación producto-proveedor con id ${detalle.producto_proveedor_id} no encontrada`);
+                    }
+
+                    productoId = productoProveedor.producto_id;
+                } else if (detalle.producto_id) {
+                    // Usar directamente el producto_id proporcionado
+                    productoId = detalle.producto_id;
+                } else {
+                    throw new BadRequestException('Debe proporcionar producto_proveedor_id, producto_id o codigo_producto_temp en los detalles');
+                }
+
                 // Crear el detalle (esto suma el stock del producto)
                 await this.detalleCompraService.createDetalle({
                     ...detalle,
                     compra_id: compraId, // Asignar la compra recién creada
+                    producto_id: productoId, // Asegurar que el producto_id esté presente
                 });
-
-                // Obtener el producto actualizado para saber el stock resultante
-                // Necesitamos obtener el producto_id desde la relación producto-proveedor
-                const productoProveedor = await this.productoProveedorRepository.findOne({
-                    where: { id: detalle.producto_proveedor_id },
-                    relations: ['producto']
-                });
-
-                if (!productoProveedor) {
-                    throw new NotFoundException(`Relación producto-proveedor con id ${detalle.producto_proveedor_id} no encontrada`);
-                }
 
                 const productoActualizado = await this.productoRepository.findOne({
-                    where: { id: productoProveedor.producto_id }
+                    where: { id: productoId }
                 });
 
                 if (!productoActualizado) {
-                    throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
+                    throw new NotFoundException(`Producto con id ${productoId} no encontrado`);
                 }
 
                 // Crear movimiento de stock tipo COMPRA (solo registro, no modifica stock)
@@ -140,7 +215,7 @@ export class ComprasService extends BaseService<CompraEntity>{
                     tipo_movimiento: TipoMovimientoStock.COMPRA,
                     descripcion: `Compra #${nuevoNumeroCompra} - Producto adquirido`,
                     cantidad: detalle.cantidad, // Positivo porque es una entrada
-                    producto_id: productoProveedor.producto_id,
+                    producto_id: productoId,
                     sucursal_id: compraData.sucursal_id,
                 }, productoActualizado.stock);
             }

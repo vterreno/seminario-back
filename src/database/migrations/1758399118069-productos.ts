@@ -1,24 +1,157 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableColumn } from "typeorm";
 
 export class Productos1758399118069 implements MigrationInterface {
     name = 'Productos1758399118069'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "productos" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "nombre" character varying NOT NULL, "codigo" character varying NOT NULL, "empresa_id" integer, "marca_id" integer, "precio_costo" numeric(10,2) NOT NULL, "precio_venta" numeric(10,2) NOT NULL, "estado" boolean NOT NULL DEFAULT true, "stock_apertura" integer NOT NULL DEFAULT '0', "stock" integer NOT NULL DEFAULT '0', CONSTRAINT "UQ_2da210b34325c2319d784a32d49" UNIQUE ("codigo"), CONSTRAINT "PK_04f604609a0949a7f3b43400766" PRIMARY KEY ("id"))`);
+        // Crear tabla productos
+        await queryRunner.createTable(
+            new Table({
+                name: "productos",
+                columns: [
+                    {
+                        name: "id",
+                        type: "int",
+                        isPrimary: true,
+                        isGenerated: true,
+                        generationStrategy: "increment"
+                    },
+                    {
+                        name: "created_at",
+                        type: "timestamp",
+                        default: "now()",
+                        isNullable: false
+                    },
+                    {
+                        name: "updated_at",
+                        type: "timestamp",
+                        default: "now()",
+                        isNullable: false
+                    },
+                    {
+                        name: "deleted_at",
+                        type: "timestamp",
+                        isNullable: true
+                    },
+                    {
+                        name: "nombre",
+                        type: "varchar",
+                        isNullable: false
+                    },
+                    {
+                        name: "codigo",
+                        type: "varchar",
+                        isNullable: false,
+                        isUnique: true
+                    },
+                    {
+                        name: "empresa_id",
+                        type: "int",
+                        isNullable: true
+                    },
+                    {
+                        name: "marca_id",
+                        type: "int",
+                        isNullable: true
+                    },
+                    {
+                        name: "precio_costo",
+                        type: "decimal",
+                        precision: 10,
+                        scale: 2,
+                        isNullable: false
+                    },
+                    {
+                        name: "precio_venta",
+                        type: "decimal",
+                        precision: 10,
+                        scale: 2,
+                        isNullable: false
+                    },
+                    {
+                        name: "estado",
+                        type: "boolean",
+                        default: true,
+                        isNullable: false
+                    },
+                    {
+                        name: "stock_apertura",
+                        type: "int",
+                        default: 0,
+                        isNullable: false
+                    },
+                    {
+                        name: "stock",
+                        type: "int",
+                        default: 0,
+                        isNullable: false
+                    }
+                ]
+            }),
+            true
+        );
+
+        // Manejo de secuencia
         await queryRunner.query(`CREATE SEQUENCE IF NOT EXISTS "sucursales_id_seq" OWNED BY "sucursales"."id"`);
         await queryRunner.query(`ALTER TABLE "sucursales" ALTER COLUMN "id" SET DEFAULT nextval('"sucursales_id_seq"')`);
-        await queryRunner.query(`ALTER TABLE "marcas" ALTER COLUMN "descripcion" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "productos" ADD CONSTRAINT "FK_4697737382403af5c31644ad3ce" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "productos" ADD CONSTRAINT "FK_db0c18bdd5f379d40ae838e74bd" FOREIGN KEY ("marca_id") REFERENCES "marcas"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+
+        // Cambiar columna descripcion en marcas a nullable
+        const marcasTable = await queryRunner.getTable("marcas");
+        const descripcionColumn = marcasTable?.findColumnByName("descripcion");
+        if (descripcionColumn) {
+            await queryRunner.changeColumn(
+                "marcas",
+                "descripcion",
+                new TableColumn({
+                    ...descripcionColumn,
+                    isNullable: true
+                })
+            );
+        }
+
+        // Crear foreign keys
+        await queryRunner.createForeignKey(
+            "productos",
+            new TableForeignKey({
+                name: "FK_4697737382403af5c31644ad3ce",
+                columnNames: ["empresa_id"],
+                referencedTableName: "empresa",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
+
+        await queryRunner.createForeignKey(
+            "productos",
+            new TableForeignKey({
+                name: "FK_db0c18bdd5f379d40ae838e74bd",
+                columnNames: ["marca_id"],
+                referencedTableName: "marcas",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "productos" DROP CONSTRAINT "FK_db0c18bdd5f379d40ae838e74bd"`);
-        await queryRunner.query(`ALTER TABLE "productos" DROP CONSTRAINT "FK_4697737382403af5c31644ad3ce"`);
-        await queryRunner.query(`ALTER TABLE "marcas" ALTER COLUMN "descripcion" SET NOT NULL`);
+        await queryRunner.dropForeignKey("productos", "FK_db0c18bdd5f379d40ae838e74bd");
+        await queryRunner.dropForeignKey("productos", "FK_4697737382403af5c31644ad3ce");
+
+        await queryRunner.changeColumn(
+            "marcas",
+            "descripcion",
+            new TableColumn({
+                name: "descripcion",
+                type: "varchar",
+                isNullable: false
+            })
+        );
+
         await queryRunner.query(`ALTER TABLE "sucursales" ALTER COLUMN "id" DROP DEFAULT`);
         await queryRunner.query(`DROP SEQUENCE "sucursales_id_seq"`);
-        await queryRunner.query(`DROP TABLE "productos"`);
+        
+        await queryRunner.dropTable("productos");
     }
-
 }

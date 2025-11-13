@@ -1,10 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { BaseEntity } from "./base.entity";
+import { BaseEntityWithoutId } from "./base.entity";
 import { ProductoEntity } from "./producto.entity";
 import { ListaPreciosEntity } from "./lista-precios.entity";
 
 @Entity("producto_lista_precios")
-export class ProductoListaPreciosEntity extends BaseEntity {
+export class ProductoListaPreciosEntity extends BaseEntityWithoutId {
     @PrimaryColumn()
     producto_id: number;
 

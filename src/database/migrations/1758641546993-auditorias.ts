@@ -1,20 +1,112 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
 
 export class Auditorias1758641546993 implements MigrationInterface {
     name = 'Auditorias1758641546993'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Crear ENUM type (SQL puro, no hay soporte en Query Builder)
         await queryRunner.query(`CREATE TYPE "public"."movimiento-stock_tipo_movimiento_enum" AS ENUM('STOCK_APERTURA', 'VENTA', 'COMPRA', 'AJUSTE_MANUAL')`);
-        await queryRunner.query(`CREATE TABLE "movimiento-stock" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "fecha" TIMESTAMP NOT NULL, "tipo_movimiento" "public"."movimiento-stock_tipo_movimiento_enum" NOT NULL, "descripcion" character varying NOT NULL, "cantidad" integer NOT NULL, "stock_resultante" integer NOT NULL, "empresa_id" integer NOT NULL, "producto_id" integer NOT NULL, CONSTRAINT "PK_4184090d25a4476f93557f6c3bf" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ADD CONSTRAINT "FK_6ad1654ba8c7192ffb33fb23538" FOREIGN KEY ("empresa_id") REFERENCES "empresa"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" ADD CONSTRAINT "FK_014700f8b783fad11b4a3e21533" FOREIGN KEY ("producto_id") REFERENCES "productos"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+
+        // Crear tabla movimiento-stock
+        await queryRunner.createTable(
+            new Table({
+                name: "movimiento-stock",
+                columns: [
+                    {
+                        name: "id",
+                        type: "int",
+                        isPrimary: true,
+                        isGenerated: true,
+                        generationStrategy: "increment"
+                    },
+                    {
+                        name: "created_at",
+                        type: "timestamp",
+                        default: "now()",
+                        isNullable: false
+                    },
+                    {
+                        name: "updated_at",
+                        type: "timestamp",
+                        default: "now()",
+                        isNullable: false
+                    },
+                    {
+                        name: "deleted_at",
+                        type: "timestamp",
+                        isNullable: true
+                    },
+                    {
+                        name: "fecha",
+                        type: "timestamp",
+                        isNullable: false
+                    },
+                    {
+                        name: "tipo_movimiento",
+                        type: "enum",
+                        enum: ["STOCK_APERTURA", "VENTA", "COMPRA", "AJUSTE_MANUAL"],
+                        isNullable: false
+                    },
+                    {
+                        name: "descripcion",
+                        type: "varchar",
+                        isNullable: false
+                    },
+                    {
+                        name: "cantidad",
+                        type: "int",
+                        isNullable: false
+                    },
+                    {
+                        name: "stock_resultante",
+                        type: "int",
+                        isNullable: false
+                    },
+                    {
+                        name: "empresa_id",
+                        type: "int",
+                        isNullable: false
+                    },
+                    {
+                        name: "producto_id",
+                        type: "int",
+                        isNullable: false
+                    }
+                ]
+            }),
+            true
+        );
+
+        // Crear foreign keys
+        await queryRunner.createForeignKey(
+            "movimiento-stock",
+            new TableForeignKey({
+                name: "FK_6ad1654ba8c7192ffb33fb23538",
+                columnNames: ["empresa_id"],
+                referencedTableName: "empresa",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
+
+        await queryRunner.createForeignKey(
+            "movimiento-stock",
+            new TableForeignKey({
+                name: "FK_014700f8b783fad11b4a3e21533",
+                columnNames: ["producto_id"],
+                referencedTableName: "productos",
+                referencedColumnNames: ["id"],
+                onDelete: "NO ACTION",
+                onUpdate: "NO ACTION"
+            })
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" DROP CONSTRAINT "FK_014700f8b783fad11b4a3e21533"`);
-        await queryRunner.query(`ALTER TABLE "movimiento-stock" DROP CONSTRAINT "FK_6ad1654ba8c7192ffb33fb23538"`);
-        await queryRunner.query(`DROP TABLE "movimiento-stock"`);
+        await queryRunner.dropForeignKey("movimiento-stock", "FK_014700f8b783fad11b4a3e21533");
+        await queryRunner.dropForeignKey("movimiento-stock", "FK_6ad1654ba8c7192ffb33fb23538");
+        await queryRunner.dropTable("movimiento-stock");
         await queryRunner.query(`DROP TYPE "public"."movimiento-stock_tipo_movimiento_enum"`);
     }
-
 }

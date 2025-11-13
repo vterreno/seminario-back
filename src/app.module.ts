@@ -40,7 +40,6 @@ import { ComprasModule } from './resource/compras/compras.module';
         database: configService.get<string>('DATABASE_NAME'),
         synchronize: false,
         autoLoadEntities: true,
-        entities: [__dirname + '/database/core/*.entity{.ts,.js}'],
       }),
     }),
     UsersModule,

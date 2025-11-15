@@ -5,25 +5,31 @@ export class AddNumeroFacturaObservacionesToCompras1718131200000 implements Migr
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Agregar numero_factura a compras
-        await queryRunner.addColumn(
-            "compras",
-            new TableColumn({
-                name: "numero_factura",
-                type: "varchar",
-                length: "100",
-                isNullable: true
-            })
-        );
+        const hasNumeroFactura = await queryRunner.hasColumn("compras", "numero_factura");
+        if (!hasNumeroFactura) {
+            await queryRunner.addColumn(
+                "compras",
+                new TableColumn({
+                    name: "numero_factura",
+                    type: "varchar",
+                    length: "100",
+                    isNullable: true
+                })
+            );
+        }
 
         // Agregar observaciones a compras
-        await queryRunner.addColumn(
-            "compras",
-            new TableColumn({
-                name: "observaciones",
-                type: "text",
-                isNullable: true
-            })
-        );
+        const hasObservaciones = await queryRunner.hasColumn("compras", "observaciones");
+        if (!hasObservaciones) {
+            await queryRunner.addColumn(
+                "compras",
+                new TableColumn({
+                    name: "observaciones",
+                    type: "text",
+                    isNullable: true
+                })
+            );
+        }
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

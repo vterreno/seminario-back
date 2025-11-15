@@ -71,6 +71,10 @@ export class ProductoProveedorService extends BaseService<ProductoProveedorEntit
     if (!proveedor) {
       throw new NotFoundException(`Proveedor con id ${createDto.proveedor_id} no encontrado`);
     }
+    // Validar que el contacto tiene el rol adecuado
+    if (proveedor.rol !== 'proveedor' && proveedor.rol !== 'ambos') {
+      throw new BadRequestException(`El contacto con id ${createDto.proveedor_id} no tiene el rol de proveedor o ambos`);
+    }
 
     // Verificar si ya existe la relación
     const existente = await this.productoProveedorRepository.findOne({

@@ -110,7 +110,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             const savedCompra = await this.compraRepository.save(compra);
             const compraId = (savedCompra as any).id;
 
-            // Paso 6.5: Crear nuevos productos si se proporcionaron
+            // Paso 7: Crear nuevos productos si se proporcionaron
             if (compraData.nuevos_productos && compraData.nuevos_productos.length > 0) {
                 await this.productoRepository.manager.transaction(async transactionalEntityManager => {
                     for (const nuevoProducto of compraData.nuevos_productos) {

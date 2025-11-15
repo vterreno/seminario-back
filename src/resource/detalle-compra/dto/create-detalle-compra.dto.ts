@@ -1,11 +1,13 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
 
 export class CreateDetalleCompraDto {
-    @IsOptional()
+    @ValidateIf(o => !o.producto_id)
+    @IsNotEmpty({ message: 'Debe proporcionar producto_proveedor_id o producto_id' })
     @IsNumber({}, { message: 'El id del producto-proveedor debe ser un número' })
     producto_proveedor_id?: number;
 
-    @IsOptional()
+    @ValidateIf(o => !o.producto_proveedor_id)
+    @IsNotEmpty({ message: 'Debe proporcionar producto_proveedor_id o producto_id' })
     @IsNumber({}, { message: 'El id del producto debe ser un número' })
     producto_id?: number;
 

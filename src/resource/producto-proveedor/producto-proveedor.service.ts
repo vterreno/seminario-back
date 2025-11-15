@@ -106,6 +106,28 @@ export class ProductoProveedorService extends BaseService<ProductoProveedorEntit
       throw new NotFoundException(`Relación producto-proveedor con id ${id} no encontrada`);
     }
 
+    // Si se está actualizando producto_id o proveedor_id, verificar que no cree duplicados
+    const nuevoProductoId = updateDto.producto_id ?? productoProveedor.producto_id;
+    const nuevoProveedorId = updateDto.proveedor_id ?? productoProveedor.proveedor_id;
+
+    // Solo validar si hay cambio en producto_id o proveedor_id
+    if (updateDto.producto_id || updateDto.proveedor_id) {
+      const existente = await this.productoProveedorRepository.findOne({
+        where: {
+          producto_id: nuevoProductoId,
+          proveedor_id: nuevoProveedorId,
+          deleted_at: IsNull()
+        }
+      });
+
+      // Si existe y no es el mismo registro que estamos actualizando
+      if (existente && existente.id !== id) {
+        throw new BadRequestException(
+          'Ya existe una relación producto-proveedor con esa combinación de producto y proveedor'
+        );
+      }
+    }
+
     // Actualizar
     Object.assign(productoProveedor, updateDto);
     const updated = await this.productoProveedorRepository.save(productoProveedor);

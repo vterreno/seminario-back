@@ -7,6 +7,7 @@ import { FindManyOptions, FindOneOptions, In, IsNull, Repository } from 'typeorm
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
+import { CompraEntity } from 'src/database/core/compra.entity';
 
 @Injectable()
 export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
@@ -60,35 +61,77 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
 
   // Create detalle
   async createDetalle(detalleData: CreateDetalleCompraDto): Promise<DetalleCompraEntity> {
-    // Verificar que la relación producto-proveedor existe
-    const productoProveedor = await this.productoProveedorRepository.findOne({
-      where: { id: detalleData.producto_proveedor_id },
-      relations: ['producto']
-    });
+    let productoProveedorId: number;
+    let productoId: number;
 
-    if (!productoProveedor) {
-      throw new NotFoundException(`Relación producto-proveedor con id ${detalleData.producto_proveedor_id} no encontrada`);
+    // Validar que al menos uno de los dos IDs esté presente
+    if (!detalleData.producto_proveedor_id && !detalleData.producto_id) {
+      throw new BadRequestException('Debe proporcionar producto_proveedor_id o producto_id');
+    }
+
+    // Si se proporciona producto_proveedor_id, usarlo directamente
+    if (detalleData.producto_proveedor_id) {
+      const productoProveedor = await this.productoProveedorRepository.findOne({
+        where: { id: detalleData.producto_proveedor_id },
+        relations: ['producto']
+      });
+
+      if (!productoProveedor) {
+        throw new NotFoundException(`Relación producto-proveedor con id ${detalleData.producto_proveedor_id} no encontrada`);
+      }
+
+      productoProveedorId = productoProveedor.id;
+      productoId = productoProveedor.producto_id;
+    } 
+    // Si solo se proporciona producto_id, buscar o crear la relación producto-proveedor
+    else if (detalleData.producto_id) {
+      // Verificar que el producto existe
+      const producto = await this.productoRepository.findOne({
+        where: { id: detalleData.producto_id }
+      });
+
+      if (!producto) {
+        throw new NotFoundException(`Producto con id ${detalleData.producto_id} no encontrado`);
+      }
+
+      // Buscar una relación producto-proveedor existente para este producto
+      // Si no existe, esto indica un problema en la lógica de negocio
+      const productoProveedor = await this.productoProveedorRepository.findOne({
+        where: { producto_id: detalleData.producto_id },
+        relations: ['producto']
+      });
+
+      if (!productoProveedor) {
+        throw new BadRequestException(
+          `No existe relación producto-proveedor para el producto con id ${detalleData.producto_id}. ` +
+          'Debe proporcionar producto_proveedor_id en su lugar.'
+        );
+      }
+
+      productoProveedorId = productoProveedor.id;
+      productoId = productoProveedor.producto_id;
+    } 
+    else {
+      throw new BadRequestException('Debe proporcionar producto_proveedor_id o producto_id');
     }
 
     // Obtener el producto para actualizar su stock
     const producto = await this.productoRepository.findOne({
-      where: { id: productoProveedor.producto_id }
+      where: { id: productoId }
     });
 
     if (!producto) {
-      throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
+      throw new NotFoundException(`Producto con id ${productoId} no encontrado`);
     }
 
-    // Crear el detalle de compra con todos los datos requeridos
-    const detalleToCreate: any = {
-      compra: { id: detalleData.compra_id },
-      producto: { id: detalleData.producto_proveedor_id },
+    // Crear el detalle de compra con el producto_proveedor_id correcto
+    const detalle = this.detalleCompraRepository.create({
+      compra: { id: detalleData.compra_id } as CompraEntity,
+      producto: { id: productoProveedorId } as ProductoProveedorEntity,
       cantidad: detalleData.cantidad,
       precio_unitario: detalleData.precio_unitario,
       subtotal: detalleData.subtotal,
-    };
-
-    const detalle = this.detalleCompraRepository.create(detalleToCreate);
+    });
     
     const savedDetalle = await this.detalleCompraRepository.save(detalle);
 
@@ -96,20 +139,11 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
     producto.stock += detalleData.cantidad;
     await this.productoRepository.save(producto);
 
-    // Obtener el ID del detalle guardado (TypeScript tiene problemas con el tipo, usamos any)
-    const detalleId = (savedDetalle as any).id;
-
     // Retornar el detalle con las relaciones cargadas
-    const detalleCompleto = await this.detalleCompraRepository.findOne({
-      where: { id: detalleId },
+    return await this.detalleCompraRepository.findOne({
+      where: { id: savedDetalle.id },
       relations: ['producto', 'compra'],
     });
-
-    if (!detalleCompleto) {
-      throw new NotFoundException(`Error al recuperar el detalle de compra creado`);
-    }
-
-    return detalleCompleto;
   }
 
   // Update detalle

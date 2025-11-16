@@ -10,12 +10,16 @@ import { JwtModule } from 'src/jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { ProductosModule } from '../productos/productos.module';
+import { ProductoProveedorModule } from '../producto-proveedor/producto-proveedor.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CompraEntity, sucursalEntity, ProductoProveedorEntity, ProductoEntity]),
     DetalleCompraModule,
     MovimientosStockModule,
+    ProductosModule,
+    ProductoProveedorModule,
     JwtModule,
     UsersModule
   ],

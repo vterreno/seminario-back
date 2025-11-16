@@ -2,14 +2,22 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateCompraDto } from './dto/create-compra.dto';
 import { BaseService } from 'src/base-service/base-service.service';
 import { CompraEntity } from 'src/database/core/compra.entity';
-import { FindManyOptions, In, Repository } from 'typeorm';
+import { DetalleCompraEntity } from 'src/database/core/detalleCompra.entity';
+import { DataSource, FindManyOptions, In, IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
+import { contactoEntity } from 'src/database/core/contacto.entity';
 import { DetalleCompraService } from '../detalle-compra/detalle-compra.service';
 import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
+import { EstadoCompra } from 'src/database/core/enums/EstadoCompra.enum';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { ProductoProveedorService } from '../producto-proveedor/producto-proveedor.service';
+import { ProductosService } from '../productos/productos.service';
+
+// Constante para el margen de ganancia por defecto (30%)
+const DEFAULT_PRICE_MARKUP = 1.3;
 
 @Injectable()
 export class ComprasService extends BaseService<CompraEntity>{
@@ -27,6 +35,9 @@ export class ComprasService extends BaseService<CompraEntity>{
         protected productoRepository: Repository<ProductoEntity>,
         private readonly detalleCompraService: DetalleCompraService,
         private readonly movimientosStockService: MovimientosStockService,
+        private readonly productoProveedorService: ProductoProveedorService,
+        private readonly productosService: ProductosService,
+        private dataSource: DataSource,
     ){
         super(compraRepository);
     }
@@ -67,9 +78,14 @@ export class ComprasService extends BaseService<CompraEntity>{
 
     // Create compra
     async createCompra(compraData: CreateCompraDto): Promise<CompraEntity> {
+        // Usar QueryRunner para manejar transacciones
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             // Paso 1: Verificar que la sucursal existe y obtener su información
-            const sucursal = await this.sucursalRepository.findOne({
+            const sucursal = await queryRunner.manager.findOne(sucursalEntity, {
                 where: { id: compraData.sucursal_id }
             });
 
@@ -79,84 +95,269 @@ export class ComprasService extends BaseService<CompraEntity>{
 
             // Paso 2: Obtener el siguiente número de compra (incrementar el talonario)
             const nuevoNumeroCompra = sucursal.numero_compra + 1;
+            
             // Paso 3: Actualizar el número de compra en la sucursal (incrementar el talonario)
-            await this.sucursalRepository.update(sucursal.id, {
+            await queryRunner.manager.update(sucursalEntity, sucursal.id, {
                 numero_compra: nuevoNumeroCompra
             });
 
-            // Paso 5: Crear la compra sin detalles pero con el número de compra generado
-            const compra = this.compraRepository.create({
-                numero_compra: nuevoNumeroCompra, // ← Usar el número generado del talonario
+            // Paso 4: Crear la compra sin detalles pero con el número de compra generado
+            const compra: Partial<CompraEntity> = {
+                numero_compra: nuevoNumeroCompra,
                 fecha_compra: new Date(compraData.fecha_compra),
                 monto_total: compraData.monto_total,
-                sucursal: { id: compraData.sucursal_id } as any,
-                contacto: compraData.contacto_id ? { id: compraData.contacto_id } as any : undefined,
-                estado: compraData.estado || 'PENDIENTE_PAGO',
-            } as any);
+                sucursal: { id: compraData.sucursal_id } as sucursalEntity,
+                contacto: compraData.contacto_id ? { id: compraData.contacto_id } as contactoEntity : undefined,
+                estado: compraData.estado || EstadoCompra.PENDIENTE_PAGO,
+                numero_factura: compraData.numero_factura,
+                observaciones: compraData.observaciones,
+            };
 
-            // Guardar campos opcionales si existen
-            if (compraData.numero_factura) {
-                (compra as any).numero_factura = compraData.numero_factura;
-            }
-            if (compraData.observaciones) {
-                (compra as any).observaciones = compraData.observaciones;
-            }
+            // Paso 5: Guardar la compra
+            const savedCompra = await queryRunner.manager.save(CompraEntity, compra);
+            const compraId = savedCompra.id;
 
-            // Paso 6: Guardar la compra
-            const savedCompra = await this.compraRepository.save(compra);
-            const compraId = (savedCompra as any).id;
-
-            // Paso 7: Crear los detalles usando el servicio de detalle-compra
-            // Esto manejará la actualización del stock automáticamente
-            // Y crear movimientos de stock tipo COMPRA por cada detalle (solo registro)
-            for (const detalle of compraData.detalles) {
-                // Crear el detalle (esto suma el stock del producto)
-                await this.detalleCompraService.createDetalle({
-                    ...detalle,
-                    compra_id: compraId, // Asignar la compra recién creada
+            // Paso 6: Crear nuevos productos si se proporcionaron
+            const productosCreados = new Map<string, number>(); // codigo -> producto_id
+            
+            if (compraData.nuevos_productos && compraData.nuevos_productos.length > 0) {
+                // Obtener todos los códigos de productos nuevos para verificar existencia en una sola consulta
+                const codigosNuevos = compraData.nuevos_productos.map(p => p.codigo);
+                const productosExistentes = await queryRunner.manager.find(ProductoEntity, {
+                    where: { 
+                        codigo: In(codigosNuevos),
+                        sucursal_id: compraData.sucursal_id 
+                    }
                 });
 
-                // Obtener el producto actualizado para saber el stock resultante
-                // Necesitamos obtener el producto_id desde la relación producto-proveedor
-                const productoProveedor = await this.productoProveedorRepository.findOne({
-                    where: { id: detalle.producto_proveedor_id },
+                const codigosExistentes = new Set(productosExistentes.map(p => p.codigo));
+
+                for (const nuevoProducto of compraData.nuevos_productos) {
+                    let productoId: number;
+
+                    // Si el producto ya existe, usarlo en lugar de crear uno nuevo
+                    if (codigosExistentes.has(nuevoProducto.codigo)) {
+                        const productoExistente = productosExistentes.find(p => p.codigo === nuevoProducto.codigo);
+                        if (!productoExistente) {
+                            throw new NotFoundException(`Producto con código ${nuevoProducto.codigo} no encontrado`);
+                        }
+                        productoId = productoExistente.id;
+                        productosCreados.set(nuevoProducto.codigo, productoId);
+                    } else {
+                        // Buscar en los detalles la cantidad comprada de este nuevo producto
+                        const detalleAsociado = compraData.detalles.find(
+                            d => d.codigo_producto_temp === nuevoProducto.codigo
+                        );
+                        const cantidadComprada = detalleAsociado ? detalleAsociado.cantidad : 0;
+
+                        // Crear el producto con stock_apertura = cantidad_comprada
+                        const productoCreado = queryRunner.manager.create(ProductoEntity, {
+                            codigo: nuevoProducto.codigo,
+                            nombre: nuevoProducto.nombre,
+                            marca_id: nuevoProducto.marca_id,
+                            categoria_id: nuevoProducto.categoria_id,
+                            unidad_medida_id: nuevoProducto.unidad_medida_id,
+                            precio_costo: nuevoProducto.precio_proveedor,
+                            precio_venta: nuevoProducto.precio_proveedor * DEFAULT_PRICE_MARKUP,
+                            stock_apertura: cantidadComprada,
+                            stock: cantidadComprada,
+                            sucursal_id: compraData.sucursal_id,
+                            estado: true,
+                        });
+
+                        const savedProducto = await queryRunner.manager.save(ProductoEntity, productoCreado);
+                        productoId = savedProducto.id;
+                        productosCreados.set(nuevoProducto.codigo, productoId);
+                    }
+
+                    // Verificar si la relación producto-proveedor ya existe
+                    const relacionExistente = await queryRunner.manager.findOne(ProductoProveedorEntity, {
+                        where: {
+                            producto_id: productoId,
+                            proveedor_id: nuevoProducto.proveedor_id,
+                            deleted_at: IsNull()
+                        }
+                    });
+
+                    // Solo crear la relación si no existe
+                    if (!relacionExistente) {
+                        const productoProveedor = queryRunner.manager.create(ProductoProveedorEntity, {
+                            producto_id: productoId,
+                            proveedor_id: nuevoProducto.proveedor_id,
+                            precio_proveedor: nuevoProducto.precio_proveedor,
+                            codigo_proveedor: nuevoProducto.codigo_proveedor,
+                        });
+                        await queryRunner.manager.save(ProductoProveedorEntity, productoProveedor);
+                    }
+                }
+            }
+
+            // Paso 7: Obtener todos los productos-proveedor necesarios en una sola consulta
+            const productosProveedorIds = compraData.detalles
+                .filter(d => d.producto_proveedor_id)
+                .map(d => d.producto_proveedor_id!);
+
+            const productosProveedorMap = new Map<number, ProductoProveedorEntity>();
+            
+            if (productosProveedorIds.length > 0) {
+                const productosProveedor = await queryRunner.manager.find(ProductoProveedorEntity, {
+                    where: { id: In(productosProveedorIds) },
                     relations: ['producto']
                 });
+                
+                productosProveedor.forEach(pp => {
+                    productosProveedorMap.set(pp.id, pp);
+                });
+            }
 
-                if (!productoProveedor) {
-                    throw new NotFoundException(`Relación producto-proveedor con id ${detalle.producto_proveedor_id} no encontrada`);
+            // Paso 8: Crear los detalles y movimientos de stock
+            const productosIds = new Set<number>();
+
+            for (const detalle of compraData.detalles) {
+                let productoId: number;
+                let productoProveedorId: number;
+
+                // Determinar el producto_id y producto_proveedor_id según el tipo de detalle
+                if (detalle.codigo_producto_temp) {
+                    // Producto nuevo creado en esta transacción
+                    const productoIdTemp = productosCreados.get(detalle.codigo_producto_temp);
+                    
+                    if (!productoIdTemp) {
+                        throw new NotFoundException(`Producto con código ${detalle.codigo_producto_temp} no encontrado después de crearlo`);
+                    }
+
+                    productoId = productoIdTemp;
+
+                    // Buscar la relación producto-proveedor recién creada
+                    const productoProveedorNuevo = await queryRunner.manager.findOne(ProductoProveedorEntity, {
+                        where: {
+                            producto_id: productoId,
+                            proveedor_id: compraData.contacto_id,
+                            deleted_at: IsNull()
+                        }
+                    });
+
+                    if (!productoProveedorNuevo) {
+                        throw new NotFoundException(
+                            `No se encontró la relación producto-proveedor para el producto recién creado con id ${productoId}`
+                        );
+                    }
+
+                    productoProveedorId = productoProveedorNuevo.id;
+                } else if (detalle.producto_proveedor_id) {
+                    // Relación producto-proveedor proporcionada directamente
+                    const productoProveedor = productosProveedorMap.get(detalle.producto_proveedor_id);
+
+                    if (!productoProveedor) {
+                        throw new NotFoundException(`Relación producto-proveedor con id ${detalle.producto_proveedor_id} no encontrada`);
+                    }
+
+                    productoId = productoProveedor.producto_id;
+                    productoProveedorId = productoProveedor.id;
+                } else if (detalle.producto_id) {
+                    // Solo producto_id proporcionado, buscar la relación
+                    productoId = detalle.producto_id;
+
+                    const productoProveedorExistente = await queryRunner.manager.findOne(ProductoProveedorEntity, {
+                        where: {
+                            producto_id: productoId,
+                            proveedor_id: compraData.contacto_id,
+                            deleted_at: IsNull()
+                        }
+                    });
+
+                    if (!productoProveedorExistente) {
+                        throw new BadRequestException(
+                            `No existe relación producto-proveedor para el producto con id ${productoId} y el proveedor seleccionado`
+                        );
+                    }
+
+                    productoProveedorId = productoProveedorExistente.id;
+                } else {
+                    throw new BadRequestException('Debe proporcionar producto_proveedor_id, producto_id o codigo_producto_temp en los detalles');
                 }
 
-                const productoActualizado = await this.productoRepository.findOne({
-                    where: { id: productoProveedor.producto_id }
+                productosIds.add(productoId);
+
+                // Crear el detalle directamente con queryRunner (dentro de la transacción)
+                const detalleEntity = queryRunner.manager.create(DetalleCompraEntity, {
+                    compra: { id: compraId } as CompraEntity,
+                    producto: { id: productoProveedorId } as ProductoProveedorEntity,
+                    cantidad: detalle.cantidad,
+                    precio_unitario: detalle.precio_unitario,
+                    subtotal: detalle.subtotal,
                 });
 
+                await queryRunner.manager.save(DetalleCompraEntity, detalleEntity);
+
+                // Actualizar el stock del producto (SUMAR la cantidad comprada)
+                await queryRunner.manager.increment(
+                    ProductoEntity,
+                    { id: productoId },
+                    'stock',
+                    detalle.cantidad
+                );
+            }
+
+            // Paso 9: Obtener todos los productos actualizados en una sola consulta
+            const productosActualizados = await queryRunner.manager.find(ProductoEntity, {
+                where: { id: In(Array.from(productosIds)) }
+            });
+
+            const productosMap = new Map<number, ProductoEntity>();
+            productosActualizados.forEach(p => {
+                productosMap.set(p.id, p);
+            });
+
+            // Paso 10: Crear movimientos de stock
+            for (const detalle of compraData.detalles) {
+                let productoId: number;
+
+                if (detalle.codigo_producto_temp) {
+                    productoId = productosCreados.get(detalle.codigo_producto_temp)!;
+                } else if (detalle.producto_proveedor_id) {
+                    productoId = productosProveedorMap.get(detalle.producto_proveedor_id)!.producto_id;
+                } else {
+                    productoId = detalle.producto_id!;
+                }
+
+                const productoActualizado = productosMap.get(productoId);
+
                 if (!productoActualizado) {
-                    throw new NotFoundException(`Producto con id ${productoProveedor.producto_id} no encontrado`);
+                    throw new NotFoundException(`Producto con id ${productoId} no encontrado`);
                 }
 
                 // Crear movimiento de stock tipo COMPRA (solo registro, no modifica stock)
                 await this.movimientosStockService.createMovimientoRegistro({
                     tipo_movimiento: TipoMovimientoStock.COMPRA,
                     descripcion: `Compra #${nuevoNumeroCompra} - Producto adquirido`,
-                    cantidad: detalle.cantidad, // Positivo porque es una entrada
-                    producto_id: productoProveedor.producto_id,
+                    cantidad: detalle.cantidad,
+                    producto_id: productoId,
                     sucursal_id: compraData.sucursal_id,
                 }, productoActualizado.stock);
             }
 
-            // Paso 8: Retornar la compra completa con todas sus relaciones
+            // Confirmar la transacción
+            await queryRunner.commitTransaction();
+
+            // Paso 11: Retornar la compra completa con todas sus relaciones
             return await this.compraRepository.findOne({
                 where: { id: compraId },
                 relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto'],
             });
         } catch (error) {
+            // Revertir la transacción en caso de error
+            await queryRunner.rollbackTransaction();
             console.error('Error interno al crear la compra:', error);
+            
             // Si el error ya es un BadRequestException o NotFoundException, lo propagamos
             if (error instanceof BadRequestException || error instanceof NotFoundException) {
                 throw error;
             }
             throw new BadRequestException('Error al crear la compra. Por favor, verifica los datos e intenta nuevamente.');
+        } finally {
+            // Liberar el queryRunner
+            await queryRunner.release();
         }
     }
     // Find compra by id with relations

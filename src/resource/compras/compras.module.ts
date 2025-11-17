@@ -11,6 +11,8 @@ import { UsersModule } from '../users/users.module';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { PagoModule } from '../pago/pago.module';
+import { ProductosModule } from '../productos/productos.module';
+import { ProductoProveedorModule } from '../producto-proveedor/producto-proveedor.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { PagoModule } from '../pago/pago.module';
     DetalleCompraModule,
     MovimientosStockModule,
     PagoModule,
+    ProductosModule,
+    ProductoProveedorModule,
     JwtModule,
     UsersModule
   ],

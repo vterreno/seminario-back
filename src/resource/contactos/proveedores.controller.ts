@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Put, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put, UseGuards, Req } from '@nestjs/common';
 import { ContactosService } from './contactos.service';
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { contactoEntity } from 'src/database/core/contacto.entity';
@@ -35,6 +35,12 @@ export class ProveedoresController extends BaseController<contactoEntity> {
     }
   }
 
+  @Get(':id')
+  @Action('ver')
+  async getProveedorById(@Param('id', ParseIntPipe) id: number) {
+    return await this.contactosService.findOne({ where: { id } });
+  }
+
   @Post()
   @Action('agregar')
   async createProveedor(@Body() dto: CreateContactoDto, @Req() req: RequestWithUser) {
@@ -45,14 +51,14 @@ export class ProveedoresController extends BaseController<contactoEntity> {
 
   @Put(':id')
   @Action('modificar')
-  async updateProveedor(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
+  async updateProveedor(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateContactoDto) {
     const { provincia, ciudad, ...rest } = dto as any;
     return await this.contactosService.updateContacto(id, rest as Partial<contactoEntity>);
   }
 
   @Patch(':id')
   @Action('modificar')
-  async updateProveedorPartial(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
+  async updateProveedorPartial(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateContactoDto) {
     const { provincia, ciudad, ...rest } = dto as any;
     return await this.contactosService.updateContacto(id, rest as Partial<contactoEntity>);
   }

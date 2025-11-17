@@ -10,6 +10,8 @@ import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 import { ProductoProveedorEntity } from 'src/database/core/producto-proveedor.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { PagoService } from '../pago/pago.service';
+import { EstadoCompra } from 'src/database/core/enums/EstadoCompra.enum';
 
 @Injectable()
 export class ComprasService extends BaseService<CompraEntity>{
@@ -27,6 +29,7 @@ export class ComprasService extends BaseService<CompraEntity>{
         protected productoRepository: Repository<ProductoEntity>,
         private readonly detalleCompraService: DetalleCompraService,
         private readonly movimientosStockService: MovimientosStockService,
+        private readonly pagoService: PagoService,
     ){
         super(compraRepository);
     }
@@ -163,34 +166,279 @@ export class ComprasService extends BaseService<CompraEntity>{
     async findById(id: number): Promise<CompraEntity> {
         return await this.compraRepository.findOne({
             where: { id },
-            relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto'],
+            relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto', 'detalles.producto.producto', 'pago'],
         });
     }
 
-    // Delete single venta
-    async deleteVenta(id: number): Promise<void> {
+    // Asociar pago a compra
+    async asociarPagoACompra(compraId: number, pagoData: { fecha_pago: string | Date; monto_pago: number; metodo_pago: 'efectivo' | 'transferencia'; sucursal_id: number }): Promise<CompraEntity> {
+        try {
+            // Paso 1: Verificar que la compra existe
+            const compra = await this.compraRepository.findOne({
+                where: { id: compraId },
+                relations: ['pago', 'sucursal', 'sucursal.empresa'],
+            });
+
+            if (!compra) {
+                throw new NotFoundException(`Compra con id ${compraId} no encontrada`);
+            }
+
+            // Paso 2: Validar que la compra esté en estado PENDIENTE_PAGO
+            if (compra.estado !== EstadoCompra.PENDIENTE_PAGO) {
+                throw new BadRequestException(`La compra debe estar en estado PENDIENTE_PAGO para asociar un pago. Estado actual: ${compra.estado}`);
+            }
+
+            // Paso 3: Validar que la compra no tenga un pago asociado
+            if (compra.pago) {
+                throw new BadRequestException('La compra ya tiene un pago asociado');
+            }
+
+            // Paso 4: Crear el pago
+            const savedPago = await this.pagoService.createPago({
+                fecha_pago: new Date(pagoData.fecha_pago),
+                monto_pago: pagoData.monto_pago,
+                metodo_pago: pagoData.metodo_pago,
+                sucursal: { id: pagoData.sucursal_id } as any,
+            });
+
+            // Paso 5: Asociar el pago a la compra y cambiar el estado a PAGADO
+            await this.compraRepository.update(compraId, {
+                pago: savedPago,
+                estado: EstadoCompra.PAGADO,
+            });
+
+            // Paso 6: Retornar la compra actualizada con todas sus relaciones
+            return await this.findById(compraId);
+        } catch (error) {
+            console.error('Error al asociar pago a compra:', error);
+            if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new BadRequestException('Error al asociar el pago a la compra. Por favor, verifica los datos e intenta nuevamente.');
+        }
+    }
+
+    // Update compra
+    async updateCompra(id: number, updateData: Partial<CreateCompraDto>): Promise<CompraEntity> {
+        try {
+            // Paso 1: Verificar que la compra existe y obtener sus detalles actuales
+            const compraExistente = await this.compraRepository.findOne({
+                where: { id },
+                relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal'],
+            });
+
+            if (!compraExistente) {
+                throw new NotFoundException(`Compra con id ${id} no encontrada`);
+            }
+
+            // Paso 2: VALIDAR que la compra esté en estado PENDIENTE_PAGO
+            if (compraExistente.estado !== EstadoCompra.PENDIENTE_PAGO) {
+                throw new BadRequestException(`Solo se pueden modificar compras en estado PENDIENTE_PAGO. Estado actual: ${compraExistente.estado}`);
+            }
+
+            // Paso 3: Si se actualizan los detalles, gestionar el stock y los detalles
+            if (updateData.detalles && updateData.detalles.length > 0) {
+                // 3.0: VALIDAR que hay suficiente stock para revertir los detalles antiguos
+                for (const detalleAntiguo of compraExistente.detalles) {
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalleAntiguo.producto.id },
+                        relations: ['producto']
+                    });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            // Validar que el stock actual sea suficiente para revertir
+                            if (producto.stock < detalleAntiguo.cantidad) {
+                                throw new BadRequestException(
+                                    `No se puede modificar la compra. El producto "${productoProveedor.producto.nombre}" tiene un stock actual de ${producto.stock}, ` +
+                                    `pero se necesitan ${detalleAntiguo.cantidad} unidades disponibles para poder modificar esta compra. ` +
+                                    `El stock de este producto ya ha sido vendido o ajustado.`
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // 3.1: Revertir el stock de los detalles antiguos
+                for (const detalleAntiguo of compraExistente.detalles) {
+                    // Obtener el producto_id desde la relación producto-proveedor
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalleAntiguo.producto.id },
+                        relations: ['producto']
+                    });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            // Restar el stock que se había sumado con la compra original
+                            producto.stock -= detalleAntiguo.cantidad;
+                            await this.productoRepository.save(producto);
+
+                            // Crear movimiento de stock tipo AJUSTE_MANUAL para registrar la reversión
+                            // Usar la sucursal del producto para evitar error de validación
+                            await this.movimientosStockService.createMovimientoRegistro({
+                                tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
+                                descripcion: `Ajuste por modificación de compra #${compraExistente.numero_compra}`,
+                                cantidad: -detalleAntiguo.cantidad,
+                                producto_id: productoProveedor.producto_id,
+                                sucursal_id: producto.sucursal.id,
+                            }, producto.stock);
+                        }
+                    }
+                }
+
+                // 3.2: Eliminar todos los detalles antiguos en una sola operación (mejor performance)
+                await this.compraRepository
+                    .createQueryBuilder()
+                    .delete()
+                    .from('detalle_compra')
+                    .where('compra_id = :compraId', { compraId: id })
+                    .execute();
+
+                // 3.3: Crear los nuevos detalles y actualizar el stock
+                for (const nuevoDetalle of updateData.detalles) {
+                    // Crear el detalle (esto suma el stock del producto automáticamente)
+                    await this.detalleCompraService.createDetalle({
+                        ...nuevoDetalle,
+                        compra_id: id,
+                    });
+
+                    // Obtener el producto actualizado para registrar el movimiento
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: nuevoDetalle.producto_proveedor_id },
+                        relations: ['producto']
+                    });
+
+                    if (productoProveedor) {
+                        const productoActualizado = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (productoActualizado) {
+                            // Crear movimiento de stock tipo COMPRA para el nuevo detalle
+                            // Usar la sucursal del producto para evitar error de validación
+                            await this.movimientosStockService.createMovimientoRegistro({
+                                tipo_movimiento: TipoMovimientoStock.COMPRA,
+                                descripcion: `Compra #${compraExistente.numero_compra} - Producto actualizado`,
+                                cantidad: nuevoDetalle.cantidad,
+                                producto_id: productoProveedor.producto_id,
+                                sucursal_id: productoActualizado.sucursal.id,
+                            }, productoActualizado.stock);
+                        }
+                    }
+                }
+            }
+
+            // Paso 4: Actualizar los campos de la compra (fecha, número de factura, observaciones, monto_total)
+            const updateFields: any = {};
+            
+            if (updateData.fecha_compra !== undefined) {
+                updateFields.fecha_compra = new Date(updateData.fecha_compra);
+            }
+            if (updateData.numero_factura !== undefined) {
+                updateFields.numero_factura = updateData.numero_factura;
+            }
+            if (updateData.observaciones !== undefined) {
+                updateFields.observaciones = updateData.observaciones;
+            }
+            if (updateData.monto_total !== undefined) {
+                updateFields.monto_total = updateData.monto_total;
+            }
+
+            // Solo actualizar si hay campos para actualizar
+            if (Object.keys(updateFields).length > 0) {
+                await this.compraRepository.update(id, updateFields);
+            }
+
+            // Paso 5: Retornar la compra actualizada con todas sus relaciones
+            return await this.findById(id);
+        } catch (error) {
+            console.error('Error al actualizar la compra:', error);
+            if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new BadRequestException('Error al actualizar la compra. Por favor, verifica los datos e intenta nuevamente.');
+        }
+    }
+
+    // Delete single compra
+    async deleteCompra(id: number): Promise<void> {
         try {
             // Primero obtenemos la compra con todas sus relaciones
             const compra = await this.compraRepository.findOne({
                 where: { id },
-                relations: ['detalles', 'detalles.producto', 'sucursal'],
+                relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal'],
             });
 
             if (!compra) {
                 throw new BadRequestException(`❌ No se encontró la compra con ID ${id} que intentas eliminar.`);
             }
 
+            // PASO 0: Validar que hay suficiente stock para devolver
+            // Al eliminar una compra, debemos restar el stock que se sumó, pero primero validamos que exista
+            if (compra.detalles && compra.detalles.length > 0) {
+                for (const detalle of compra.detalles) {
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalle.producto.id },
+                        relations: ['producto']
+                    });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            // Validar que el stock actual sea suficiente para devolver
+                            if (producto.stock < detalle.cantidad) {
+                                throw new BadRequestException(
+                                    `No se puede eliminar la compra. El producto "${productoProveedor.producto.nombre}" tiene un stock actual de ${producto.stock}, ` +
+                                    `pero se necesitan ${detalle.cantidad} unidades disponibles para poder eliminar esta compra. ` +
+                                    `El stock de este producto ya ha sido vendido o ajustado.`
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
             // PASO 0.5: Crear movimientos de stock tipo AJUSTE_MANUAL para devolver el stock
             // Estos movimientos SÍ modificarán el stock del producto (devolución)
             if (compra.detalles && compra.detalles.length > 0) {
                 for (const detalle of compra.detalles) {
-                    await this.movimientosStockService.create({
-                        tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
-                        descripcion: `Devolución por eliminación de compra #${compra.numero_compra}`,
-                        cantidad: -detalle.cantidad, // Cantidad negativa para devolver stock
-                        producto_id: detalle.producto.id,
-                        sucursal_id: compra.sucursal.id,
+                    // Obtener el producto_id desde la relación producto-proveedor
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalle.producto.id },
+                        relations: ['producto']
                     });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            await this.movimientosStockService.create({
+                                tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
+                                descripcion: `Devolución por eliminación de compra #${compra.numero_compra}`,
+                                cantidad: -detalle.cantidad, // Cantidad negativa para devolver stock
+                                producto_id: productoProveedor.producto_id,
+                                sucursal_id: producto.sucursal.id,
+                            });
+                        }
+                    }
                 }
             }
 
@@ -232,11 +480,11 @@ export class ComprasService extends BaseService<CompraEntity>{
     }
 
     // Bulk delete compras
-    async bulkDeleteCompras(ids: number[], sucursalId?: number): Promise<void> {
+    async bulkDeleteCompras(ids: number[], empresaId?: number): Promise<void> {
         // Obtener todas las compras con sus relaciones
         const compras = await this.compraRepository.find({
             where: { id: In(ids) },
-            relations: ['detalles', 'detalles.producto', 'sucursal'],
+            relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal', 'sucursal.empresa'],
         });
 
         // Validar que existan compras
@@ -244,11 +492,11 @@ export class ComprasService extends BaseService<CompraEntity>{
             throw new BadRequestException('❌ No se encontraron compras con los IDs proporcionados.');
         }
 
-        // Si se proporciona sucursalId, validar que las compras pertenezcan a esa sucursal
-        if (sucursalId) {
-            const comprasInvalidas = compras.filter(compra => compra.sucursal.id !== sucursalId);
+        // Si se proporciona empresaId, validar que las compras pertenezcan a esa empresa
+        if (empresaId) {
+            const comprasInvalidas = compras.filter(compra => compra.sucursal?.empresa?.id !== empresaId);
             if (comprasInvalidas.length > 0) {
-                throw new BadRequestException('❌ Algunas compras que intentas eliminar no pertenecen a tu sucursal.');
+                throw new BadRequestException('❌ Algunas compras que intentas eliminar no pertenecen a tu empresa.');
             }
         }
 
@@ -257,18 +505,64 @@ export class ComprasService extends BaseService<CompraEntity>{
             throw new BadRequestException('❌ Algunas compras que intentas eliminar no existen.');
         }
 
+        // PASO 0: Validar que hay suficiente stock para devolver en todas las compras
+        // Al eliminar compras, debemos restar el stock que se sumó, pero primero validamos que exista
+        for (const compra of compras) {
+            if (compra.detalles && compra.detalles.length > 0) {
+                for (const detalle of compra.detalles) {
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalle.producto.id },
+                        relations: ['producto']
+                    });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            // Validar que el stock actual sea suficiente para devolver
+                            if (producto.stock < detalle.cantidad) {
+                                throw new BadRequestException(
+                                    `No se pueden eliminar las compras. El producto "${productoProveedor.producto.nombre}" tiene un stock actual de ${producto.stock}, ` +
+                                    `pero se necesitan ${detalle.cantidad} unidades disponibles para poder eliminar la compra #${compra.numero_compra}. ` +
+                                    `El stock de este producto ya ha sido vendido o ajustado.`
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // PASO 0.5: Crear movimientos de stock tipo AJUSTE_MANUAL para devolver el stock de todas las compras
         // Estos movimientos SÍ modificarán el stock del producto (devolución)
         for (const compra of compras) {
             if (compra.detalles && compra.detalles.length > 0) {
                 for (const detalle of compra.detalles) {
-                    await this.movimientosStockService.create({
-                        tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
-                        descripcion: `Devolución por eliminación de compra #${compra.numero_compra}`,
-                        cantidad: -detalle.cantidad, // Cantidad negativa para reducir stock
-                        producto_id: detalle.producto.id,
-                        sucursal_id: compra.sucursal.id,
+                    // Obtener el producto_id desde la relación producto-proveedor
+                    const productoProveedor = await this.productoProveedorRepository.findOne({
+                        where: { id: detalle.producto.id },
+                        relations: ['producto']
                     });
+
+                    if (productoProveedor) {
+                        const producto = await this.productoRepository.findOne({
+                            where: { id: productoProveedor.producto_id },
+                            relations: ['sucursal']
+                        });
+
+                        if (producto) {
+                            await this.movimientosStockService.create({
+                                tipo_movimiento: TipoMovimientoStock.AJUSTE_MANUAL,
+                                descripcion: `Devolución por eliminación de compra #${compra.numero_compra}`,
+                                cantidad: -detalle.cantidad, // Cantidad negativa para reducir stock
+                                producto_id: productoProveedor.producto_id,
+                                sucursal_id: producto.sucursal.id,
+                            });
+                        }
+                    }
                 }
             }
         }

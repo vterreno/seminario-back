@@ -1,8 +1,9 @@
-import { Column, Entity, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { BaseEntity } from "./base.entity";
 import { ventaEntity } from "./venta.entity";
 import { empresaEntity } from "./empresa.entity";
 import { sucursalEntity } from "./sucursal.entity";
+import { CompraEntity } from "./compra.entity";
 
 export type metodoPago = 'efectivo' | 'transferencia' ;
 
@@ -20,6 +21,10 @@ export class pagoEntity extends BaseEntity{
     @OneToOne(() => ventaEntity, venta => venta.pago)
     venta: ventaEntity;
 
+    @OneToOne(() => CompraEntity, compra => compra.pago)
+    compra: CompraEntity;
+
     @ManyToOne(() => sucursalEntity, sucursal => sucursal.pagos)
+    @JoinColumn({ name: 'sucursal_id' })
     sucursal: sucursalEntity;
 }

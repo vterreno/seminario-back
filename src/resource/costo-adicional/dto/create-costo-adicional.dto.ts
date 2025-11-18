@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateCostoAdicionalDto {
     @IsOptional()
@@ -8,6 +8,7 @@ export class CreateCostoAdicionalDto {
     @IsNumber()
     compra_id: number;
 
-    @IsNumber()
+    @IsNotEmpty({ message: 'El monto es requerido' })
+    @IsNumber({}, { message: 'El monto debe ser un número' })
     monto: number;
 }

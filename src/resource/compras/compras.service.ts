@@ -544,15 +544,32 @@ export class ComprasService extends BaseService<CompraEntity>{
                     }
                 }
 
-                // 3.2: Eliminar todos los detalles antiguos usando el servicio para respetar hooks y cascadas
-                const detallesAntiguos = await this.detalleCompraService.detalleCompraRepository.find({
-                    where: { compra_id: id }
-                });
-                if (detallesAntiguos.length > 0) {
-                    await this.detalleCompraService.detalleCompraRepository.remove(detallesAntiguos);
-                }
+                // 3.2: Eliminar todos los detalles antiguos
+                await this.compraRepository
+                    .createQueryBuilder()
+                    .delete()
+                    .from('detalle_compra')
+                    .where('compra_id = :compraId', { compraId: id })
+                    .execute();
 
                 // 3.3: Crear los nuevos detalles y actualizar el stock
+                // Optimización: Obtener todos los productos de una vez para evitar N+1 queries
+                const productoProveedorIds = updateData.detalles.map(d => d.producto_proveedor_id);
+                const productosProveedores = await this.productoProveedorRepository.find({
+                    where: { id: In(productoProveedorIds) },
+                    relations: ['producto']
+                });
+                
+                const productoIds = productosProveedores.map(pp => pp.producto_id);
+                const productos = await this.productoRepository.find({
+                    where: { id: In(productoIds) },
+                    relations: ['sucursal']
+                });
+                
+                // Crear mapas para acceso rápido
+                const productoProveedorMap = new Map(productosProveedores.map(pp => [pp.id, pp]));
+                const productoMap = new Map(productos.map(p => [p.id, p]));
+
                 for (const nuevoDetalle of updateData.detalles) {
                     // Crear el detalle (esto suma el stock del producto automáticamente)
                     await this.detalleCompraService.createDetalle({
@@ -560,17 +577,11 @@ export class ComprasService extends BaseService<CompraEntity>{
                         compra_id: id,
                     });
 
-                    // Obtener el producto actualizado para registrar el movimiento
-                    const productoProveedor = await this.productoProveedorRepository.findOne({
-                        where: { id: nuevoDetalle.producto_proveedor_id },
-                        relations: ['producto']
-                    });
-
+                    // Obtener el producto desde los mapas precargados
+                    const productoProveedor = productoProveedorMap.get(nuevoDetalle.producto_proveedor_id);
+                    
                     if (productoProveedor) {
-                        const productoActualizado = await this.productoRepository.findOne({
-                            where: { id: productoProveedor.producto_id },
-                            relations: ['sucursal']
-                        });
+                        const productoActualizado = productoMap.get(productoProveedor.producto_id);
 
                         if (productoActualizado) {
                             // Crear movimiento de stock tipo COMPRA para el nuevo detalle

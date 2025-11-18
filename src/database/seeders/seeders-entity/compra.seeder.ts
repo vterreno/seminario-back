@@ -204,7 +204,7 @@ export class CompraSeeder {
                                 : null,
                         });
 
-                        const compraGuardada = await this.compraRepo.save(compra);
+                        await this.compraRepo.save(compra);
 
                         // Actualizar el monto del pago si existe
                         if (pagoGuardado) {

@@ -377,7 +377,7 @@ export class ComprasService extends BaseService<CompraEntity>{
                         const costoEntityData = queryRunner.manager.create(CostoAdicionalEntity, {
                             concepto: costoData.concepto,
                             monto: costoData.monto,
-                            compra_id: compraId,
+                            compra: { id: compraId } as CompraEntity,
                         });
                         
                         await queryRunner.manager.save(CostoAdicionalEntity, costoEntityData);
@@ -415,6 +415,22 @@ export class ComprasService extends BaseService<CompraEntity>{
         return await this.compraRepository.findOne({
             where: { id },
             relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto', 'detalles.producto.producto', 'pago', 'costosAdicionales'],
+        });
+    }
+
+    // Find compra by id with empresa relation
+    async findByIdWithEmpresa(id: number): Promise<CompraEntity> {
+        return await this.compraRepository.findOne({
+            where: { id },
+            relations: ['sucursal', 'sucursal.empresa', 'contacto', 'detalles', 'pago', 'costosAdicionales'],
+        });
+    }
+
+    // Find compra by id with sucursal and empresa relation
+    async findByIdWithSucursalEmpresa(id: number): Promise<CompraEntity> {
+        return await this.compraRepository.findOne({
+            where: { id },
+            relations: ['sucursal', 'sucursal.empresa'],
         });
     }
 

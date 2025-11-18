@@ -123,7 +123,7 @@ export class CostoAdicionalIva1763469011648 implements MigrationInterface {
         `);
         await queryRunner.query(`
             ALTER TABLE "costos-adicionales"
-            ADD CONSTRAINT "FK_b85a68e9466f31a12e996d1efda" FOREIGN KEY ("compraId") REFERENCES "compras"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+            ADD CONSTRAINT "FK_b85a68e9466f31a12e996d1efda" FOREIGN KEY ("compra_id") REFERENCES "compras"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
         await queryRunner.query(`
             ALTER TABLE "compras"

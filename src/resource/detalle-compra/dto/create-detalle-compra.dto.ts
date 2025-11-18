@@ -23,9 +23,9 @@ export class CreateDetalleCompraDto {
     @IsNumber({}, { message: 'El porcentaje de IVA debe ser un número' })
     iva_porcentaje?: number;
 
-    @IsOptional()
+    @IsNotEmpty({ message: 'El monto de IVA es requerido' })
     @IsNumber({}, { message: 'El monto de IVA debe ser un número' })
-    iva_monto?: number;
+    iva_monto: number;
 
     @IsNotEmpty({ message: 'El subtotal es requerido' })
     @IsNumber({}, { message: 'El subtotal debe ser un número' })

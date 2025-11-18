@@ -35,6 +35,25 @@ export class ComprasController {
     return [];
   }
 
+  @Get('empresa/:empresaId')
+  @Action('ver')
+  async getComprasByEmpresa(@Param('empresaId') empresaId: string, @Req() req: RequestWithUser) {
+    const user = req.user;
+
+    // Si es super admin, puede ver compras de cualquier empresa
+    if (user.role?.nombre?.toLowerCase() === 'superadmin') {
+      return await this.comprasService.getComprasByEmpresa(+empresaId);
+    }
+
+    // Si no es super admin, solo puede ver compras de su propia empresa
+    if (user.empresa?.id && user.empresa.id === +empresaId) {
+      return await this.comprasService.getComprasByEmpresa(+empresaId);
+    }
+
+    // Si intenta acceder a otra empresa, retornar array vacío o error
+    throw new BadRequestException('No tienes permisos para ver las compras de esta empresa');
+  }
+
   @Get(':id')
   @Action('ver')
   async getCompraById(@Param('id') id: string) {

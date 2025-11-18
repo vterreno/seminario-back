@@ -71,10 +71,7 @@ export class ComprasController {
     // Si el usuario tiene empresa, verificar que la compra pertenezca a esa empresa
     if (user.empresa?.id) {
       // Necesitamos cargar la relación empresa de la sucursal
-      const compraConEmpresa = await this.comprasService['compraRepository'].findOne({
-        where: { id: +id },
-        relations: ['sucursal', 'sucursal.empresa']
-      });
+      const compraConEmpresa = await this.comprasService.findByIdWithEmpresa(+id);
 
       if (!compraConEmpresa || !compraConEmpresa.sucursal || compraConEmpresa.sucursal.empresa?.id !== user.empresa.id) {
         throw new BadRequestException('No tienes permisos para modificar esta compra');

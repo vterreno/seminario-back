@@ -293,8 +293,8 @@ export class ComprasService extends BaseService<CompraEntity>{
                     producto: { id: productoProveedorId } as ProductoProveedorEntity,
                     cantidad: detalle.cantidad,
                     precio_unitario: detalle.precio_unitario,
-                    iva_porcentaje: detalle.iva_porcentaje || 21,
-                    iva_monto: detalle.iva_monto || 0,
+                    iva_porcentaje: detalle.iva_porcentaje ?? 21,
+                    iva_monto: detalle.iva_monto ?? 0,
                     subtotal: detalle.subtotal,
                 });
 

@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, TableUnique } from "typeorm";
 
-export class AddUniqueConstraintProductoProveedor1731600000000 implements MigrationInterface {
+export class AddUniqueConstraintProductoProveedor1762995576312 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Primero, eliminar duplicados existentes (mantener solo el más reciente)
         await queryRunner.query(`

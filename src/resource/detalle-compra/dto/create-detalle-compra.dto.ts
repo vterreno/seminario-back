@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateIf, Min, Max } from "class-validator";
 
 export class CreateDetalleCompraDto {
     @ValidateIf(o => !o.producto_id)
@@ -18,6 +18,17 @@ export class CreateDetalleCompraDto {
     @IsNotEmpty({ message: 'El precio unitario es requerido' })
     @IsNumber({}, { message: 'El precio unitario debe ser un número' })
     precio_unitario: number;
+
+    @IsOptional()
+    @IsNumber({}, { message: 'El porcentaje de IVA debe ser un número' })
+    @Min(0, { message: 'El porcentaje de IVA no puede ser negativo' })
+    @Max(100, { message: 'El porcentaje de IVA no puede ser mayor a 100' })
+    iva_porcentaje?: number;
+
+    @IsOptional()
+    @IsNumber({}, { message: 'El monto de IVA debe ser un número' })
+    @Min(0, { message: 'El monto de IVA no puede ser negativo' })
+    iva_monto?: number;
 
     @IsNotEmpty({ message: 'El subtotal es requerido' })
     @IsNumber({}, { message: 'El subtotal debe ser un número' })

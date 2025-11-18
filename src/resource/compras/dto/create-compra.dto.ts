@@ -1,8 +1,20 @@
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from "class-validator";
 import { CreateDetalleCompraDto } from "src/resource/detalle-compra/dto/create-detalle-compra.dto";
 import { EstadoCompra } from "src/database/core/enums/EstadoCompra.enum";
 import { CreateNuevoProductoDto } from "./create-nuevo-producto.dto";
+import { CreatePagoDto } from "src/resource/pago/dto/create-pago.dto";
+
+export class CreateCostoAdicionalCompraDto {
+    @IsNotEmpty({ message: 'El concepto es requerido' })
+    @IsString({ message: 'El concepto debe ser un texto' })
+    concepto: string;
+
+    @IsNotEmpty({ message: 'El monto es requerido' })
+    @IsNumber({}, { message: 'El monto debe ser un número' })
+    @IsPositive({ message: 'El monto debe ser un valor positivo' })
+    monto: number;
+}
 
 export class CreateCompraDto {
     @IsNotEmpty({ message: 'La fecha de compra es requerida' })
@@ -59,4 +71,15 @@ export class CreateCompraDto {
     @ValidateNested({ each: true })
     @Type(() => CreateNuevoProductoDto)
     nuevos_productos?: CreateNuevoProductoDto[];
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => CreatePagoDto)
+    pago?: CreatePagoDto;
+
+    @IsOptional()
+    @IsArray({ message: 'Los costos adicionales deben ser un array' })
+    @ValidateNested({ each: true })
+    @Type(() => CreateCostoAdicionalCompraDto)
+    costos_adicionales?: CreateCostoAdicionalCompraDto[];
 }

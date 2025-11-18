@@ -1,5 +1,5 @@
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, ValidateNested } from "class-validator";
 import { CreateDetalleCompraDto } from "src/resource/detalle-compra/dto/create-detalle-compra.dto";
 import { EstadoCompra } from "src/database/core/enums/EstadoCompra.enum";
 import { CreateNuevoProductoDto } from "./create-nuevo-producto.dto";
@@ -12,6 +12,7 @@ export class CreateCostoAdicionalCompraDto {
 
     @IsNotEmpty({ message: 'El monto es requerido' })
     @IsNumber({}, { message: 'El monto debe ser un número' })
+    @IsPositive({ message: 'El monto debe ser un valor positivo' })
     monto: number;
 }
 

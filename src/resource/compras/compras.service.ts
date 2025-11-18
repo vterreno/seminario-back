@@ -813,21 +813,35 @@ export class ComprasService extends BaseService<CompraEntity>{
         }
 
         // PASO 0.5: Crear movimientos de stock tipo AJUSTE_MANUAL para devolver el stock de todas las compras
+        // Optimización: Obtener todos los productos de una vez para evitar N+1 queries
+        const allProductoProveedorIds = compras.flatMap(compra => 
+            compra.detalles?.map(d => d.producto.id) || []
+        );
+        
+        const productosProveedores = await this.productoProveedorRepository.find({
+            where: { id: In(allProductoProveedorIds) },
+            relations: ['producto']
+        });
+        
+        const allProductoIds = productosProveedores.map(pp => pp.producto_id);
+        const productos = await this.productoRepository.find({
+            where: { id: In(allProductoIds) },
+            relations: ['sucursal']
+        });
+        
+        // Crear mapas para acceso rápido
+        const productoProveedorMap = new Map(productosProveedores.map(pp => [pp.id, pp]));
+        const productoMap = new Map(productos.map(p => [p.id, p]));
+        
         // Estos movimientos SÍ modificarán el stock del producto (devolución)
         for (const compra of compras) {
             if (compra.detalles && compra.detalles.length > 0) {
                 for (const detalle of compra.detalles) {
-                    // Obtener el producto_id desde la relación producto-proveedor
-                    const productoProveedor = await this.productoProveedorRepository.findOne({
-                        where: { id: detalle.producto.id },
-                        relations: ['producto']
-                    });
-
+                    // Obtener desde los mapas precargados
+                    const productoProveedor = productoProveedorMap.get(detalle.producto.id);
+                    
                     if (productoProveedor) {
-                        const producto = await this.productoRepository.findOne({
-                            where: { id: productoProveedor.producto_id },
-                            relations: ['sucursal']
-                        });
+                        const producto = productoMap.get(productoProveedor.producto_id);
 
                         if (producto) {
                             await this.movimientosStockService.create({

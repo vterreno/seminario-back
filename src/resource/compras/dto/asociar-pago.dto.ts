@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, MaxLength, IsDateString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsIn, IsDateString } from "class-validator";
 
 export class AsociarPagoCompraDto {
     @IsNotEmpty({ message: 'La fecha de pago es requerida' })
@@ -10,8 +10,7 @@ export class AsociarPagoCompraDto {
     monto_pago: number;
 
     @IsNotEmpty({ message: 'El método de pago es requerido' })
-    @IsString({ message: 'El método de pago debe ser un texto' })
-    @MaxLength(255, { message: 'El método de pago no puede exceder 255 caracteres' })
+    @IsIn(['efectivo', 'transferencia'], { message: 'El método de pago debe ser efectivo o transferencia' })
     metodo_pago: 'efectivo' | 'transferencia';
 
     @IsNotEmpty({ message: 'La sucursal es requerida' })

@@ -93,7 +93,7 @@ export class CostoAdicionalIva1763469011648 implements MigrationInterface {
         `);
         await queryRunner.query(`
             ALTER TABLE "detalle_compra"
-            ADD "iva_monto" numeric(10, 2) NOT NULL
+            ADD "iva_monto" numeric(10, 2) NOT NULL DEFAULT 0
         `);
         await queryRunner.query(`
             ALTER TABLE "movimiento-stock"

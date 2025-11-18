@@ -544,13 +544,13 @@ export class ComprasService extends BaseService<CompraEntity>{
                     }
                 }
 
-                // 3.2: Eliminar todos los detalles antiguos en una sola operación (mejor performance)
-                await this.compraRepository
-                    .createQueryBuilder()
-                    .delete()
-                    .from('detalle_compra')
-                    .where('compra_id = :compraId', { compraId: id })
-                    .execute();
+                // 3.2: Eliminar todos los detalles antiguos usando el servicio para respetar hooks y cascadas
+                const detallesAntiguos = await this.detalleCompraService.detalleCompraRepository.find({
+                    where: { compra_id: id }
+                });
+                if (detallesAntiguos.length > 0) {
+                    await this.detalleCompraService.detalleCompraRepository.remove(detallesAntiguos);
+                }
 
                 // 3.3: Crear los nuevos detalles y actualizar el stock
                 for (const nuevoDetalle of updateData.detalles) {

@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddNumeroFacturaObservacionesToCompras1718131200000 implements MigrationInterface {
-    name = 'AddNumeroFacturaObservacionesToCompras1718131200000'
+export class AddNumeroFacturaObservacionesToCompras1762995476312 implements MigrationInterface {
+    name = 'AddNumeroFacturaObservacionesToCompras1762995476312'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Agregar numero_factura a compras

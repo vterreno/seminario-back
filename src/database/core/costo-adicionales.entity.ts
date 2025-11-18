@@ -15,8 +15,6 @@ export class CostoAdicionalEntity extends BaseEntity {
     @JoinColumn({ name: 'compra_id' })
     compra: CompraEntity;
 
-    @Column()
-    compra_id: number;
 }
 
 

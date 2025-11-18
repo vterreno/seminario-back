@@ -55,7 +55,6 @@ export class CostoAdicionalIva1763469011648 implements MigrationInterface {
                 "concepto" character varying(255),
                 "monto" numeric(10, 2) NOT NULL,
                 "compra_id" integer NOT NULL,
-                "compraId" integer,
                 CONSTRAINT "PK_bf4e60ed0bf44f7ed852c926003" PRIMARY KEY ("id")
             )
         `);

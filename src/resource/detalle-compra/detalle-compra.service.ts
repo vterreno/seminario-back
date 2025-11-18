@@ -130,6 +130,8 @@ export class DetalleCompraService extends BaseService<DetalleCompraEntity> {
       producto: { id: productoProveedorId } as ProductoProveedorEntity,
       cantidad: detalleData.cantidad,
       precio_unitario: detalleData.precio_unitario,
+      iva_porcentaje: detalleData.iva_porcentaje ?? 21, // Valor por defecto: 21%
+      iva_monto: detalleData.iva_monto ?? 0, // Valor por defecto: 0
       subtotal: detalleData.subtotal,
     });
     

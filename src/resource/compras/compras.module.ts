@@ -13,15 +13,18 @@ import { ProductoEntity } from 'src/database/core/producto.entity';
 import { PagoModule } from '../pago/pago.module';
 import { ProductosModule } from '../productos/productos.module';
 import { ProductoProveedorModule } from '../producto-proveedor/producto-proveedor.module';
+import { CostoAdicionalEntity } from 'src/database/core/costo-adicionales.entity';
+import { CostoAdicionalModule } from '../costo-adicional/costo-adicional.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CompraEntity, sucursalEntity, ProductoProveedorEntity, ProductoEntity]),
+    TypeOrmModule.forFeature([CompraEntity, sucursalEntity, ProductoProveedorEntity, ProductoEntity, CostoAdicionalEntity]),
     DetalleCompraModule,
     MovimientosStockModule,
     PagoModule,
     ProductosModule,
     ProductoProveedorModule,
+    CostoAdicionalModule,
     JwtModule,
     UsersModule
   ],

@@ -5,6 +5,7 @@ import { sucursalEntity } from "./sucursal.entity";
 import { EstadoCompra } from "./enums/EstadoCompra.enum";
 import { DetalleCompraEntity } from "./detalleCompra.entity";
 import { pagoEntity } from "./pago.entity";
+import { CostoAdicionalEntity } from "./costo-adicionales.entity";
 
 @Entity('compras')
 export class CompraEntity extends BaseEntity{
@@ -40,4 +41,7 @@ export class CompraEntity extends BaseEntity{
 
     @Column({ type: 'text', nullable: true })
     observaciones?: string;
+
+    @OneToMany(() => CostoAdicionalEntity, costoAdicional => costoAdicional.compra, { cascade: true, eager: true })
+    costosAdicionales: CostoAdicionalEntity[];
 }

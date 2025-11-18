@@ -19,6 +19,14 @@ export class CreateDetalleCompraDto {
     @IsNumber({}, { message: 'El precio unitario debe ser un número' })
     precio_unitario: number;
 
+    @IsOptional()
+    @IsNumber({}, { message: 'El porcentaje de IVA debe ser un número' })
+    iva_porcentaje?: number;
+
+    @IsOptional()
+    @IsNumber({}, { message: 'El monto de IVA debe ser un número' })
+    iva_monto?: number;
+
     @IsNotEmpty({ message: 'El subtotal es requerido' })
     @IsNumber({}, { message: 'El subtotal debe ser un número' })
     subtotal: number;

@@ -16,6 +16,10 @@ import { ProductoEntity } from 'src/database/core/producto.entity';
 import { PagoService } from '../pago/pago.service';
 import { ProductoProveedorService } from '../producto-proveedor/producto-proveedor.service';
 import { ProductosService } from '../productos/productos.service';
+import { CostoAdicionalService } from '../costo-adicional/costo-adicional.service';
+import { pagoEntity } from 'src/database/core/pago.entity';
+import { CostoAdicionalEntity } from 'src/database/core/costo-adicionales.entity';
+import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 
 // Constante para el margen de ganancia por defecto (30%)
 const DEFAULT_PRICE_MARKUP = 1.3;
@@ -39,6 +43,7 @@ export class ComprasService extends BaseService<CompraEntity>{
         private readonly pagoService: PagoService,
         private readonly productoProveedorService: ProductoProveedorService,
         private readonly productosService: ProductosService,
+        private readonly costoAdicionalService: CostoAdicionalService,
         private dataSource: DataSource,
     ){
         super(compraRepository);
@@ -47,7 +52,7 @@ export class ComprasService extends BaseService<CompraEntity>{
     // Get all compras (for superadmin)
     async getAllCompras(): Promise<CompraEntity[]> {
         return await this.compraRepository.find({
-            relations: ['sucursal', 'sucursal.empresa', 'contacto'],
+            relations: ['sucursal', 'sucursal.empresa', 'contacto', 'costosAdicionales'],
         });
     }
 
@@ -73,10 +78,9 @@ export class ComprasService extends BaseService<CompraEntity>{
     async getComprasBySucursal(sucursalId: number[]): Promise<CompraEntity[]> {
         return await this.compraRepository.find({
             where: { sucursal: { id: In(sucursalId) } },
-            relations: ['sucursal', 'contacto'],
+            relations: ['sucursal', 'contacto', 'costosAdicionales'],
         });
     }
-
 
     // Create compra
     async createCompra(compraData: CreateCompraDto): Promise<CompraEntity> {
@@ -84,6 +88,8 @@ export class ComprasService extends BaseService<CompraEntity>{
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        let compraId: number;
 
         try {
             // Paso 1: Verificar que la sucursal existe y obtener su información
@@ -117,7 +123,7 @@ export class ComprasService extends BaseService<CompraEntity>{
 
             // Paso 5: Guardar la compra
             const savedCompra = await queryRunner.manager.save(CompraEntity, compra);
-            const compraId = savedCompra.id;
+            compraId = savedCompra.id;
 
             // Paso 6: Crear nuevos productos si se proporcionaron
             const productosCreados = new Map<string, number>(); // codigo -> producto_id
@@ -287,6 +293,8 @@ export class ComprasService extends BaseService<CompraEntity>{
                     producto: { id: productoProveedorId } as ProductoProveedorEntity,
                     cantidad: detalle.cantidad,
                     precio_unitario: detalle.precio_unitario,
+                    iva_porcentaje: detalle.iva_porcentaje || 21,
+                    iva_monto: detalle.iva_monto || 0,
                     subtotal: detalle.subtotal,
                 });
 
@@ -329,24 +337,57 @@ export class ComprasService extends BaseService<CompraEntity>{
                     throw new NotFoundException(`Producto con id ${productoId} no encontrado`);
                 }
 
-                // Crear movimiento de stock tipo COMPRA (solo registro, no modifica stock)
-                await this.movimientosStockService.createMovimientoRegistro({
+                // Crear movimiento de stock tipo COMPRA usando el queryRunner para mantener la transacción
+                const movimientoEntity = queryRunner.manager.create(MovimientoStockEntity, {
+                    fecha: new Date(),
                     tipo_movimiento: TipoMovimientoStock.COMPRA,
                     descripcion: `Compra #${nuevoNumeroCompra} - Producto adquirido`,
                     cantidad: detalle.cantidad,
+                    stock_resultante: productoActualizado.stock,
                     producto_id: productoId,
                     sucursal_id: compraData.sucursal_id,
-                }, productoActualizado.stock);
+                });
+
+                await queryRunner.manager.save(MovimientoStockEntity, movimientoEntity);
+            }
+
+            // Paso 11: Crear el pago si se proporcionó
+            if (compraData.pago) {
+                // Crear el pago usando el queryRunner para mantener la transacción
+                const pagoEntityData = queryRunner.manager.create(pagoEntity, {
+                    fecha_pago: new Date(compraData.pago.fecha_pago),
+                    monto_pago: compraData.pago.monto_pago,
+                    metodo_pago: compraData.pago.metodo_pago as 'efectivo' | 'transferencia',
+                    sucursal: { id: compraData.pago.sucursal_id } as sucursalEntity,
+                });
+
+                const savedPago = await queryRunner.manager.save(pagoEntity, pagoEntityData);
+
+                // Asociar el pago a la compra
+                await queryRunner.manager.update(CompraEntity, compraId, {
+                    pago: savedPago,
+                });
+            }
+
+            // Paso 12: Crear los costos adicionales si se proporcionaron
+            if (compraData.costos_adicionales && compraData.costos_adicionales.length > 0) {
+                for (const costoData of compraData.costos_adicionales) {
+                    if (costoData.concepto && costoData.monto > 0) {
+                        // Crear el costo adicional usando el queryRunner para mantener la transacción
+                        const costoEntityData = queryRunner.manager.create(CostoAdicionalEntity, {
+                            concepto: costoData.concepto,
+                            monto: costoData.monto,
+                            compra_id: compraId,
+                        });
+                        
+                        await queryRunner.manager.save(CostoAdicionalEntity, costoEntityData);
+                    }
+                }
             }
 
             // Confirmar la transacción
             await queryRunner.commitTransaction();
 
-            // Paso 11: Retornar la compra completa con todas sus relaciones
-            return await this.compraRepository.findOne({
-                where: { id: compraId },
-                relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto'],
-            });
         } catch (error) {
             // Revertir la transacción en caso de error
             await queryRunner.rollbackTransaction();
@@ -361,12 +402,19 @@ export class ComprasService extends BaseService<CompraEntity>{
             // Liberar el queryRunner
             await queryRunner.release();
         }
+
+        // Paso 13: Retornar la compra completa con todas sus relaciones
+        // Se hace FUERA del try-catch para evitar rollback de transacción ya commiteada
+        return await this.compraRepository.findOne({
+            where: { id: compraId },
+            relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto', 'pago', 'costosAdicionales'],
+        });
     }
     // Find compra by id with relations
     async findById(id: number): Promise<CompraEntity> {
         return await this.compraRepository.findOne({
             where: { id },
-            relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto', 'detalles.producto.producto', 'pago'],
+            relations: ['sucursal', 'contacto', 'detalles', 'detalles.producto', 'detalles.producto.producto', 'pago', 'costosAdicionales'],
         });
     }
 
@@ -560,7 +608,24 @@ export class ComprasService extends BaseService<CompraEntity>{
                 await this.compraRepository.update(id, updateFields);
             }
 
-            // Paso 5: Retornar la compra actualizada con todas sus relaciones
+            // Paso 5: Actualizar costos adicionales si se proporcionan
+            if (updateData.costos_adicionales !== undefined) {
+                // Eliminar costos adicionales existentes
+                await this.costoAdicionalService.deleteCostosByCompraId(id);
+
+                // Crear los nuevos costos adicionales
+                if (updateData.costos_adicionales.length > 0) {
+                    for (const costoData of updateData.costos_adicionales) {
+                        await this.costoAdicionalService.createCostoAdicional({
+                            concepto: costoData.concepto,
+                            monto: costoData.monto,
+                            compra_id: id,
+                        });
+                    }
+                }
+            }
+
+            // Paso 6: Retornar la compra actualizada con todas sus relaciones
             return await this.findById(id);
         } catch (error) {
             console.error('Error al actualizar la compra:', error);
@@ -684,7 +749,7 @@ export class ComprasService extends BaseService<CompraEntity>{
         // Obtener todas las compras con sus relaciones
         const compras = await this.compraRepository.find({
             where: { id: In(ids) },
-            relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal', 'sucursal.empresa'],
+            relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal', 'sucursal.empresa', 'costosAdicionales'],
         });
 
         // Validar que existan compras

@@ -173,11 +173,16 @@ export class CompraSeeder {
                             const subtotal = cantidad * precioUnitario;
                             montoTotal += subtotal;
 
+                            // Asignar un porcentaje de IVA aleatorio (por ejemplo, 10% o 21%)
+                            const iva_porcentaje = Math.random() > 0.5 ? 21 : 10;
+                            const iva_monto = subtotal * (iva_porcentaje / 100);
                             const detalle = this.detalleCompraRepo.create({
                                 producto: productoProveedor,
                                 cantidad: cantidad,
                                 precio_unitario: precioUnitario,
                                 subtotal: subtotal,
+                                iva_porcentaje: iva_porcentaje,
+                                iva_monto: iva_monto,
                             });
 
                             detalles.push(detalle);

@@ -137,10 +137,7 @@ export class ComprasController {
         }
         
         // Cargar la relación empresa de la sucursal
-        const compraConEmpresa = await this.comprasService['compraRepository'].findOne({
-          where: { id: +id },
-          relations: ['sucursal', 'sucursal.empresa']
-        });
+        const compraConEmpresa = await this.comprasService.findByIdWithSucursalEmpresa(+id);
         
         if (compraConEmpresa && compraConEmpresa.sucursal.empresa?.id !== user.empresa.id) {
           throw new BadRequestException('No tienes permisos para eliminar esta compra');

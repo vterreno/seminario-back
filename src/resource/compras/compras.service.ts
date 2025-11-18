@@ -513,18 +513,29 @@ export class ComprasService extends BaseService<CompraEntity>{
                 }
 
                 // 3.1: Revertir el stock de los detalles antiguos
+                // Optimización: Obtener todos los productos de una vez para evitar N+1 queries
+                const detalleProveedorIds = compraExistente.detalles.map(d => d.producto.id);
+                const detalleProductosProveedores = await this.productoProveedorRepository.find({
+                    where: { id: In(detalleProveedorIds) },
+                    relations: ['producto']
+                });
+                
+                const detalleProductoIds = detalleProductosProveedores.map(pp => pp.producto_id);
+                const detalleProductos = await this.productoRepository.find({
+                    where: { id: In(detalleProductoIds) },
+                    relations: ['sucursal']
+                });
+                
+                // Crear mapas para acceso rápido
+                const detalleProveedorMap = new Map(detalleProductosProveedores.map(pp => [pp.id, pp]));
+                const detalleProductoMap = new Map(detalleProductos.map(p => [p.id, p]));
+                
                 for (const detalleAntiguo of compraExistente.detalles) {
-                    // Obtener el producto_id desde la relación producto-proveedor
-                    const productoProveedor = await this.productoProveedorRepository.findOne({
-                        where: { id: detalleAntiguo.producto.id },
-                        relations: ['producto']
-                    });
+                    // Obtener desde los mapas precargados
+                    const productoProveedor = detalleProveedorMap.get(detalleAntiguo.producto.id);
 
                     if (productoProveedor) {
-                        const producto = await this.productoRepository.findOne({
-                            where: { id: productoProveedor.producto_id },
-                            relations: ['sucursal']
-                        });
+                        const producto = detalleProductoMap.get(productoProveedor.producto_id);
 
                         if (producto) {
                             // Restar el stock que se había sumado con la compra original

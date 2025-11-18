@@ -5,7 +5,8 @@ export class CreateCostoAdicionalDto {
     @IsString()
     concepto?: string;
 
-    @IsNumber()
+    @IsNotEmpty({ message: 'El id de la compra es requerido' })
+    @IsNumber({}, { message: 'El id de la compra debe ser un número' })
     compra_id: number;
 
     @IsNotEmpty({ message: 'El monto es requerido' })

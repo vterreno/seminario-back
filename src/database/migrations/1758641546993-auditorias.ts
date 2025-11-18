@@ -4,8 +4,23 @@ export class Auditorias1758641546993 implements MigrationInterface {
     name = 'Auditorias1758641546993'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Crear ENUM type (SQL puro, no hay soporte en Query Builder)
-        await queryRunner.query(`CREATE TYPE "public"."movimiento-stock_tipo_movimiento_enum" AS ENUM('STOCK_APERTURA', 'VENTA', 'COMPRA', 'AJUSTE_MANUAL')`);
+        // Verificar si el tipo ENUM ya existe antes de crearlo
+        const enumExists = await queryRunner.query(`
+            SELECT EXISTS (
+                SELECT 1 FROM pg_type 
+                WHERE typname = 'movimiento-stock_tipo_movimiento_enum'
+            );
+        `);
+        
+        if (!enumExists[0].exists) {
+            await queryRunner.query(`CREATE TYPE "public"."movimiento-stock_tipo_movimiento_enum" AS ENUM('STOCK_APERTURA', 'VENTA', 'COMPRA', 'AJUSTE_MANUAL')`);
+        }
+
+        // Verificar si la tabla ya existe antes de crearla
+        const tableExists = await queryRunner.hasTable("movimiento-stock");
+        if (tableExists) {
+            return;
+        }
 
         // Crear tabla movimiento-stock
         await queryRunner.createTable(

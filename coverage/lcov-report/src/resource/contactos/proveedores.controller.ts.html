@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">97.29% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/35</span>
+                <span class='fraction'>36/37</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>6/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">97.14% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>33/33</span>
+                <span class='fraction'>34/35</span>
             </div>
         
             
@@ -131,7 +131,13 @@
 <a name='L66'></a><a href='#L66'>66</a>
 <a name='L67'></a><a href='#L67'>67</a>
 <a name='L68'></a><a href='#L68'>68</a>
-<a name='L69'></a><a href='#L69'>69</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -172,6 +178,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -199,7 +211,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Body, Controller, Get, Param, Patch, Post, Put, UseGuards, Req } from '@nestjs/common';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put, UseGuards, Req } from '@nestjs/common';
 import { ContactosService } from './contactos.service';
 import { BaseController } from 'src/base-service/base-controller.controller';
 import { contactoEntity } from 'src/database/core/contacto.entity';
@@ -237,6 +249,12 @@ export class ProveedoresController extends BaseController&lt;contactoEntity&gt; 
     }
   }
 &nbsp;
+  @Get(':id')
+  @Action('ver')
+<span class="fstat-no" title="function not covered" >  async </span>getProveedorById(@Param('id', ParseIntPipe) id: number) {
+<span class="cstat-no" title="statement not covered" >    return await this.contactosService.findOne({ where: { id } });</span>
+  }
+&nbsp;
   @Post()
   @Action('agregar')
   async createProveedor(@Body() dto: CreateContactoDto, @Req() req: RequestWithUser) {
@@ -247,14 +265,14 @@ export class ProveedoresController extends BaseController&lt;contactoEntity&gt; 
 &nbsp;
   @Put(':id')
   @Action('modificar')
-  async updateProveedor(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
+  async updateProveedor(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateContactoDto) {
     const { provincia, ciudad, ...rest } = dto as any;
     return await this.contactosService.updateContacto(id, rest as Partial&lt;contactoEntity&gt;);
   }
 &nbsp;
   @Patch(':id')
   @Action('modificar')
-  async updateProveedorPartial(@Param('id') id: number, @Body() dto: UpdateContactoDto) {
+  async updateProveedorPartial(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateContactoDto) {
     const { provincia, ciudad, ...rest } = dto as any;
     return await this.contactosService.updateContacto(id, rest as Partial&lt;contactoEntity&gt;);
   }
@@ -274,7 +292,7 @@ export class ProveedoresController extends BaseController&lt;contactoEntity&gt; 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T19:50:31.395Z
+                at 2025-12-02T02:31:55.563Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

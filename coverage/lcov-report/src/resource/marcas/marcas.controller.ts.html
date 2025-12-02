@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86.15% </span>
+                <span class="strong">87.69% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>56/65</span>
+                <span class='fraction'>57/65</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64.28% </span>
+                <span class="strong">52.94% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/14</span>
+                <span class='fraction'>9/17</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.71% </span>
+                <span class="strong">87.3% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>54/63</span>
+                <span class='fraction'>55/63</span>
             </div>
         
             
@@ -204,13 +204,7 @@
 <a name='L139'></a><a href='#L139'>139</a>
 <a name='L140'></a><a href='#L140'>140</a>
 <a name='L141'></a><a href='#L141'>141</a>
-<a name='L142'></a><a href='#L142'>142</a>
-<a name='L143'></a><a href='#L143'>143</a>
-<a name='L144'></a><a href='#L144'>144</a>
-<a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a>
-<a name='L148'></a><a href='#L148'>148</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L142'></a><a href='#L142'>142</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -295,14 +289,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -315,20 +309,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -351,7 +340,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -442,42 +430,37 @@ export class MarcasController extends BaseController&lt;MarcaEntity&gt;{
     @Delete(':id')
     @Action('eliminar')
     async deleteMarca(@Param('id') id: number, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
-&nbsp;
         const user = req.user;
-        
-        // Verify the marca belongs to the user's company (if user has a company)
+&nbsp;
+        // Validar pertenencia a la empresa
         if (user.empresa?.id) {
             const existingMarca = await this.marcasService.findById(id);
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!existingMarca) {
+<span class="cstat-no" title="statement not covered" >                throw new BadRequestException('Marca no encontrada.');</span>
+            }
             <span class="missing-if-branch" title="if path not taken" >I</span>if (existingMarca.empresa_id !== user.empresa.id) {
-<span class="cstat-no" title="statement not covered" >                throw new BadRequestException('No tienes permisos para eliminar esta marca');</span>
+<span class="cstat-no" title="statement not covered" >                throw new BadRequestException('No tienes permisos para eliminar esta marca.');</span>
             }
         }
 &nbsp;
         await this.marcasService.deleteMarca(id);
-        return { message: 'Marca eliminada exitosamente' };
+        return { message: '✅ Marca eliminada exitosamente.' };
     }
 &nbsp;
     @Delete('bulk/delete')
     @Action('eliminar')
     async bulkDeleteMarcas(@Body() body: { ids: number[] }, @Req() req: RequestWithUser) {
-        //Como todavia no se desarrollo lo que es producto, no se puede hacer la
-        //validacion de que no se pueda eliminar una marca que este asociada a un producto
         const user = req.user;
         const { ids } = body;
 &nbsp;
         try {
-            await this.marcasService.bulkDeleteMarcas(
-                ids, 
-                user.empresa?.id
-            );
-            return { message: `${ids.length} marcas eliminadas exitosamente` };
+            await this.marcasService.bulkDeleteMarcas(ids, user.empresa?.id);
+            return { message: `✅ ${ids.length} marcas eliminadas exitosamente.` };
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >            console.error('Error en bulk delete de marcas:', error);</span>
-<span class="cstat-no" title="statement not covered" >            throw new BadRequestException(`Error al eliminar marcas: ${error.message}`);</span>
+<span class="cstat-no" title="statement not covered" >            throw new BadRequestException(error.message || 'Error al eliminar marcas.');</span>
         }
     }
+&nbsp;
 &nbsp;
     @Put('bulk/status')
     @Action('modificar')
@@ -498,7 +481,6 @@ export class MarcasController extends BaseController&lt;MarcaEntity&gt;{
                 updatedMarcas: updatedMarcas
             };
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >            console.error('Error en bulk update de marcas:', error);</span>
 <span class="cstat-no" title="statement not covered" >            throw new BadRequestException(`Error al actualizar marcas: ${error.message}`);</span>
         }
     }
@@ -511,7 +493,7 @@ export class MarcasController extends BaseController&lt;MarcaEntity&gt;{
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T19:50:31.395Z
+                at 2025-12-02T02:31:55.563Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

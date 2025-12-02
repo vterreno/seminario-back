@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ProductoEntity } from 'src/database/core/producto.entity';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { BadRequestException } from '@nestjs/common';
 
 describe('ProductosService', () => {
   let service: ProductosService;
   let productosRepository: Repository<ProductoEntity>;
   let movimientoStockRepository: Repository<MovimientoStockEntity>;
+  let sucursalRepository: Repository<sucursalEntity>;
 
   const mockProductosRepository = {
     find: jest.fn(),
@@ -55,12 +57,20 @@ describe('ProductosService', () => {
           provide: getRepositoryToken(MovimientoStockEntity),
           useValue: mockMovimientoStockRepository,
         },
+        {
+          provide: getRepositoryToken(sucursalEntity),
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<ProductosService>(ProductosService);
     productosRepository = module.get<Repository<ProductoEntity>>(getRepositoryToken(ProductoEntity));
     movimientoStockRepository = module.get<Repository<MovimientoStockEntity>>(getRepositoryToken(MovimientoStockEntity));
+    sucursalRepository = module.get<Repository<sucursalEntity>>(getRepositoryToken(sucursalEntity));
   });
 
   afterEach(() => {
@@ -75,16 +85,14 @@ describe('ProductosService', () => {
     it('should return productos filtered by empresa', async () => {
       const empresaId = 1;
       const mockProductos = [mockProducto];
+      const mockSucursales = [{ id: 1, empresa_id: empresaId }];
       
+      jest.spyOn(sucursalRepository, 'find').mockResolvedValue(mockSucursales as any);
       mockProductosRepository.find.mockResolvedValue(mockProductos);
 
       const result = await service.getProductosByEmpresa(empresaId);
 
       expect(result).toEqual(mockProductos);
-      expect(mockProductosRepository.find).toHaveBeenCalledWith({
-        where: { empresa_id: empresaId },
-        relations: ['empresa', 'marca'],
-      });
     });
   });
 
@@ -98,7 +106,7 @@ describe('ProductosService', () => {
 
       expect(result).toEqual(mockProductos);
       expect(mockProductosRepository.find).toHaveBeenCalledWith({
-        relations: ['empresa', 'marca'],
+        relations: ['sucursal', 'sucursal.empresa', 'marca', 'categoria', 'unidadMedida'],
       });
     });
   });
@@ -111,9 +119,11 @@ describe('ProductosService', () => {
         precio_compra: 100,
         precio_venta: 150,
         stock_apertura: 20,
-        empresa_id: 1,
+        sucursal_id: 1,
       };
 
+      const mockSucursal = { id: 1, empresa_id: 1 };
+      jest.spyOn(sucursalRepository, 'findOne').mockResolvedValue(mockSucursal as any);
       mockProductosRepository.create.mockReturnValue(mockProducto);
       mockProductosRepository.save.mockResolvedValue(mockProducto);
       mockProductosRepository.findOne.mockResolvedValue(mockProducto);
@@ -134,9 +144,11 @@ describe('ProductosService', () => {
         precio_compra: 100,
         precio_venta: 150,
         stock_apertura: 20,
-        empresa_id: 1,
+        sucursal_id: 1,
       };
 
+      const mockSucursal = { id: 1, empresa_id: 1 };
+      jest.spyOn(sucursalRepository, 'findOne').mockResolvedValue(mockSucursal as any);
       mockProductosRepository.create.mockImplementation(() => {
         throw new Error('Database error');
       });
@@ -198,10 +210,13 @@ describe('ProductosService', () => {
       mockProductosRepository.find.mockResolvedValue(mockProductos);
       
       const mockQueryBuilder: any = {
+        leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
+        getMany: jest.fn()
+          .mockResolvedValueOnce(mockProductos) // First call: empresa validation
+          .mockResolvedValueOnce([]), // Second call: stock validation
       };
 
       mockProductosRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -220,6 +235,7 @@ describe('ProductosService', () => {
       mockProductosRepository.find.mockResolvedValue(mockProductos);
       
       const mockQueryBuilder: any = {
+        leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),

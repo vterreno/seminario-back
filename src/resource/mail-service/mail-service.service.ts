@@ -76,6 +76,7 @@ async sendMail(to: string) {
       return info;
     } catch (err) {
       // Es muy probable que el error sea que el archivo no fue encontrado (ENOENT).
+      console.error('Error al enviar correo:', err);
       throw new Error('No se pudo enviar el correo. Verifique que el archivo de plantilla exista y esté configurado como un asset en nest-cli.json.');
     }
   }
@@ -116,6 +117,7 @@ async sendMail(to: string) {
       return info;
     } catch (err) {
       // No lanzamos error para que no afecte el registro si falla el envío del correo
+      console.error('Error al enviar correo de bienvenida:', err);
       return null;
     }
   }

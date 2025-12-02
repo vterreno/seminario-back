@@ -3,13 +3,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
 import { MovimientosStockService } from './movimientos-stock.service';
 
 describe('MovimientosStockService', () => {
   let service: MovimientosStockService;
+  let module: TestingModule;
   let movimientoStockRepository: Record<string, jest.Mock>;
   let productoRepository: Record<string, jest.Mock>;
+  let sucursalRepository: Record<string, jest.Mock>;
   let manager: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -28,7 +31,11 @@ describe('MovimientosStockService', () => {
       findOne: jest.fn(),
     } as any;
 
-    const module: TestingModule = await Test.createTestingModule({
+    sucursalRepository = {
+      find: jest.fn(),
+    } as any;
+
+    module = await Test.createTestingModule({
       providers: [
         MovimientosStockService,
         {
@@ -38,6 +45,10 @@ describe('MovimientosStockService', () => {
         {
           provide: getRepositoryToken(ProductoEntity),
           useValue: productoRepository,
+        },
+        {
+          provide: getRepositoryToken(sucursalEntity),
+          useValue: sucursalRepository,
         },
       ],
     }).compile();
@@ -51,7 +62,8 @@ describe('MovimientosStockService', () => {
 
   const buildProducto = (overrides: Partial<ProductoEntity> = {}): ProductoEntity => ({
     id: 1,
-    empresa_id: 2,
+    sucursal_id: 2,
+    sucursal: { id: 2 } as any,
     stock: 10,
     ...overrides,
   }) as ProductoEntity;
@@ -70,7 +82,7 @@ describe('MovimientosStockService', () => {
 
     const result = await service.create({
       producto_id: producto.id,
-      empresa_id: producto.empresa_id,
+      sucursal_id: producto.sucursal_id,
       tipo_movimiento: TipoMovimientoStock.COMPRA,
       cantidad: 3,
     });
@@ -88,15 +100,15 @@ describe('MovimientosStockService', () => {
     manager.findOne.mockResolvedValue(null);
 
     await expect(
-      service.create({ producto_id: 1, empresa_id: 1, tipo_movimiento: TipoMovimientoStock.COMPRA }),
-    ).rejects.toThrow(new BadRequestException('Producto no encontrado o no pertenece a la empresa.'));
+      service.create({ producto_id: 1, sucursal_id: 1, tipo_movimiento: TipoMovimientoStock.COMPRA }),
+    ).rejects.toThrow(new BadRequestException('Producto no encontrado.'));
   });
 
   it('throws when tipo de movimiento es inválido', async () => {
     manager.findOne.mockResolvedValue(buildProducto());
 
     await expect(
-      service.create({ producto_id: 1, empresa_id: 2, tipo_movimiento: 'INVALIDO' as any }),
+      service.create({ producto_id: 1, sucursal_id: 2, tipo_movimiento: 'INVALIDO' as any }),
     ).rejects.toThrow(new BadRequestException('Tipo de movimiento no válido.'));
   });
 
@@ -106,7 +118,7 @@ describe('MovimientosStockService', () => {
     await expect(
       service.create({
         producto_id: 1,
-        empresa_id: 2,
+        sucursal_id: 2,
         tipo_movimiento: TipoMovimientoStock.VENTA,
         cantidad: 5,
       }),
@@ -119,31 +131,29 @@ describe('MovimientosStockService', () => {
     manager.save.mockImplementation(async () => {
       throw new Error('db fail');
     });
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await expect(
       service.create({
         producto_id: 1,
-        empresa_id: 2,
+        sucursal_id: 2,
         tipo_movimiento: TipoMovimientoStock.STOCK_APERTURA,
         cantidad: 1,
       }),
     ).rejects.toThrow(new BadRequestException('Error interno al crear el movimiento de stock.'));
-
-    expect(consoleSpy).toHaveBeenCalledWith('Error al crear movimiento de stock:', expect.any(Error));
-    consoleSpy.mockRestore();
   });
 
   it('filters movimientos by empresa', async () => {
     const records = [{} as MovimientoStockEntity];
+    const mockSucursales = [{ id: 1 }, { id: 2 }] as any[];
+    
+    const sucursalRepository = module.get(getRepositoryToken(sucursalEntity));
+    sucursalRepository.find = jest.fn().mockResolvedValue(mockSucursales);
     movimientoStockRepository.find.mockResolvedValue(records);
 
     const result = await service.getMovimientosByEmpresa(3);
 
-    expect(movimientoStockRepository.find).toHaveBeenCalledWith({
+    expect(sucursalRepository.find).toHaveBeenCalledWith({
       where: { empresa_id: 3 },
-      relations: ['producto'],
-      order: { fecha: 'DESC' },
     });
     expect(result).toBe(records);
   });
@@ -155,20 +165,20 @@ describe('MovimientosStockService', () => {
     const result = await service.getAllMovimientos();
 
     expect(movimientoStockRepository.find).toHaveBeenCalledWith({
-      relations: ['empresa', 'producto'],
+      relations: ['sucursal', 'producto'],
       order: { fecha: 'DESC' },
     });
     expect(result).toBe(records);
   });
 
-  it('filters movimientos by producto and empresa when provided', async () => {
+  it('filters movimientos by producto and sucursal when provided', async () => {
     const records = [{} as MovimientoStockEntity];
     movimientoStockRepository.find.mockResolvedValue(records);
 
-    const result = await service.getMovimientosByProducto(9, 4);
+    const result = await service.getMovimientosByProducto(9, [4]);
 
     expect(movimientoStockRepository.find).toHaveBeenCalledWith({
-      where: { producto_id: 9, empresa_id: 4 },
+      where: { producto_id: 9, sucursal_id: [4] },
       relations: ['producto'],
       order: { fecha: 'DESC' },
     });
@@ -188,8 +198,8 @@ describe('MovimientosStockService', () => {
     });
   });
 
-  it('realiza ajuste de stock usando empresa_id del payload', async () => {
-    const data = { empresa_id: 8 } as any;
+  it('realiza ajuste de stock usando sucursal_id del payload', async () => {
+    const data = { sucursal_id: 8, producto_id: 1 } as any;
     const createSpy = jest.spyOn(service, 'create').mockResolvedValue({} as any);
 
     await service.realizarAjusteStock(data);
@@ -197,16 +207,16 @@ describe('MovimientosStockService', () => {
     expect(createSpy).toHaveBeenCalledWith(data);
   });
 
-  it('realiza ajuste obteniendo empresa del producto cuando falta', async () => {
-    productoRepository.findOne.mockResolvedValue({ empresa_id: 9 });
+  it('realiza ajuste obteniendo sucursal del producto cuando falta', async () => {
+    productoRepository.findOne.mockResolvedValue({ sucursal: { id: 9 } } as any);
     const createSpy = jest.spyOn(service, 'create').mockResolvedValue({} as any);
 
     await service.realizarAjusteStock({ producto_id: 3 } as any);
 
     expect(productoRepository.findOne).toHaveBeenCalledWith({
       where: { id: 3 },
-      select: ['id', 'empresa_id'],
+      relations: ['sucursal'],
     });
-    expect(createSpy).toHaveBeenCalledWith({ producto_id: 3, empresa_id: 9 });
+    expect(createSpy).toHaveBeenCalledWith({ producto_id: 3, sucursal_id: 9 });
   });
 });

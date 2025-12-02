@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.74% </span>
+                <span class="strong">88.37% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/39</span>
+                <span class='fraction'>38/43</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.85% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/7</span>
+                <span class='fraction'>2/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>6/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.18% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>33/37</span>
+                <span class='fraction'>35/40</span>
             </div>
         
             
@@ -160,7 +160,15 @@
 <a name='L95'></a><a href='#L95'>95</a>
 <a name='L96'></a><a href='#L96'>96</a>
 <a name='L97'></a><a href='#L97'>97</a>
-<a name='L98'></a><a href='#L98'>98</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -197,12 +205,25 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -232,7 +253,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -249,12 +269,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Put, Query, ParseIntPipe } from '@nestjs/common';
@@ -294,12 +310,25 @@ export class MovimientosStockController extends BaseController&lt;MovimientoStoc
 <span class="cstat-no" title="statement not covered" >            throw new Error('Usuario no encontrado en la request');</span>
         }
         
-        // If user has a company, filter movimientos by that company
         if (user.empresa?.id) {
-            return await this.movimientoStockService.getMovimientosByEmpresa(user.empresa.id);
+            //Extrae los IDs de todas sus sucursales
+            const sucursalIds = user.sucursales.map(sucursal =&gt; sucursal.id);
+&nbsp;
+            return await this.movimientoStockService.getMovimientosBySucursal(sucursalIds);
         }
         // If no company (superadmin), return all movimientos
         return await this.movimientoStockService.getAllMovimientos();
+    }
+    @Get('empresa/:id')
+    @Action('ver')
+<span class="fstat-no" title="function not covered" >    async </span>getMovimientoStocksByEmpresa(@Param('id') id: number) {
+<span class="cstat-no" title="statement not covered" >        return await this.movimientoStockService.getMovimientosByEmpresa(id);</span>
+    }
+&nbsp;
+    @Get('sucursal/:id')
+    @Action('ver')
+<span class="fstat-no" title="function not covered" >    async </span>getMovimientoStocksBySucursal(@Param('id') id: number) {
+<span class="cstat-no" title="statement not covered" >        return await this.movimientoStockService.getMovimientosBySucursal([id]);</span>
     }
 &nbsp;
     @Post('ajuste-stock/:productoId')
@@ -325,9 +354,8 @@ export class MovimientosStockController extends BaseController&lt;MovimientoStoc
             descripcion: ajusteData.motivo,
             cantidad: cantidad,
             producto_id: productoId,
-            // Si el usuario tiene empresa, usar esa empresa
-            // Si no tiene empresa (superadmin), el servicio obtendrá la empresa del producto
-            empresa_id: user.empresa?.id
+            // El servicio obtendrá la sucursal del producto automáticamente
+            // sucursal_id se asignará en el servicio según el producto
         };
 &nbsp;
         return this.movimientoStockService.realizarAjusteStock(movimientoData);
@@ -345,13 +373,9 @@ export class MovimientosStockController extends BaseController&lt;MovimientoStoc
 <span class="cstat-no" title="statement not covered" >            throw new Error('Usuario no encontrado en la request');</span>
         }
         
-        // If user has a company, filter by both producto and company
-        if (user.empresa?.id) {
-            return await this.movimientoStockService.getMovimientosByProducto(productoId, user.empresa.id);
-        }
-        
-        // If no company (superadmin), get all movimientos for the product
-<span class="cstat-no" title="statement not covered" >        return await this.movimientoStockService.getMovimientosByProducto(productoId);</span>
+        // Get all movimientos for the product
+        // If you need to filter by sucursal, you can pass sucursalId as a query parameter
+        return await this.movimientoStockService.getMovimientosByProducto(productoId);
     }
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -361,7 +385,7 @@ export class MovimientosStockController extends BaseController&lt;MovimientoStoc
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T19:50:31.395Z
+                at 2025-12-02T02:31:55.563Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -133,9 +133,10 @@ export class UsersService extends BaseService<UserEntity> {
       const userName = `${user.nombre} ${user.apellido}`;
 
       try {
-        this.mailService.sendWelcomeMail(user.email, userName);
+        await this.mailService.sendWelcomeMail(user.email, userName);
       } catch (err) {
-        throw err;
+        // Log but don't throw - mail errors shouldn't stop registration
+        console.error('Error sending welcome email:', err);
       }
       return { 
         accessToken: this.jwtService.generateToken({ email: user.email }, 'auth'),

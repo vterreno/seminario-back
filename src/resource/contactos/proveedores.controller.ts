@@ -31,6 +31,7 @@ export class ProveedoresController extends BaseController<contactoEntity> {
       const result = await this.contactosService.findByRoles(['proveedor', 'ambos'], empresaId, isSuperAdmin);
       return result;
     } catch (error) {
+      console.error('Error al obtener proveedores:', error);
       throw error;
     }
   }

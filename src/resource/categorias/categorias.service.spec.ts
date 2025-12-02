@@ -3,6 +3,7 @@ import { CategoriasService } from './categorias.service';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { categoriasEntity } from 'src/database/core/categorias.entity';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('CategoriasService', () => {
@@ -19,6 +20,12 @@ describe('CategoriasService', () => {
     softDelete: jest.fn(),
     restore: jest.fn(),
     createQueryBuilder: jest.fn(),
+  };
+
+  const mockProductoRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    count: jest.fn(),
   };
 
   const mockCategoria: categoriasEntity = {
@@ -40,6 +47,10 @@ describe('CategoriasService', () => {
         {
           provide: getRepositoryToken(categoriasEntity),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(ProductoEntity),
+          useValue: mockProductoRepository,
         },
       ],
     }).compile();
@@ -215,6 +226,7 @@ describe('CategoriasService', () => {
 
   describe('deleteCategoria', () => {
     it('should delete a categoria', async () => {
+      mockProductoRepository.count.mockResolvedValue(0); // No productos asociados
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
       await service.deleteCategoria(1);
@@ -223,6 +235,7 @@ describe('CategoriasService', () => {
     });
 
     it('should throw NotFoundException if categoria does not exist', async () => {
+      mockProductoRepository.count.mockResolvedValue(0); // No productos asociados
       mockRepository.delete.mockResolvedValue({ affected: 0 });
 
       await expect(service.deleteCategoria(1)).rejects.toThrow(NotFoundException);
@@ -235,6 +248,7 @@ describe('CategoriasService', () => {
       const mockCategorias = [mockCategoria, mockCategoria, mockCategoria];
 
       mockRepository.find.mockResolvedValue(mockCategorias);
+      mockProductoRepository.find.mockResolvedValue([]); // No productos asociados
       mockRepository.delete.mockResolvedValue({ affected: 3 });
 
       await service.bulkDeleteCategorias(ids, 1);

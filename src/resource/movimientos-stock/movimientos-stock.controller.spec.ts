@@ -10,6 +10,7 @@ describe('MovimientosStockController', () => {
   let mockService: {
     create: jest.Mock;
     getMovimientosByEmpresa: jest.Mock;
+    getMovimientosBySucursal: jest.Mock;
     getAllMovimientos: jest.Mock;
     realizarAjusteStock: jest.Mock;
     getMovimientosByProducto: jest.Mock;
@@ -18,6 +19,7 @@ describe('MovimientosStockController', () => {
   const mockUser = {
     id: 1,
     empresa: { id: 1 },
+    sucursales: [{ id: 1, nombre: 'Sucursal 1' }, { id: 2, nombre: 'Sucursal 2' }],
   };
 
   const mockRequest: Partial<RequestWithUser> = {
@@ -30,6 +32,7 @@ describe('MovimientosStockController', () => {
     mockService = {
       create: jest.fn(),
       getMovimientosByEmpresa: jest.fn(),
+      getMovimientosBySucursal: jest.fn(),
       getAllMovimientos: jest.fn(),
       realizarAjusteStock: jest.fn(),
       getMovimientosByProducto: jest.fn(),
@@ -57,12 +60,12 @@ describe('MovimientosStockController', () => {
 
   it('should get movimientos by empresa for company user', async () => {
     const movimientos = [{ id: 1 }] as MovimientoStockEntity[];
-    mockService.getMovimientosByEmpresa.mockResolvedValue(movimientos);
+    mockService.getMovimientosBySucursal.mockResolvedValue(movimientos);
 
     const result = await controller.getAllMovimientos(mockRequest as RequestWithUser);
 
     expect(result).toBe(movimientos);
-    expect(mockService.getMovimientosByEmpresa).toHaveBeenCalledWith(1);
+    expect(mockService.getMovimientosBySucursal).toHaveBeenCalledWith([1, 2]);
     expect(mockService.getAllMovimientos).not.toHaveBeenCalled();
   });
 
@@ -88,7 +91,6 @@ describe('MovimientosStockController', () => {
       descripcion: 'Test',
       cantidad: -5,
       producto_id: 10,
-      empresa_id: 1,
     });
   });
 
@@ -99,6 +101,6 @@ describe('MovimientosStockController', () => {
     const result = await controller.getMovimientosByProducto(5, mockRequest as RequestWithUser);
 
     expect(result).toBe(movimientos);
-    expect(mockService.getMovimientosByProducto).toHaveBeenCalledWith(5, 1);
+    expect(mockService.getMovimientosByProducto).toHaveBeenCalledWith(5);
   });
 });

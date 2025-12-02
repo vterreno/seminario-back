@@ -135,7 +135,7 @@ describe('MarcasController', () => {
 
       const result = await controller.deleteMarca(1, mockRequest as RequestWithUser);
 
-      expect(result).toEqual({ message: 'Marca eliminada exitosamente' });
+      expect(result).toEqual({ message: '✅ Marca eliminada exitosamente.' });
     });
   });
 
@@ -147,7 +147,7 @@ describe('MarcasController', () => {
 
       const result = await controller.bulkDeleteMarcas(body, mockRequest as RequestWithUser);
 
-      expect(result).toEqual({ message: '3 marcas eliminadas exitosamente' });
+      expect(result).toEqual({ message: '✅ 3 marcas eliminadas exitosamente.' });
     });
   });
 

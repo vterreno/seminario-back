@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.18% </span>
+                <span class="strong">93.1% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>81/86</span>
+                <span class='fraction'>81/87</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">90% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>9/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">93.67% </span>
+                <span class="strong">92.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>74/79</span>
+                <span class='fraction'>74/80</span>
             </div>
         
             
@@ -254,15 +254,27 @@
 <a name='L189'></a><a href='#L189'>189</a>
 <a name='L190'></a><a href='#L190'>190</a>
 <a name='L191'></a><a href='#L191'>191</a>
-<a name='L192'></a><a href='#L192'>192</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">19x</span>
@@ -319,7 +331,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -399,7 +410,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -441,6 +451,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -510,7 +534,6 @@ export class ContactosService extends BaseService&lt;contactoEntity&gt; {
         throw new BadRequestException(`Ya existe un contacto con ${data.tipo_identificacion} ${data.numero_identificacion} en esta empresa`);
       }
       
-<span class="cstat-no" title="statement not covered" >      console.error('Error creating contacto:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new BadRequestException('Error al crear el contacto');</span>
     }
   }
@@ -589,7 +612,6 @@ export class ContactosService extends BaseService&lt;contactoEntity&gt; {
         throw new BadRequestException(`Ya existe un contacto con esa identificación en esta empresa`);
       }
       
-<span class="cstat-no" title="statement not covered" >      console.error('Error updating contacto:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw new BadRequestException('Error al actualizar el contacto');</span>
     }
   }
@@ -633,6 +655,20 @@ export class ContactosService extends BaseService&lt;contactoEntity&gt; {
     await this.contactosRepository.softDelete(id);
     return { message: 'deleted' };
   }
+<span class="fstat-no" title="function not covered" >  async </span>crearConsumidorFinal(empresa: empresaEntity){
+    const nuevoConsumidor = <span class="cstat-no" title="statement not covered" >this.contactosRepository.create({</span>
+        nombre_razon_social: 'Consumidor Final',
+        condicion_iva: 'Consumidor Final',
+        rol: 'cliente',
+        es_consumidor_final: true,
+        estado: true,
+        empresa: empresa,
+        tipo_identificacion: 'DNI',
+        numero_identificacion: '00-00000000-0',
+    });
+<span class="cstat-no" title="statement not covered" >    await this.contactosRepository.save(nuevoConsumidor);</span>
+<span class="cstat-no" title="statement not covered" >    return nuevoConsumidor;</span>
+  }
 }
 &nbsp;
 &nbsp;
@@ -643,7 +679,7 @@ export class ContactosService extends BaseService&lt;contactoEntity&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T19:50:31.395Z
+                at 2025-12-02T02:31:55.563Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

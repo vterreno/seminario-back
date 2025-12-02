@@ -3,6 +3,7 @@ import { MarcasService } from './marcas.service';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MarcaEntity } from 'src/database/core/marcas.entity';
+import { ProductoEntity } from 'src/database/core/producto.entity';
 import { BadRequestException } from '@nestjs/common';
 
 describe('MarcasService', () => {
@@ -17,6 +18,11 @@ describe('MarcasService', () => {
     update: jest.fn(),
     delete: jest.fn(),
     createQueryBuilder: jest.fn(),
+  };
+
+  const mockProductoRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockMarca = {
@@ -36,6 +42,10 @@ describe('MarcasService', () => {
         {
           provide: getRepositoryToken(MarcaEntity),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(ProductoEntity),
+          useValue: mockProductoRepository,
         },
       ],
     }).compile();
@@ -145,6 +155,8 @@ describe('MarcasService', () => {
 
   describe('deleteMarca', () => {
     it('should delete a marca', async () => {
+      mockRepository.findOne.mockResolvedValue(mockMarca);
+      mockProductoRepository.find.mockResolvedValue([]); // No productos asociados
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 
       await service.deleteMarca(1);
@@ -159,6 +171,7 @@ describe('MarcasService', () => {
       const mockMarcas = [mockMarca, mockMarca, mockMarca];
 
       mockRepository.find.mockResolvedValue(mockMarcas);
+      mockProductoRepository.find.mockResolvedValue([]); // No productos asociados
       mockRepository.delete.mockResolvedValue({ affected: 3 });
 
       await service.bulkDeleteMarcas(ids, 1);

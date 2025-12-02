@@ -5,9 +5,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserEntity } from 'src/database/core/user.entity';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { empresaEntity } from 'src/database/core/empresa.entity';
+import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { PermissionEntity } from 'src/database/core/permission.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { MailServiceService } from '../mail-service/mail-service.service';
+import { ContactosService } from '../contactos/contactos.service';
 import { BadRequestException, HttpException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
@@ -96,12 +98,15 @@ describe('UsersService', () => {
     role: {
       id: 1,
       nombre: 'Admin',
-      permissions: [],
+      permissions: [
+        { id: 1, nombre: 'Ver', codigo: 'ver' } as PermissionEntity,
+      ],
     } as RoleEntity,
     empresa: {
       id: 1,
       name: 'Test Empresa',
     } as empresaEntity,
+    sucursales: [],
     created_at: new Date(),
     updated_at: new Date(),
     deleted_at: null,
@@ -128,12 +133,27 @@ describe('UsersService', () => {
           useValue: mockPermissionRepository,
         },
         {
+          provide: getRepositoryToken(sucursalEntity),
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
           provide: JwtService,
           useValue: mockJwtService,
         },
         {
           provide: MailServiceService,
           useValue: mockMailService,
+        },
+        {
+          provide: ContactosService,
+          useValue: {
+            create: jest.fn(),
+            findOne: jest.fn(),
+            crearConsumidorFinal: jest.fn().mockResolvedValue({}),
+          },
         },
       ],
     }).compile();
@@ -303,6 +323,8 @@ describe('UsersService', () => {
         },
       };
 
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
       const result = await service.me(userI);
 
       expect(result).toEqual({
@@ -330,6 +352,14 @@ describe('UsersService', () => {
         empresa: null,
         role: null,
       };
+
+      const mockUserWithoutEmpresa = {
+        ...mockUser,
+        empresa: null,
+        role: null,
+        sucursales: [],
+      };
+      mockUserRepository.findOne.mockResolvedValue(mockUserWithoutEmpresa);
 
       const result = await service.me(userI);
 
@@ -523,6 +553,7 @@ describe('UsersService', () => {
         relations: {
           role: { permissions: true },
           empresa: true,
+          sucursales: true,
         },
       });
     });
@@ -540,7 +571,7 @@ describe('UsersService', () => {
       await expect(service.findByEmailWithRole('test@test.com')).resolves.toBe(mockUser);
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'test@test.com' },
-        relations: ['role', 'role.permissions', 'empresa'],
+        relations: ['role', 'role.permissions', 'empresa', 'sucursales'],
       });
     });
   });

@@ -99,16 +99,12 @@ export class RolesController extends BaseController<RoleEntity>{
         const user = req.user;
         const { ids } = body;
 
-        try {
-            await this.roleService.bulkDeleteRoles(
-                ids, 
-                user.empresa?.id,
-                user.role?.id // Pass current user's role ID to prevent self-deletion
-            );
-            return { message: `${ids.length} roles eliminados exitosamente` };
-        } catch (error) {
-            throw new Error(`Error al eliminar roles: ${error.message}`);
-        }
+        await this.roleService.bulkDeleteRoles(
+            ids, 
+            user.empresa?.id,
+            user.role?.id // Pass current user's role ID to prevent self-deletion
+        );
+        return { message: `${ids.length} roles eliminados exitosamente` };
     }
 
     @Put('bulk/status')
@@ -117,21 +113,17 @@ export class RolesController extends BaseController<RoleEntity>{
         const user = req.user;
         const { ids, estado } = body;
 
-        try {
-            const updatedRoles = await this.roleService.bulkUpdateRoleStatus(
-                ids, 
-                estado, 
-                user.empresa?.id, // Pass company ID for validation
-                user.role?.id // Pass current user's role ID to prevent self-modification
-            );
-            
-            const action = estado ? 'activados' : 'desactivados';
-            return { 
-                message: `${ids.length} roles ${action} exitosamente`,
-                updatedRoles: updatedRoles
-            };
-        } catch (error) {
-            throw new Error(`Error al actualizar roles: ${error.message}`);
-        }
+        const updatedRoles = await this.roleService.bulkUpdateRoleStatus(
+            ids, 
+            estado, 
+            user.empresa?.id, // Pass company ID for validation
+            user.role?.id // Pass current user's role ID to prevent self-modification
+        );
+        
+        const action = estado ? 'activados' : 'desactivados';
+        return { 
+            message: `${ids.length} roles ${action} exitosamente`,
+            updatedRoles: updatedRoles
+        };
     }
 }

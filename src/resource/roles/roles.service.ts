@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { RoleEntity } from 'src/database/core/roles.entity';
 import { PermissionEntity } from 'src/database/core/permission.entity';
+import { UserEntity } from 'src/database/core/user.entity';
 import { FindManyOptions, FindOneOptions, Repository, In } from 'typeorm';
 
 @Injectable()
@@ -16,8 +17,25 @@ export class RolesService extends BaseService<RoleEntity> {
         protected roleRepository: Repository<RoleEntity>,
         @InjectRepository(PermissionEntity) 
         private readonly permissionRepository: Repository<PermissionEntity>,
+        @InjectRepository(UserEntity)
+        private readonly userRepository: Repository<UserEntity>,
     ){
         super(roleRepository);
+    }
+
+    // Verificar si un rol tiene usuarios asociados
+    private async hasUsersAssociated(roleId: number): Promise<boolean> {
+        const count = await this.userRepository.count({ where: { role_id: roleId } });
+        return count > 0;
+    }
+
+    // Verificar si alguno de los roles tiene usuarios asociados
+    private async getRolesWithUsers(roleIds: number[]): Promise<number[]> {
+        const users = await this.userRepository.find({
+            where: { role_id: In(roleIds) },
+            select: ['role_id'],
+        });
+        return [...new Set(users.map(u => u.role_id))];
     }
 
     // Get roles filtered by company
@@ -92,6 +110,10 @@ export class RolesService extends BaseService<RoleEntity> {
 
     // Delete single role
     async deleteRole(id: number): Promise<void> {
+        // Verificar si el rol tiene usuarios asociados
+        if (await this.hasUsersAssociated(id)) {
+            throw new BadRequestException('No se puede eliminar el rol porque tiene usuarios asociados');
+        }
         await this.roleRepository.delete(id);
     }
 
@@ -111,6 +133,12 @@ export class RolesService extends BaseService<RoleEntity> {
         // Verificar que el usuario no esté intentando eliminar su propio rol
         if (currentUserRoleId && ids.includes(currentUserRoleId)) {
             throw new BadRequestException('No puedes eliminar tu propio rol');
+        }
+
+        // Verificar si algún rol tiene usuarios asociados
+        const rolesWithUsers = await this.getRolesWithUsers(ids);
+        if (rolesWithUsers.length > 0) {
+            throw new BadRequestException('No se pueden eliminar los roles porque algunos tienen usuarios asociados');
         }
 
         await this.roleRepository.delete(ids);
@@ -134,6 +162,14 @@ export class RolesService extends BaseService<RoleEntity> {
             throw new BadRequestException('No puedes cambiar el estado de tu propio rol');
         }
 
+        // Si se está desactivando, verificar que no haya usuarios asociados
+        if (!estado) {
+            const rolesWithUsers = await this.getRolesWithUsers(ids);
+            if (rolesWithUsers.length > 0) {
+                throw new BadRequestException('No se pueden desactivar los roles porque algunos tienen usuarios asociados');
+            }
+        }
+
         // Update the roles
         await this.roleRepository.update(ids, { estado });
         
@@ -146,12 +182,21 @@ export class RolesService extends BaseService<RoleEntity> {
 
     // Soft delete (set estado to false instead of hard delete)
     async softDeleteRole(id: number): Promise<RoleEntity> {
+        // Verificar si el rol tiene usuarios asociados
+        if (await this.hasUsersAssociated(id)) {
+            throw new BadRequestException('No se puede desactivar el rol porque tiene usuarios asociados');
+        }
         await this.roleRepository.update(id, { estado: false });
         return await this.findById(id);
     }
 
     // Bulk soft delete
     async bulkSoftDeleteRoles(ids: number[]): Promise<void> {
+        // Verificar si algún rol tiene usuarios asociados
+        const rolesWithUsers = await this.getRolesWithUsers(ids);
+        if (rolesWithUsers.length > 0) {
+            throw new BadRequestException('No se pueden desactivar los roles porque algunos tienen usuarios asociados');
+        }
         await this.roleRepository.update(ids, { estado: false });
     }
 

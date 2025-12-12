@@ -236,7 +236,7 @@ export class VentasService extends BaseService<ventaEntity>{
     }
 
     // Bulk delete ventas
-    async bulkDeleteVentas(ids: number[], sucursalId?: number): Promise<void> {
+    async bulkDeleteVentas(ids: number[]): Promise<void> {
         // Obtener todas las ventas con sus relaciones
         const ventas = await this.ventaRepository.find({
             where: { id: In(ids) },
@@ -246,14 +246,6 @@ export class VentasService extends BaseService<ventaEntity>{
         // Validar que existan ventas
         if (ventas.length === 0) {
             throw new BadRequestException('❌ No se encontraron ventas con los IDs proporcionados.');
-        }
-
-        // Si se proporciona sucursalId, validar que las ventas pertenezcan a esa sucursal
-        if (sucursalId) {
-            const ventasInvalidas = ventas.filter(venta => venta.sucursal.id !== sucursalId);
-            if (ventasInvalidas.length > 0) {
-                throw new BadRequestException('❌ Algunas ventas que intentas eliminar no pertenecen a tu sucursal.');
-            }
         }
 
         // Verificar que todas las ventas solicitadas fueron encontradas

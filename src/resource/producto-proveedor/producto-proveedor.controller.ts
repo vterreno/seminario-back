@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, UseGuard
 import { ProductoProveedorService } from './producto-proveedor.service';
 import { CreateProductoProveedorDto } from './dto/create-producto-proveedor.dto';
 import { UpdateProductoProveedorDto } from './dto/update-producto-proveedor.dto';
+import { BulkDeleteProductoProveedorDto } from './dto/bulk-delete-producto-proveedor.dto';
 import { AuthGuard } from 'src/middlewares/auth.middleware';
 
 @Controller('producto-proveedor')
@@ -34,6 +35,17 @@ export class ProductoProveedorController {
   @Post()
   async create(@Body() createDto: CreateProductoProveedorDto) {
     return await this.productoProveedorService.create(createDto);
+  }
+
+  // Eliminar múltiples relaciones producto-proveedor (bulk delete)
+  @Post('bulk-delete')
+  async bulkRemove(@Body() bulkDeleteDto: BulkDeleteProductoProveedorDto) {
+    const result = await this.productoProveedorService.bulkRemove(bulkDeleteDto.ids);
+    return {
+      message: `Se eliminaron ${result.deleted} relación(es) correctamente`,
+      deleted: result.deleted,
+      errors: result.errors,
+    };
   }
 
   // Actualizar relación producto-proveedor

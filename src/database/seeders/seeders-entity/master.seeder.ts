@@ -12,7 +12,6 @@ import { VentaSeeder } from './venta.seeder';
 import SucursalesSeeder from './sucursales.seeder';
 import { UnidadMedidaSeeder } from './unidad-medida.seeder';
 import { CategoriaSimpleSeeder } from './categoria.seeder';
-import { ListaPreciosSeeder } from './lista-precios.seeder';
 import { UserSucursalesSeeder } from './UserSucursalesSeeder';
 import { ProductoProveedorSeeder } from './producto-proveedor.seeder';
 import { CompraSeeder } from './compra.seeder';
@@ -33,7 +32,6 @@ export class MasterSeeder {
         private readonly movimientosStockInicialSeeder: MovimientosStockInicialSeeder,
         private readonly ventaSeeder: VentaSeeder,
         private readonly unidadesMedidaSeeder: UnidadMedidaSeeder,
-        private readonly listaPreciosSeeder: ListaPreciosSeeder,
         private readonly userSucursalesSeeder: UserSucursalesSeeder,
         private readonly productoProveedorSeeder: ProductoProveedorSeeder,
         private readonly compraSeeder: CompraSeeder,
@@ -88,9 +86,6 @@ export class MasterSeeder {
 
             // 13. Compras con detalles y movimientos de stock
             await this.ejecutarPaso(13, 16, 'Compras', () => this.compraSeeder.run());
-
-            // 14. Listas de precios por empresa
-            await this.ejecutarPaso(14, 16, 'Listas de precios', () => this.listaPreciosSeeder.run());
 
             // 15. Movimientos de stock iniciales
             await this.ejecutarPaso(15, 16, 'Movimientos de stock iniciales', () => this.movimientosStockInicialSeeder.run());

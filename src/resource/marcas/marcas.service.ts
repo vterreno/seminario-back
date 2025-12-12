@@ -86,6 +86,19 @@ export class MarcasService extends BaseService<MarcaEntity>{
             throw new BadRequestException(`❌ No se encontró la marca que intentas actualizar. Verifica que el ID sea correcto.`);
         }
 
+        // Si se intenta desactivar, verificar que no tenga productos asociados
+        if (marcaData.estado === false && marca.estado === true) {
+            const productosAsociados = await this.productosRepository.count({
+                where: { marca_id: id },
+            });
+
+            if (productosAsociados > 0) {
+                throw new BadRequestException(
+                    `No se puede desactivar la marca "${marca.nombre}" porque tiene ${productosAsociados} producto(s) asociado(s).`
+                );
+            }
+        }
+
         await this.marcasRepository.update(id, marcaData);
         return await this.findById(id);
     }
@@ -166,6 +179,27 @@ export class MarcasService extends BaseService<MarcaEntity>{
 
             if (marcas.length !== ids.length) {
                 throw new BadRequestException('❌ Algunas marcas que intentas modificar no pertenecen a tu empresa o no existen.');
+            }
+        }
+
+        // Si se intenta desactivar, verificar que no tengan productos asociados
+        if (estado === false) {
+            const productosAsociados = await this.productosRepository.find({
+                where: { marca_id: In(ids) },
+                select: ['marca_id'],
+            });
+
+            if (productosAsociados.length > 0) {
+                // Obtener las marcas bloqueadas
+                const marcasBloqueadas = [...new Set(productosAsociados.map(p => p.marca_id))];
+                const marcasConProductos = await this.marcasRepository.find({
+                    where: { id: In(marcasBloqueadas) },
+                    select: ['id', 'nombre'],
+                });
+                const nombresMarcas = marcasConProductos.map(m => m.nombre).join(', ');
+                throw new BadRequestException(
+                    `No se pueden desactivar las siguientes marcas porque tienen productos asociados: ${nombresMarcas}`
+                );
             }
         }
 

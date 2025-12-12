@@ -284,9 +284,15 @@ export class UsersService extends BaseService<UserEntity> {
   async login(body: LoginDTO) {
     const user = await this.findByEmail(body.email);
 
-    if (user == null) {
-      throw new UnauthorizedException();
+    if (!user) {
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
+
+    // Verificar si el usuario está activo
+    if (user.status === false) {
+      throw new UnauthorizedException('Usuario inactivo. Contacte al administrador.');
+    }
+
     const compareResult = compareSync(body.password, user.password);
     if (!compareResult) {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');

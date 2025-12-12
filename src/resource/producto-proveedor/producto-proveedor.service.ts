@@ -156,4 +156,35 @@ export class ProductoProveedorService extends BaseService<ProductoProveedorEntit
     productoProveedor.deleted_at = new Date();
     await this.productoProveedorRepository.save(productoProveedor);
   }
+
+  // Eliminar múltiples relaciones producto-proveedor (bulk delete)
+  async bulkRemove(ids: number[]): Promise<{ deleted: number; errors: Array<{ id: number; message: string }> }> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('Debe proporcionar al menos un ID para eliminar');
+    }
+
+    const errors: Array<{ id: number; message: string }> = [];
+    let deleted = 0;
+
+    for (const id of ids) {
+      try {
+        const productoProveedor = await this.productoProveedorRepository.findOne({
+          where: { id, deleted_at: IsNull() }
+        });
+
+        if (!productoProveedor) {
+          errors.push({ id, message: `Relación con id ${id} no encontrada` });
+          continue;
+        }
+
+        productoProveedor.deleted_at = new Date();
+        await this.productoProveedorRepository.save(productoProveedor);
+        deleted++;
+      } catch (error) {
+        errors.push({ id, message: `Error al eliminar relación con id ${id}` });
+      }
+    }
+
+    return { deleted, errors };
+  }
 }

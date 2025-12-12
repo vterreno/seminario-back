@@ -76,6 +76,19 @@ export class CategoriasService extends BaseService<categoriasEntity> {
         throw new BadRequestException(`Ya existe otra categoría con el nombre "${categoriaData.nombre}" en esta empresa.`);
       }
     }
+
+    // Si se intenta desactivar, verificar que no tenga productos asociados
+    if (categoriaData.estado === false && categoria.estado === true) {
+      const productosAsociados = await this.productosRepository.count({
+        where: { categoria_id: id, deleted_at: IsNull() },
+      });
+
+      if (productosAsociados > 0) {
+        throw new BadRequestException(
+          `No se puede desactivar la categoría "${categoria.nombre}" porque tiene ${productosAsociados} producto(s) asociado(s).`
+        );
+      }
+    }
     
     // Filtrar propiedades no pertenecientes a la entidad (como isEdit)
     const { isEdit, ...categoriaDataFiltered } = categoriaData as any;
@@ -229,6 +242,27 @@ export class CategoriasService extends BaseService<categoriasEntity> {
 
       if (categorias.length !== ids.length) {
         throw new BadRequestException('Algunas categorías no pertenecen a tu empresa o no existen');
+      }
+    }
+
+    // Si se intenta desactivar, verificar que no tengan productos asociados
+    if (estado === false) {
+      const productosAsociados = await this.productosRepository.find({
+        where: { categoria_id: In(ids), deleted_at: IsNull() },
+        select: ['categoria_id'],
+      });
+
+      if (productosAsociados.length > 0) {
+        // Obtener las categorías bloqueadas
+        const categoriasBloqueadas = [...new Set(productosAsociados.map(p => p.categoria_id))];
+        const categoriasConProductos = await this.categoriasRepository.find({
+          where: { id: In(categoriasBloqueadas) },
+          select: ['id', 'nombre'],
+        });
+        const nombresCategorias = categoriasConProductos.map(c => c.nombre).join(', ');
+        throw new BadRequestException(
+          `No se pueden desactivar las siguientes categorías porque tienen productos asociados: ${nombresCategorias}`
+        );
       }
     }
 

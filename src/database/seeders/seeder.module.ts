@@ -29,7 +29,6 @@ import { MasterSeeder } from './seeders-entity/master.seeder';
 import { UnidadMedidaEntity } from '../core/unidad-medida.entity';
 import { UnidadMedidaSeeder } from './seeders-entity/unidad-medida.seeder';
 import { ListaPreciosEntity } from '../core/lista-precios.entity';
-import { ListaPreciosSeeder } from './seeders-entity/lista-precios.seeder';
 import { ProductoListaPreciosEntity } from '../core/producto-lista-precios.entity';
 import { categoriasEntity } from '../core/categorias.entity';
 import { CategoriaSimpleSeeder } from './seeders-entity/categoria.seeder';
@@ -75,7 +74,6 @@ import { DetalleCompraEntity } from '../core/detalleCompra.entity';
         MarcaSeeder,
         CategoriaSimpleSeeder,
         UnidadMedidaSeeder,
-        ListaPreciosSeeder,
         // Seeders simplificados
         ProductoSimpleSeeder,
         ProductoProveedorSeeder,

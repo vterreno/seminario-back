@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, BadRequestException, Put } from '@nestjs/common';
+import { In } from 'typeorm';
 import { VentasService } from './ventas.service';
 import { ventaEntity } from 'src/database/core/venta.entity';
 import { BaseController } from 'src/base-service/base-controller.controller';
@@ -72,7 +73,10 @@ export class VentasController extends BaseController<ventaEntity>{
         try {
             // Verify the venta belongs to the user's company (if user has a company)
             if (user.empresa?.id) {
-                const existingVenta = await this.ventasService.findById(id);
+                const existingVenta = await this.ventasService.findOne({
+                    where: { id },
+                    relations: ['sucursal', 'sucursal.empresa']
+                });
                 
                 if (!existingVenta) {
                     throw new BadRequestException(`No se encontró la venta con ID ${id}`);
@@ -102,10 +106,23 @@ export class VentasController extends BaseController<ventaEntity>{
         const { ids } = body;
 
         try {
-            await this.ventasService.bulkDeleteVentas(
-                ids, 
-                user.empresa?.id
-            );
+            // Si el usuario tiene empresa, validar que todas las ventas pertenezcan a su empresa
+            if (user.empresa?.id) {
+                const ventas = await this.ventasService.find({
+                    where: { id: In(ids) },
+                    relations: ['sucursal', 'sucursal.empresa']
+                });
+
+                const ventasInvalidas = ventas.filter(
+                    venta => venta.sucursal?.empresa?.id !== user.empresa.id
+                );
+
+                if (ventasInvalidas.length > 0) {
+                    throw new BadRequestException('No tienes permisos para eliminar algunas de estas ventas');
+                }
+            }
+
+            await this.ventasService.bulkDeleteVentas(ids);
             return { message: `${ids.length} ventas eliminadas exitosamente` };
         } catch (error) {
             throw new BadRequestException(error.message);

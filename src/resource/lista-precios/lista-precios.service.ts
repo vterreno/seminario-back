@@ -247,7 +247,13 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
     async getProductosByListaPrecio(id: number): Promise<any[]> {
         const listaPrecio = await this.listaPreciosRepository.findOne({
             where: { id },
-            relations: ['productosListasPrecios', 'productosListasPrecios.producto', 'productosListasPrecios.producto.marca'],
+            relations: [
+                'productosListasPrecios', 
+                'productosListasPrecios.producto', 
+                'productosListasPrecios.producto.marca',
+                'productosListasPrecios.producto.categoria',
+                'productosListasPrecios.producto.unidadMedida'
+            ],
         });
         if (!listaPrecio) {
             throw new BadRequestException(`❌ No se encontró la lista de precios con ID ${id}.`);
@@ -263,8 +269,14 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
                 id: plp.producto.marca.id,
                 nombre: plp.producto.marca.nombre,
             } : null,
-            categoria: null, // Por implementar cuando se descomente la relación
-            unidadMedida: null, // Por implementar cuando se descomente la relación
+            categoria: plp.producto.categoria ? {
+                id: plp.producto.categoria.id,
+                nombre: plp.producto.categoria.nombre,
+            } : null,
+            unidadMedida: plp.producto.unidadMedida ? {
+                id: plp.producto.unidadMedida.id,
+                nombre: plp.producto.unidadMedida.nombre,
+            } : null,
             estado: plp.producto.estado,
             stock: plp.producto.stock,
         }));

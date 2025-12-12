@@ -177,11 +177,59 @@ export class ListaPreciosService extends BaseService<ListaPreciosEntity>{
     }
 
     // Find lista precio by id with relations
-    async findById(id: number): Promise<ListaPreciosEntity> {
-        return await this.listaPreciosRepository.findOne({
+    async findById(id: number): Promise<any> {
+        const listaPrecio = await this.listaPreciosRepository.findOne({
             where: { id },
-            relations: ['empresa', 'productos.marca'],
+            relations: [
+                'empresa', 
+                'productosListasPrecios', 
+                'productosListasPrecios.producto', 
+                'productosListasPrecios.producto.marca',
+                'productosListasPrecios.producto.categoria',
+                'productosListasPrecios.producto.unidadMedida'
+            ],
         });
+
+        if (!listaPrecio) {
+            return null;
+        }
+
+        // Transform productosListasPrecios to productos with list-specific prices
+        const productosConPrecios = listaPrecio.productosListasPrecios?.map(plp => ({
+            id: plp.producto.id,
+            codigo: plp.producto.codigo,
+            nombre: plp.producto.nombre,
+            precio_venta: plp.producto.precio_venta || 0, // Base price
+            precio: plp.precio_venta_especifico, // List-specific price
+            marca: plp.producto.marca ? {
+                id: plp.producto.marca.id,
+                nombre: plp.producto.marca.nombre,
+            } : null,
+            categoria: plp.producto.categoria ? {
+                id: plp.producto.categoria.id,
+                nombre: plp.producto.categoria.nombre,
+            } : null,
+            unidadMedida: plp.producto.unidadMedida ? {
+                id: plp.producto.unidadMedida.id,
+                nombre: plp.producto.unidadMedida.nombre,
+            } : null,
+            estado: plp.producto.estado,
+            stock: plp.producto.stock,
+        })) || [];
+
+        // Return lista with transformed productos
+        return {
+            id: listaPrecio.id,
+            nombre: listaPrecio.nombre,
+            descripcion: listaPrecio.descripcion,
+            estado: listaPrecio.estado,
+            empresa_id: listaPrecio.empresa_id,
+            empresa: listaPrecio.empresa,
+            productos: productosConPrecios,
+            created_at: listaPrecio.created_at,
+            updated_at: listaPrecio.updated_at,
+            deleted_at: listaPrecio.deleted_at,
+        };
     }
 
     // Delete single lista precio

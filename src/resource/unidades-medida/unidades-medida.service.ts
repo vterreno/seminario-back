@@ -37,6 +37,11 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
     // Create unidad
     async createUnidad(unidadData: CreateUnidadMedidaDto): Promise<UnidadMedidaEntity> {
         try {
+            // Validar que se proporcione empresa_id
+            if (!unidadData.empresaId) {
+                throw new BadRequestException('La unidad de medida debe estar asociada a una empresa.');
+            }
+
             // Verificar si ya existe una unidad con el mismo nombre en la empresa
             const existingByNombre = await this.unidadesMedidaRepository.findOne({
                 where: { 
@@ -68,8 +73,8 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             });
             return await this.unidadesMedidaRepository.save(unidad);
         } catch (error) {
-            // Re-throw ConflictException as is
-            if (error instanceof ConflictException) {
+            // Re-throw ConflictException and BadRequestException as is
+            if (error instanceof ConflictException || error instanceof BadRequestException) {
                 throw error;
             }
             // Log internal error but don't expose it to client

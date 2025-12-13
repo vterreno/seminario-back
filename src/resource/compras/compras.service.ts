@@ -20,6 +20,7 @@ import { CostoAdicionalService } from '../costo-adicional/costo-adicional.servic
 import { pagoEntity } from 'src/database/core/pago.entity';
 import { CostoAdicionalEntity } from 'src/database/core/costo-adicionales.entity';
 import { MovimientoStockEntity } from 'src/database/core/movimientos-stock.entity';
+import { parseLocalDate } from 'src/utils/date.utils';
 
 // Constante para el margen de ganancia por defecto (30%)
 const DEFAULT_PRICE_MARKUP = 1.3;
@@ -112,7 +113,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             // Paso 4: Crear la compra sin detalles pero con el número de compra generado
             const compra: Partial<CompraEntity> = {
                 numero_compra: nuevoNumeroCompra,
-                fecha_compra: new Date(compraData.fecha_compra),
+                fecha_compra: parseLocalDate(compraData.fecha_compra),
                 monto_total: compraData.monto_total,
                 sucursal: { id: compraData.sucursal_id } as sucursalEntity,
                 contacto: compraData.contacto_id ? { id: compraData.contacto_id } as contactoEntity : undefined,
@@ -355,7 +356,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             if (compraData.pago) {
                 // Crear el pago usando el queryRunner para mantener la transacción
                 const pagoEntityData = queryRunner.manager.create(pagoEntity, {
-                    fecha_pago: new Date(compraData.pago.fecha_pago),
+                    fecha_pago: parseLocalDate(compraData.pago.fecha_pago),
                     monto_pago: compraData.pago.monto_pago,
                     metodo_pago: compraData.pago.metodo_pago as 'efectivo' | 'transferencia',
                     sucursal: { id: compraData.pago.sucursal_id } as sucursalEntity,
@@ -459,7 +460,7 @@ export class ComprasService extends BaseService<CompraEntity>{
 
             // Paso 4: Crear el pago
             const savedPago = await this.pagoService.createPago({
-                fecha_pago: new Date(pagoData.fecha_pago),
+                fecha_pago: parseLocalDate(pagoData.fecha_pago),
                 monto_pago: pagoData.monto_pago,
                 metodo_pago: pagoData.metodo_pago,
                 sucursal: { id: pagoData.sucursal_id } as any,
@@ -629,7 +630,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             const updateFields: any = {};
             
             if (updateData.fecha_compra !== undefined) {
-                updateFields.fecha_compra = new Date(updateData.fecha_compra);
+                updateFields.fecha_compra = parseLocalDate(updateData.fecha_compra);
             }
             if (updateData.numero_factura !== undefined) {
                 updateFields.numero_factura = updateData.numero_factura;

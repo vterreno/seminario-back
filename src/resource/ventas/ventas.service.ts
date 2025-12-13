@@ -10,6 +10,7 @@ import { PagoService } from '../pago/pago.service';
 import { DetalleVentaService } from '../detalle-venta/detalle-venta.service';
 import { MovimientosStockService } from '../movimientos-stock/movimientos-stock.service';
 import { TipoMovimientoStock } from 'src/database/core/enums/TipoMovimientoStock.enum';
+import { parseLocalDate } from 'src/utils/date.utils';
 
 @Injectable()
 export class VentasService extends BaseService<ventaEntity>{
@@ -84,7 +85,7 @@ export class VentasService extends BaseService<ventaEntity>{
 
             // Paso 4: Crear el pago primero (porque venta necesita el pago_id)
             const savedPago = await this.pagoService.createPago({
-                fecha_pago: new Date(ventaData.pago.fecha_pago),
+                fecha_pago: parseLocalDate(ventaData.pago.fecha_pago),
                 monto_pago: ventaData.pago.monto_pago,
                 metodo_pago: ventaData.pago.metodo_pago as 'efectivo' | 'transferencia',
                 sucursal: { id: ventaData.pago.sucursal_id } as any,
@@ -93,7 +94,7 @@ export class VentasService extends BaseService<ventaEntity>{
             // Paso 5: Crear la venta sin detalles pero con el número de venta generado
             const venta = this.ventaRepository.create({
                 numero_venta: nuevoNumeroVenta, // ← Usar el número generado del talonario
-                fecha_venta: new Date(ventaData.fecha_venta),
+                fecha_venta: parseLocalDate(ventaData.fecha_venta),
                 monto_total: ventaData.monto_total,
                 sucursal: { id: ventaData.sucursal_id } as any,
                 contacto: ventaData.contacto_id ? { id: ventaData.contacto_id } as any : undefined,

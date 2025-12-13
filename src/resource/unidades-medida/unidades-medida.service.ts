@@ -37,12 +37,41 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
     // Create unidad
     async createUnidad(unidadData: CreateUnidadMedidaDto): Promise<UnidadMedidaEntity> {
         try {
+            // Verificar si ya existe una unidad con el mismo nombre en la empresa
+            const existingByNombre = await this.unidadesMedidaRepository.findOne({
+                where: { 
+                    nombre: unidadData.nombre, 
+                    empresa_id: unidadData.empresaId 
+                }
+            });
+            if (existingByNombre) {
+                throw new ConflictException(`Ya existe una unidad de medida con el nombre "${unidadData.nombre}" en esta empresa.`);
+            }
+
+            // Verificar si ya existe una unidad con la misma abreviatura en la empresa
+            const existingByAbreviatura = await this.unidadesMedidaRepository.findOne({
+                where: { 
+                    abreviatura: unidadData.abreviatura, 
+                    empresa_id: unidadData.empresaId 
+                }
+            });
+            if (existingByAbreviatura) {
+                throw new ConflictException(`Ya existe una unidad de medida con la abreviatura "${unidadData.abreviatura}" en esta empresa.`);
+            }
+
             const unidad = this.unidadesMedidaRepository.create({
-                ...unidadData,
-                estado: unidadData.estado ?? true, // Default to true if not provided
+                nombre: unidadData.nombre,
+                abreviatura: unidadData.abreviatura,
+                aceptaDecimales: unidadData.aceptaDecimales ?? false,
+                empresa_id: unidadData.empresaId,
+                estado: unidadData.estado ?? true,
             });
             return await this.unidadesMedidaRepository.save(unidad);
         } catch (error) {
+            // Re-throw ConflictException as is
+            if (error instanceof ConflictException) {
+                throw error;
+            }
             // Log internal error but don't expose it to client
             console.error('Internal error creating unidad:', error);
             throw new BadRequestException('Error al crear la unidad. Por favor, verifica los datos e intenta nuevamente.');
@@ -72,7 +101,18 @@ export class UnidadesMedidaService extends BaseService<UnidadMedidaEntity>{
             throw new BadRequestException(`❌ No se puede cambiar la abreviatura de la unidad "${unidad.nombre}" porque tiene productos asociados. Primero debe reasignar o eliminar esos productos.`);
         }
 
-        await this.unidadesMedidaRepository.update(id, unidadData);
+        // Mapear empresaId a empresa_id para la actualización
+        const updateData: Partial<UnidadMedidaEntity> = {
+            nombre: unidadData.nombre,
+            abreviatura: unidadData.abreviatura,
+            aceptaDecimales: unidadData.aceptaDecimales,
+            estado: unidadData.estado,
+        };
+        if (unidadData.empresaId !== undefined) {
+            updateData.empresa_id = unidadData.empresaId;
+        }
+
+        await this.unidadesMedidaRepository.update(id, updateData);
         return await this.findById(id);
     }
 

@@ -119,14 +119,18 @@ export class Compra1762889568108 implements MigrationInterface {
             true
         );
 
-        // Crear ENUM para estado de compras
+        // Crear ENUM para estado de compras (solo si no existe)
         await queryRunner.query(`
-            CREATE TYPE "compras_estado_enum" AS ENUM(
-                'PENDIENTE_PAGO', 
-                'PAGADO', 
-                'RECIBIDO', 
-                'CANCELADO'
-            )
+            DO $$ BEGIN
+                CREATE TYPE "compras_estado_enum" AS ENUM(
+                    'PENDIENTE_PAGO', 
+                    'PAGADO', 
+                    'RECIBIDO', 
+                    'CANCELADO'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
         `);
 
         // Crear tabla compras

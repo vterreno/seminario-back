@@ -16,8 +16,14 @@ export class CreateProductoDto {
     @IsNumber()
     @IsOptional()
     marca_id: number;
-    //categoria_id: number;
-    //unidad_medida_id: number;
+
+    @IsNumber()
+    @IsOptional()
+    categoria_id: number;
+
+    @IsNumber()
+    @IsOptional()
+    unidad_medida_id: number;
 
     @IsNumber()
     @Min(0.01, { message: 'El precio de costo debe ser mayor que 0' })

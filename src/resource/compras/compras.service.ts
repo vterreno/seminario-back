@@ -685,7 +685,7 @@ export class ComprasService extends BaseService<CompraEntity>{
             });
 
             if (!compra) {
-                throw new BadRequestException(`❌ No se encontró la compra con ID ${id} que intentas eliminar.`);
+                throw new BadRequestException(`No se encontró la compra con ID ${id} que intentas eliminar.`);
             }
 
             // PASO 0: Validar que hay suficiente stock para devolver
@@ -763,6 +763,14 @@ export class ComprasService extends BaseService<CompraEntity>{
                     throw new BadRequestException(`Error al eliminar los detalles de compra: ${detalleError.message}`);
                 }
             }
+
+            // PASO 2: Eliminar los costos adicionales de la compra
+            await this.compraRepository
+                .createQueryBuilder()
+                .delete()
+                .from('costos-adicionales')
+                .where('compra_id = :compraId', { compraId: id })
+                .execute();
             
 
             // PASO 3: Finalmente eliminamos la compra usando DELETE directo
@@ -779,34 +787,59 @@ export class ComprasService extends BaseService<CompraEntity>{
             if (error instanceof BadRequestException) {
                 throw error;
             }
-            throw new BadRequestException(`Error al eliminar la compra: ${error.message}`);
+            // Traducir errores de FK a mensajes amigables
+            const friendlyMessage = this.translateForeignKeyError(error.message);
+            throw new BadRequestException(friendlyMessage);
         }
+    }
+
+    /**
+     * Traduce errores de foreign key a mensajes amigables para el usuario
+     */
+    private translateForeignKeyError(errorMessage: string): string {
+        if (errorMessage.includes('foreign key constraint')) {
+            if (errorMessage.includes('costos_adicionales') || errorMessage.includes('costos-adicionales')) {
+                return 'No se puede eliminar la compra porque tiene costos adicionales asociados. Por favor, elimine primero los costos adicionales.';
+            }
+            if (errorMessage.includes('detalle_compra')) {
+                return 'No se puede eliminar la compra porque tiene detalles de compra asociados.';
+            }
+            if (errorMessage.includes('pago')) {
+                return 'No se puede eliminar la compra porque tiene un pago asociado.';
+            }
+            if (errorMessage.includes('movimientos_stock') || errorMessage.includes('movimientos-stock')) {
+                return 'No se puede eliminar la compra porque tiene movimientos de stock asociados.';
+            }
+            return 'No se puede eliminar la compra porque tiene registros asociados. Por favor, contacte al administrador.';
+        }
+        return `Error al eliminar la compra: ${errorMessage}`;
     }
 
     // Bulk delete compras
     async bulkDeleteCompras(ids: number[], empresaId?: number): Promise<void> {
-        // Obtener todas las compras con sus relaciones
-        const compras = await this.compraRepository.find({
-            where: { id: In(ids) },
-            relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal', 'sucursal.empresa', 'costosAdicionales'],
-        });
+        try {
+            // Obtener todas las compras con sus relaciones
+            const compras = await this.compraRepository.find({
+                where: { id: In(ids) },
+                relations: ['detalles', 'detalles.producto', 'detalles.producto.producto', 'sucursal', 'sucursal.empresa', 'costosAdicionales'],
+            });
 
-        // Validar que existan compras
-        if (compras.length === 0) {
-            throw new BadRequestException('❌ No se encontraron compras con los IDs proporcionados.');
-        }
+            // Validar que existan compras
+            if (compras.length === 0) {
+                throw new BadRequestException('No se encontraron compras con los IDs proporcionados.');
+            }
 
         // Si se proporciona empresaId, validar que las compras pertenezcan a esa empresa
         if (empresaId) {
             const comprasInvalidas = compras.filter(compra => compra.sucursal?.empresa?.id !== empresaId);
             if (comprasInvalidas.length > 0) {
-                throw new BadRequestException('❌ Algunas compras que intentas eliminar no pertenecen a tu empresa.');
+                throw new BadRequestException('Algunas compras que intentas eliminar no pertenecen a tu empresa.');
             }
         }
 
         // Verificar que todas las compras solicitadas fueron encontradas
         if (compras.length !== ids.length) {
-            throw new BadRequestException('❌ Algunas compras que intentas eliminar no existen.');
+            throw new BadRequestException('Algunas compras que intentas eliminar no existen.');
         }
 
         // PASO 0: Validar que hay suficiente stock para devolver en todas las compras
@@ -894,7 +927,15 @@ export class ComprasService extends BaseService<CompraEntity>{
             .where('compra_id IN (:...ids)', { ids })
             .execute();
 
-        // PASO 5: Finalmente eliminar las compras usando DELETE directo
+        // PASO 2: Eliminar los costos adicionales de las compras
+        await this.compraRepository
+            .createQueryBuilder()
+            .delete()
+            .from('costos-adicionales')
+            .where('compra_id IN (:...ids)', { ids })
+            .execute();
+
+        // PASO 3: Finalmente eliminar las compras usando DELETE directo
         await this.compraRepository
             .createQueryBuilder()
             .delete()
@@ -902,6 +943,15 @@ export class ComprasService extends BaseService<CompraEntity>{
             .where('id IN (:...ids)', { ids })
             .execute();
         
+        } catch (error) {
+            console.error(`❌ Error en bulkDeleteCompras:`, error.message);
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
+            // Traducir errores de FK a mensajes amigables
+            const friendlyMessage = this.translateForeignKeyError(error.message);
+            throw new BadRequestException(friendlyMessage);
+        }
     }
 
     // Soft delete (set estado to false instead of hard delete)

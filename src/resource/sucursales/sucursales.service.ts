@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseService } from 'src/base-service/base-service.service';
 import { sucursalEntity } from 'src/database/core/sucursal.entity';
 import { ProductoEntity } from 'src/database/core/producto.entity';
+import { UserEntity } from 'src/database/core/user.entity';
 import { FindManyOptions, FindOneOptions, Repository, In, IsNull, UpdateResult } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
@@ -20,8 +21,49 @@ export class SucursalesService extends BaseService<sucursalEntity> {
     protected sucursalesRepository: Repository<sucursalEntity>,
     @InjectRepository(ProductoEntity)
     private productosRepository: Repository<ProductoEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {
     super(sucursalesRepository);
+  }
+
+  // Sobrescribir create para asignar sucursal a administradores de la empresa
+  async create(entity: Partial<sucursalEntity>): Promise<sucursalEntity> {
+    // Primero crear la sucursal
+    const sucursal = await this.repository.save(entity);
+
+    // Si la sucursal tiene empresa_id, asignarla a los administradores de esa empresa
+    if (sucursal.empresa_id) {
+      await this.asignarSucursalAAdministradores(sucursal);
+    }
+
+    return sucursal;
+  }
+
+  // Método para asignar una sucursal a todos los administradores de la empresa
+  private async asignarSucursalAAdministradores(sucursal: sucursalEntity): Promise<void> {
+    // Buscar usuarios administradores de la empresa
+    const administradores = await this.userRepository.find({
+      where: {
+        empresa_id: sucursal.empresa_id,
+        status: true,
+      },
+      relations: ['role', 'sucursales'],
+    });
+
+    // Filtrar solo los que tienen rol "Administrador"
+    const admins = administradores.filter(user => user.role?.nombre === 'Administrador');
+
+    // Asignar la sucursal a cada administrador
+    for (const admin of admins) {
+      // Verificar si ya tiene la sucursal asignada
+      const yaTieneSucursal = admin.sucursales?.some(s => s.id === sucursal.id);
+      
+      if (!yaTieneSucursal) {
+        admin.sucursales = [...(admin.sucursales || []), sucursal];
+        await this.userRepository.save(admin);
+      }
+    }
   }
 
   async findByEmpresa(empresaId: number): Promise<sucursalEntity[]> {

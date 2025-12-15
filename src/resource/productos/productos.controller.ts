@@ -23,12 +23,16 @@ export class ProductosController extends BaseController<ProductoEntity>{
     async getAllProductos(@Req() req: RequestWithUser) {
         const user = req.user;
 
-        // If user has a company, filter productos by sucursales of that company
+        // If user has a company, filter productos by empresa
         if (user.empresa?.id) {
-            //Extrae los IDs de todas sus sucursales
-            const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
-
-            return await this.productoService.getProductosBySucursal(sucursalIds);
+            // Si el usuario tiene sucursales asignadas, filtrar por esas sucursales
+            // Si no tiene sucursales asignadas, obtener todos los productos de la empresa
+            if (user.sucursales && user.sucursales.length > 0) {
+                const sucursalIds = user.sucursales.map(sucursal => sucursal.id);
+                return await this.productoService.getProductosBySucursal(sucursalIds);
+            }
+            // Usuario sin sucursales asignadas: obtener todos los productos de su empresa
+            return await this.productoService.getProductosByEmpresa(user.empresa.id);
         }
         // If no company (superadmin), return all productos
         return await this.productoService.getAllProductos();

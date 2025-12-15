@@ -103,8 +103,17 @@ export class UsersService extends BaseService<UserEntity> {
 
   async register(body: RegisterDTO) {
     try {
-      const rol= new RoleEntity();
+      // Primero crear y guardar la empresa para obtener su ID
+      const empresa = new empresaEntity();
+      empresa.name = body.empresa;
+      await this.empresaRepository.save(empresa);
+
+      // Crear el rol y asignarle la empresa
+      const rol = new RoleEntity();
       rol.nombre = "Administrador";
+      rol.empresa = empresa;
+      rol.empresa_id = empresa.id;
+      
       // Filtrar permisos excluyendo los de empresa directamente en la consulta
       const permisosExcluidos = [
         'empresa_ver',
@@ -116,9 +125,9 @@ export class UsersService extends BaseService<UserEntity> {
         where: { codigo: Not(In(permisosExcluidos)) }
       });
       rol.permissions = permisos;
-      const empresa = new empresaEntity();
-      empresa.name = body.empresa;
+      await this.roleRepository.save(rol);
 
+      // Crear el usuario y asociarlo con empresa y rol
       const user = new UserEntity();
       Object.assign(user, body);
       user.password = hashSync(user.password, 10);
@@ -126,8 +135,6 @@ export class UsersService extends BaseService<UserEntity> {
       user.role = rol;
       user.status = true;
       
-      await this.roleRepository.save(rol);
-      await this.empresaRepository.save(empresa);
       await this.contactoService.crearConsumidorFinal(empresa);
       await this.userRepository.save(user);
       const userName = `${user.nombre} ${user.apellido}`;
